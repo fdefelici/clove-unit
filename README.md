@@ -36,7 +36,7 @@ Than include test cases files in the one that will be the main program and expli
 CLOVE_RUNNER(FirstTest, SecondTest)
 ```
 
-| For further examples look at the [example](./example) folder
+> For further examples look at the [example](./example) folder
 
 # Apis
 Here a list of availables apis
