@@ -1,3 +1,11 @@
+/* 
+ * clove
+ * v1.0.0
+ * Unit Testing library for C
+ * https://github.com/fdefelici/clove
+ * 
+ */
+
 #ifndef CLOVE_H
 #define CLOVE_H
 
