@@ -47,7 +47,7 @@ Apis to be used for defining tests.
 | CLOVE_RUNNER(...)  | List test cases to run (defined with CLOVE_TEST) and generate program entry point  |
 | CLOVE_TEST(Name)  | Define test case named "Name" |
 
-## Test Assertion
+## Test Assertions
 Assertions that can be used within a ```CLOVE_TEST```
 
 | Api | Description |
