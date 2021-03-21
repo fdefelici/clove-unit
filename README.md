@@ -25,9 +25,10 @@ CLOVE_TEST(SecondTest) {
 }
 ```
 
-```c
 Than include test cases files in the one that will be the main program and explict test cases to be run:
 
+```c
+//file main.c
 #include "clove.h"
 #include "test1.h"
 #include "test2.h"
