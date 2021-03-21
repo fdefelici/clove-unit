@@ -14,6 +14,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
+#include <string.h>
 
 static char* __clove_base_path;
 
