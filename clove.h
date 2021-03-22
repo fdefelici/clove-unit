@@ -235,7 +235,7 @@ static char* __basepath(const char* path) {
 /*
  * Provide the executable base path
  */
-#define CLOVE_EXEC_PATH __clove_base_path
+#define CLOVE_EXEC_BASEPATH __clove_base_path
 
 // MAIN
 // - single # will create a string from the given argument

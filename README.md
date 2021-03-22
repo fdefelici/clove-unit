@@ -68,4 +68,4 @@ Assertions that can be used within a ```CLOVE_TEST```
 Helper apis to support test implementation
 | Api | Description |
 | ------------- | ------------- |
-| CLOVE_TEST(Name)  | Define test case named "Name" |
+| CLOVE_EXEC_BASEPATH  | Macro to easily retrive executable base path |
