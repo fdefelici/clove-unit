@@ -221,7 +221,7 @@ static void __clove_exec(__clove_test *tests, int numOfTests) {
 extern char* __clove_exec_path;
 extern char* __clove_exec_base_path;
 
-static void __replace_char(char* str, char src_chr, char dst_chr) {
+static void __clove_replace_char(char* str, char src_chr, char dst_chr) {
     int size = strlen(str);
     for(int i=0; i<size; ++i) {
         if (str[i] == src_chr) {
@@ -230,12 +230,12 @@ static void __replace_char(char* str, char src_chr, char dst_chr) {
     }
 }
 
-static char* __basepath(char* path) {
+static char* __clove_basepath(char* path) {
 //make sure path contains only separator specific for the OS
 #ifdef _WIN32
-    __replace_char(path, '/', __CLOVE_PATH_SEPARATOR);
+    __clove_replace_char(path, '/', __CLOVE_PATH_SEPARATOR);
 #else
-    __replace_char(path, '\\', __CLOVE_PATH_SEPARATOR)
+    __clove_replace_char(path, '\\', __CLOVE_PATH_SEPARATOR)
 #endif //_WIN32
 
     const char* last_addr = strrchr((const char*)path, __CLOVE_PATH_SEPARATOR);
@@ -272,7 +272,7 @@ char* __clove_exec_path;\
 char* __clove_exec_base_path;\
 int main(int argc, char* argv[]) {\
     __clove_exec_path = argv[0]; \
-    __clove_exec_base_path = __basepath(argv[0]); \
+    __clove_exec_base_path = __clove_basepath(argv[0]); \
     void (*func_ptr[])(__clove_test*) = {__VA_ARGS__};\
     int testSize = sizeof(func_ptr) / sizeof(func_ptr[0]);\
     __clove_test* tests = (__clove_test*)calloc(testSize, sizeof(__clove_test));\
