@@ -1,6 +1,6 @@
 /* 
  * clove
- * v1.0.0
+ * v1.0.1
  * Unit Testing library for C
  * https://github.com/fdefelici/clove
  * 
@@ -15,8 +15,6 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
-
-static char* __clove_base_path;
 
 #define __CLOVE_STRING_LENGTH 256
 #define __CLOVE_TEST_ENTRY_LENGTH 50
@@ -173,19 +171,18 @@ static void __clove_exec(__clove_test *tests, int numOfTests) {
     unsigned int skipped = 0;
     
     for(int i=0; i<numOfTests; i++) {
-        __clove_test each = tests[i];
-        each.result = __CLOVE_TEST_SKIPPED;
+        __clove_test* each = &tests[i];
+        each->result = __CLOVE_TEST_SKIPPED;
         //if (each.setup) each.setup();
         
-        each.funct(&each);
+        each->funct(each);
         //if (each.teardown) each.teardown();
 
         char result[__CLOVE_STRING_LENGTH], strToPad[__CLOVE_TEST_ENTRY_LENGTH];
-        sprintf(strToPad, "%d) %s", i+1, each.name);
+        sprintf(strToPad, "%d) %s", i+1, each->name);
         __clove_pad_right(result, strToPad);
 
-        
-        switch(each.result) {
+        switch(each->result) {
             case __CLOVE_TEST_PASSED: {
                 passed++;
                 printf("%s %s%s\n", __CLOVE_INFO, result, __CLOVE_PASSED);
@@ -193,7 +190,7 @@ static void __clove_exec(__clove_test *tests, int numOfTests) {
             }
             case __CLOVE_TEST_FAILED: {
                 failed++;
-                printf("%s %s%s => %s@%d: %s\n", __CLOVE_ERRO, result, __CLOVE_FAILED, each.file_name, each.line, each.err_msg);
+                printf("%s %s%s => %s@%d: %s\n", __CLOVE_ERRO, result, __CLOVE_FAILED, each->file_name, each->line, each->err_msg);
                 break;
             }
             case __CLOVE_TEST_SKIPPED: {
@@ -221,27 +218,61 @@ static void __clove_exec(__clove_test *tests, int numOfTests) {
     #define __CLOVE_PATH_SEPARATOR '/'
 #endif //_WIN32
 
-static char* __basepath(const char* path) {
-    char* last_addr = strrchr(path, __CLOVE_PATH_SEPARATOR);
-    int index = last_addr - path;
-    int size = index + 1;
-    char* base_path = (char*)malloc(sizeof(size));
-    strncpy_s(base_path, size, path, index);
+extern char* __clove_exec_path;
+extern char* __clove_exec_base_path;
+
+static void __replace_char(char* str, char src_chr, char dst_chr) {
+    int size = strlen(str);
+    for(int i=0; i<size; ++i) {
+        if (str[i] == src_chr) {
+            str[i] = dst_chr;
+        }
+    }
+}
+
+static char* __basepath(char* path) {
+//make sure path contains only separator specific for the OS
+#ifdef _WIN32
+    __replace_char(path, '/', __CLOVE_PATH_SEPARATOR);
+#else
+    __replace_char(path, '\\', __CLOVE_PATH_SEPARATOR)
+#endif //_WIN32
+
+    const char* last_addr = strrchr((const char*)path, __CLOVE_PATH_SEPARATOR);
+    int bytes_count;
+
+    if (!last_addr) {
+        bytes_count = strlen(path);
+    } else {
+        bytes_count = last_addr - path;
+    }
+    int size = bytes_count + 1; //considera il  null terminator
+
+    char* base_path = (char*)malloc(sizeof(char) * size);
+    strncpy_s(base_path, size, path, bytes_count);
     return base_path;
 }
 #pragma endregion
 
 #pragma region PUBLIC APIs
 /*
+ * Provide the executable path
+ */
+#define CLOVE_EXEC_PATH __clove_exec_base_path
+/*
  * Provide the executable base path
  */
-#define CLOVE_EXEC_BASEPATH __clove_base_path
+#define CLOVE_EXEC_BASE_PATH __clove_exec_base_path
 
 // MAIN
 // - single # will create a string from the given argument
 // - double ## will create a new token by concatenating the arguments
-#define CLOVE_RUNNER(...) int main(int argc, char* argv[]) {\
-    __clove_base_path = __basepath(argv[0]); \
+#define CLOVE_RUNNER(...) \
+char* __clove_exec_path;\
+char* __clove_exec_base_path;\
+int main(int argc, char* argv[]) {\
+    __clove_exec_path = argv[0]; \
+    __clove_exec_base_path = __basepath(argv[0]); \
     void (*func_ptr[])(__clove_test*) = {__VA_ARGS__};\
     int testSize = sizeof(func_ptr) / sizeof(func_ptr[0]);\
     __clove_test* tests = (__clove_test*)calloc(testSize, sizeof(__clove_test));\
@@ -256,7 +287,7 @@ static char* __basepath(const char* path) {
     }\
     __clove_exec(tests, testSize); \
     free(tests); \
-    free(__clove_base_path); \
+    free(__clove_exec_base_path); \
     return 0;\
 }
 

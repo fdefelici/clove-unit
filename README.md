@@ -68,4 +68,5 @@ Assertions that can be used within a ```CLOVE_TEST```
 Helper apis to support test implementation
 | Api | Description |
 | ------------- | ------------- |
-| CLOVE_EXEC_BASEPATH  | Macro to easily retrive executable base path |
+| CLOVE_EXEC_PATH  | Macro to easily retrive executable path |
+| CLOVE_EXEC_BASE_PATH  | Macro to easily retrive executable base path |
