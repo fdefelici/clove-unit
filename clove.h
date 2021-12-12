@@ -1,6 +1,6 @@
 /* 
  * clove
- * v1.0.1
+ * v1.0.2
  * Unit Testing library for C
  * https://github.com/fdefelici/clove
  * 
@@ -14,7 +14,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
-#include <string.h>
 
 #define __CLOVE_STRING_LENGTH 256
 #define __CLOVE_TEST_ENTRY_LENGTH 50
@@ -211,11 +210,51 @@ static void __clove_exec(__clove_test *tests, int numOfTests) {
 
 #define __CLOVE_TEST_GUARD if (_this->result==__CLOVE_TEST_FAILED) {return;} strcpy_s(_this->file_name, __CLOVE_STRING_LENGTH, __clove_rel_src(__FILE__)); _this->line=__LINE__;
 
-
 #ifdef _WIN32
     #define __CLOVE_PATH_SEPARATOR '\\'
+
+    #pragma region SetupAnsiConsoleForWindows
+    #include <windows.h>
+    #ifndef ENABLE_VIRTUAL_TERMINAL_PROCESSING
+    #define ENABLE_VIRTUAL_TERMINAL_PROCESSING  0x0004
+    #endif
+    
+    static void __clove_setup_ansi_console() {
+        DWORD outMode = 0, inMode = 0;
+        HANDLE stdoutHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+        HANDLE stdinHandle = GetStdHandle(STD_INPUT_HANDLE);
+
+        if (stdoutHandle == INVALID_HANDLE_VALUE || stdinHandle == INVALID_HANDLE_VALUE) {
+            //exit(GetLastError());
+            return; //if fails let clove to work anyway
+        }
+
+        if (!GetConsoleMode(stdoutHandle, &outMode) || !GetConsoleMode(stdinHandle, &inMode)) {
+        //exit(GetLastError());
+        return; //if fails let clove to work anyway
+        }
+
+        DWORD outModeInit = outMode;
+        DWORD inModeInit = inMode;
+
+        // Enable ANSI escape codes
+        outMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+
+        // Set stdin as no echo and unbuffered
+        inMode &= ~(ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT);
+
+        if (!SetConsoleMode(stdoutHandle, outMode) || !SetConsoleMode(stdinHandle, inMode)) {
+            //exit(GetLastError());
+            return; //if fails let clove to work anyway
+        }
+    }
+    #pragma endregion
 #else
     #define __CLOVE_PATH_SEPARATOR '/'
+
+    static void __clove_setup_ansi_console() { 
+        /* Nothing to do at the moment for other OS */
+    }
 #endif //_WIN32
 
 extern char* __clove_exec_path;
@@ -271,6 +310,7 @@ static char* __clove_basepath(char* path) {
 char* __clove_exec_path;\
 char* __clove_exec_base_path;\
 int main(int argc, char* argv[]) {\
+    __clove_setup_ansi_console();\
     __clove_exec_path = argv[0]; \
     __clove_exec_base_path = __clove_basepath(argv[0]); \
     void (*func_ptr[])(__clove_test*) = {__VA_ARGS__};\

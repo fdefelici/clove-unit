@@ -1,9 +1,7 @@
 #include "clove.h"
 
 CLOVE_TEST(BooleanTest) {
-    int TRUE = 1;
-    int FALSE = 0;
-    CLOVE_IS_TRUE(TRUE);
+    CLOVE_IS_TRUE(1);
 }
 
 CLOVE_TEST(IntTest) {
