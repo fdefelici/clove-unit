@@ -18,8 +18,23 @@
 #define __CLOVE_STRING_LENGTH 256
 #define __CLOVE_TEST_ENTRY_LENGTH 50
 
+// wrapper for Microsoft API
+#ifndef _WIN32
+char *strtok_s(char *str, const char *delimiters, char **context) {
+    return strtok_r(str, delimiters, context);
+}  
+
+int strncpy_s(char *strDest, size_t numberOfElements, const char *strSource, size_t count) {
+    return strncpy(strDest, strSource, count) == NULL;
+}
+
+int strcpy_s(char *dest, size_t dest_size, const char *src) {
+    return strcpy(dest, src) == NULL;
+}
+#endif
+
 typedef struct __clove_test_t {
-    char name[__CLOVE_STRING_LENGTH];
+    char name[__CLOVE_TEST_ENTRY_LENGTH];
     void (*funct)(struct __clove_test_t *);
     unsigned int result;
     char file_name[__CLOVE_STRING_LENGTH];
@@ -149,8 +164,8 @@ static void __clove_pad_right(char *result, char *strToPad) {
     if(padLen < 0) padLen = 0;    // Avoid negative length
 
     // FORMAT SPECIFIER: https://www.tutorialspoint.com/format-specifiers-in-c
-    // %* => lunghezza minima che sara' presa dalla stringa padding
-    // .* => precision, ovvero lunghezza esatta che sara' presa dalla stringa padding
+    // %* => minimal length taken from the padding string
+    // .* => precision, exact length of the string taken from the padding string
     sprintf(result, "%s%*.*s", strToPad, padLen, padLen, padding);  // LEFT Padding 
 }
 
@@ -177,8 +192,8 @@ static void __clove_exec(__clove_test *tests, int numOfTests) {
         each->funct(each);
         //if (each.teardown) each.teardown();
 
-        char result[__CLOVE_STRING_LENGTH], strToPad[__CLOVE_TEST_ENTRY_LENGTH];
-        sprintf(strToPad, "%d) %s", i+1, each->name);
+        char result[__CLOVE_STRING_LENGTH], strToPad[__CLOVE_TEST_ENTRY_LENGTH + 10];
+        snprintf(strToPad, __CLOVE_TEST_ENTRY_LENGTH + 10,  "%d) %s", i+1, each->name);
         __clove_pad_right(result, strToPad);
 
         switch(each->result) {
@@ -274,7 +289,7 @@ static char* __clove_basepath(char* path) {
 #ifdef _WIN32
     __clove_replace_char(path, '/', __CLOVE_PATH_SEPARATOR);
 #else
-    __clove_replace_char(path, '\\', __CLOVE_PATH_SEPARATOR)
+    __clove_replace_char(path, '\\', __CLOVE_PATH_SEPARATOR);
 #endif //_WIN32
 
     const char* last_addr = strrchr((const char*)path, __CLOVE_PATH_SEPARATOR);
