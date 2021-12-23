@@ -53,11 +53,13 @@ Assertions that can be used within a ```CLOVE_TEST```
 | Api | Description |
 | ------------- | ------------- |
 | CLOVE_INT_EQ(expected, result)  | Check equality between int |
-| CLOVE_INT_NE(exp, res)  | Check inequaliy between int |
+| CLOVE_INT_NE(expected, result)  | Check inequaliy between int |
 | CLOVE_IS_TRUE(result)  | Check if int is not 0 |
 | CLOVE_IS_FALSE(result)  | Check if int is 0 |
 | CLOVE_FLOAT_EQ(expected, result)  | Check equality between float |
-| CLOVE_FLOAT_NE(exp, res)  | Check inequaliy between float |
+| CLOVE_FLOAT_NE(expected, result)  | Check inequaliy between float |
+| CLOVE_STRING_EQ(expected, result)  | Check equality between string (null terminated char pointer or array) |
+| CLOVE_STRING_NE(expected, result)  | Check inequaliy between string (null terminated char pointer or array) |
 | CLOVE_NULL(result)  | Check if result is NULL |
 | CLOVE_NOT_NULL(result)  | Check if result is not NULL |
 | CLOVE_PTR_EQ(expected, result)  | Check equality between pointers |
