@@ -342,11 +342,11 @@ int main(int argc, char* argv[]) {\
     __clove_setup_ansi_console();\
     __clove_exec_path = argv[0]; \
     __clove_exec_base_path = __clove_basepath(argv[0]); \
-    void (*func_ptr[])(__clove_test*) = {__VA_ARGS__};\
-    int testSize = sizeof(func_ptr) / sizeof(func_ptr[0]);\
-    __clove_test* tests = (__clove_test*)calloc(testSize, sizeof(__clove_test));\
-    char functs_as_str[] = #__VA_ARGS__;\
-    for(int i=0; i < testSize; i++) {\
+    static void (*func_ptr[])(__clove_test*) = {__VA_ARGS__};\
+    int test_count = sizeof(func_ptr) / sizeof(func_ptr[0]);\
+    __clove_test* tests = (__clove_test*)calloc(test_count, sizeof(__clove_test));\
+    static char functs_as_str[] = #__VA_ARGS__;\
+    for(int i=0; i < test_count; ++i) {\
         char *token;\
         char *context;\
         if (i==0) { token = strtok_s(functs_as_str, ", ", &context); }\
@@ -354,7 +354,7 @@ int main(int argc, char* argv[]) {\
         strcpy_s(tests[i].name, sizeof(tests[i].name), token);\
         tests[i].funct = (*func_ptr[i]);\
     }\
-    __clove_exec(tests, testSize); \
+    __clove_exec(tests, test_count); \
     free(tests); \
     free(__clove_exec_base_path); \
     return 0;\
