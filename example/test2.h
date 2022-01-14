@@ -26,3 +26,13 @@ CLOVE_TEST(StringTest) {
     CLOVE_STRING_EQ(array, "123");
 }
 
+CLOVE_TEST(PassTest) {
+    CLOVE_PASS();
+}
+
+CLOVE_TEST(FailTest) {
+    CLOVE_FAIL();
+}
+
+
+

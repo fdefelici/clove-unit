@@ -384,6 +384,8 @@ int main(int argc, char* argv[]) {\
  * Define a new test named 'title'
  */
 #define CLOVE_TEST(title) static void title(__clove_test *_this) 
+#define CLOVE_PASS() __CLOVE_TEST_GUARD __clove_pass("", _this);
+#define CLOVE_FAIL() __CLOVE_TEST_GUARD __clove_fail("Test meet FAIL assertion!", _this);
 #define CLOVE_INT_EQ(exp, res) __CLOVE_TEST_GUARD __clove_check_int(__CLOVE_ASSERT_CHECK_EQUALITY, exp, res, _this);
 #define CLOVE_INT_NE(exp, res) __CLOVE_TEST_GUARD __clove_check_int(__CLOVE_ASSERT_CHECK_DIFFERENCE, exp, res, _this);
 #define CLOVE_CHAR_EQ(exp, res) __CLOVE_TEST_GUARD __clove_check_char(__CLOVE_ASSERT_CHECK_EQUALITY, exp, res, _this);

@@ -52,6 +52,9 @@ Assertions that can be used within a ```CLOVE_TEST```
 
 | Api | Description |
 | ------------- | ------------- |
+| CLOVE_PASS()  | Assertion that always make the test pass |
+| CLOVE_FAIL()  | Assertion that always make the test fail |
+| CLOVE_CHAR_NE(expected, result)  | Check inequaliy between char |
 | CLOVE_CHAR_EQ(expected, result)  | Check equality between char |
 | CLOVE_CHAR_NE(expected, result)  | Check inequaliy between char |
 | CLOVE_INT_EQ(expected, result)  | Check equality between int |
