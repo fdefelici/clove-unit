@@ -1,6 +1,6 @@
 /* 
- * clove
- * v1.0.4
+ * clove-unit
+ * v1.0.5
  * Unit Testing library for C
  * https://github.com/fdefelici/clove-unit
  * 
@@ -34,7 +34,8 @@ int strcpy_s(char *dest, size_t dest_size, const char *src) {
 #endif
 
 typedef struct __clove_test_t {
-    char name[__CLOVE_TEST_ENTRY_LENGTH];
+    //char name[__CLOVE_TEST_ENTRY_LENGTH];
+    char* name;
     void (*funct)(struct __clove_test_t *);
     unsigned int result;
     char file_name[__CLOVE_STRING_LENGTH];
@@ -80,6 +81,20 @@ static void __clove_check_int(const unsigned int check_mode, int expected, int r
     } else {
         char msg[__CLOVE_STRING_LENGTH];
         sprintf(msg, "expected [%d] but was [%d]", expected, result);
+        __clove_fail(msg, _this);
+    }
+}
+
+static void __clove_check_char(const unsigned int check_mode, char expected, char result, __clove_test *_this) {
+    int pass_scenario = 0;
+    if (check_mode == __CLOVE_ASSERT_CHECK_EQUALITY) { pass_scenario = expected == result; }
+    else if (check_mode == __CLOVE_ASSERT_CHECK_DIFFERENCE) { pass_scenario = expected != result; }
+    
+    if (pass_scenario) {
+        __clove_pass("", _this);
+    } else {
+        char msg[__CLOVE_STRING_LENGTH];
+        sprintf(msg, "expected [%c] but was [%c]", expected, result);
         __clove_fail(msg, _this);
     }
 }
@@ -206,8 +221,8 @@ static void __clove_exec(__clove_test *tests, int numOfTests) {
         each->funct(each);
         //if (each.teardown) each.teardown();
 
-        char result[__CLOVE_STRING_LENGTH], strToPad[__CLOVE_TEST_ENTRY_LENGTH + 10];
-        snprintf(strToPad, __CLOVE_TEST_ENTRY_LENGTH + 10,  "%d) %s", i+1, each->name);
+        char result[__CLOVE_STRING_LENGTH], strToPad[__CLOVE_TEST_ENTRY_LENGTH];
+        snprintf(strToPad, __CLOVE_TEST_ENTRY_LENGTH, "%d) %s", i+1, each->name);
         __clove_pad_right(result, strToPad);
 
         switch(each->result) {
@@ -237,7 +252,10 @@ static void __clove_exec(__clove_test *tests, int numOfTests) {
     return;
 }
 
-#define __CLOVE_TEST_GUARD if (_this->result==__CLOVE_TEST_FAILED) {return;} strcpy_s(_this->file_name, __CLOVE_STRING_LENGTH, __clove_rel_src(__FILE__)); _this->line=__LINE__;
+#define __CLOVE_TEST_GUARD \
+    if (_this->result == __CLOVE_TEST_FAILED) { return; }\
+    if (_this->file_name[0] == '\0') strcpy_s(_this->file_name, __CLOVE_STRING_LENGTH, __clove_rel_src(__FILE__));\
+    _this->line=__LINE__;
 
 #ifdef _WIN32
     #define __CLOVE_PATH_SEPARATOR '\\'
@@ -342,19 +360,19 @@ int main(int argc, char* argv[]) {\
     __clove_setup_ansi_console();\
     __clove_exec_path = argv[0]; \
     __clove_exec_base_path = __clove_basepath(argv[0]); \
-    void (*func_ptr[])(__clove_test*) = {__VA_ARGS__};\
-    int testSize = sizeof(func_ptr) / sizeof(func_ptr[0]);\
-    __clove_test* tests = (__clove_test*)calloc(testSize, sizeof(__clove_test));\
-    char functs_as_str[] = #__VA_ARGS__;\
-    for(int i=0; i < testSize; i++) {\
+    static void (*func_ptr[])(__clove_test*) = {__VA_ARGS__};\
+    int test_count = sizeof(func_ptr) / sizeof(func_ptr[0]);\
+    __clove_test* tests = (__clove_test*)calloc(test_count, sizeof(__clove_test));\
+    static char functs_as_str[] = #__VA_ARGS__;\
+    for(int i=0; i < test_count; ++i) {\
         char *token;\
         char *context;\
         if (i==0) { token = strtok_s(functs_as_str, ", ", &context); }\
         else { token = strtok_s(NULL, ", ", &context); }\
-        strcpy_s(tests[i].name, sizeof(tests[i].name), token);\
+        tests[i].name = token;\
         tests[i].funct = (*func_ptr[i]);\
     }\
-    __clove_exec(tests, testSize); \
+    __clove_exec(tests, test_count); \
     free(tests); \
     free(__clove_exec_base_path); \
     return 0;\
@@ -366,8 +384,12 @@ int main(int argc, char* argv[]) {\
  * Define a new test named 'title'
  */
 #define CLOVE_TEST(title) static void title(__clove_test *_this) 
+#define CLOVE_PASS() __CLOVE_TEST_GUARD __clove_pass("", _this);
+#define CLOVE_FAIL() __CLOVE_TEST_GUARD __clove_fail("Test meet FAIL assertion!", _this);
 #define CLOVE_INT_EQ(exp, res) __CLOVE_TEST_GUARD __clove_check_int(__CLOVE_ASSERT_CHECK_EQUALITY, exp, res, _this);
 #define CLOVE_INT_NE(exp, res) __CLOVE_TEST_GUARD __clove_check_int(__CLOVE_ASSERT_CHECK_DIFFERENCE, exp, res, _this);
+#define CLOVE_CHAR_EQ(exp, res) __CLOVE_TEST_GUARD __clove_check_char(__CLOVE_ASSERT_CHECK_EQUALITY, exp, res, _this);
+#define CLOVE_CHAR_NE(exp, res) __CLOVE_TEST_GUARD __clove_check_char(__CLOVE_ASSERT_CHECK_DIFFERENCE, exp, res, _this);
 #define CLOVE_IS_TRUE(res) __CLOVE_TEST_GUARD __clove_check_bool(__CLOVE_ASSERT_CHECK_TRUE, res, _this);
 #define CLOVE_IS_FALSE(res) __CLOVE_TEST_GUARD __clove_check_bool(__CLOVE_ASSERT_CHECK_FALSE, res, _this);
 #define CLOVE_NULL(res) __CLOVE_TEST_GUARD __clove_check_null(__CLOVE_ASSERT_CHECK_EQUALITY, res, _this);

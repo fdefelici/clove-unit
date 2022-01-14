@@ -4,6 +4,11 @@ CLOVE_TEST(BooleanTest) {
     CLOVE_IS_TRUE(1);
 }
 
+CLOVE_TEST(CharTest) {
+    CLOVE_CHAR_EQ('a', 'a');
+    CLOVE_CHAR_NE('a', 'b');
+}
+
 CLOVE_TEST(IntTest) {
     CLOVE_INT_EQ(2-1, 1);
 }
@@ -20,3 +25,14 @@ CLOVE_TEST(StringTest) {
     const char array[] = {'1', '2', '3', '\0'};
     CLOVE_STRING_EQ(array, "123");
 }
+
+CLOVE_TEST(PassTest) {
+    CLOVE_PASS();
+}
+
+CLOVE_TEST(FailTest) {
+    CLOVE_FAIL();
+}
+
+
+
