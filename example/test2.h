@@ -20,3 +20,4 @@ CLOVE_TEST(StringTest) {
     const char array[] = {'1', '2', '3', '\0'};
     CLOVE_STRING_EQ(array, "123");
 }
+

@@ -34,7 +34,8 @@ int strcpy_s(char *dest, size_t dest_size, const char *src) {
 #endif
 
 typedef struct __clove_test_t {
-    char name[__CLOVE_TEST_ENTRY_LENGTH];
+    //char name[__CLOVE_TEST_ENTRY_LENGTH];
+    char* name;
     void (*funct)(struct __clove_test_t *);
     unsigned int result;
     char file_name[__CLOVE_STRING_LENGTH];
@@ -206,8 +207,8 @@ static void __clove_exec(__clove_test *tests, int numOfTests) {
         each->funct(each);
         //if (each.teardown) each.teardown();
 
-        char result[__CLOVE_STRING_LENGTH], strToPad[__CLOVE_TEST_ENTRY_LENGTH + 10];
-        snprintf(strToPad, __CLOVE_TEST_ENTRY_LENGTH + 10,  "%d) %s", i+1, each->name);
+        char result[__CLOVE_STRING_LENGTH], strToPad[__CLOVE_TEST_ENTRY_LENGTH];
+        snprintf(strToPad, __CLOVE_TEST_ENTRY_LENGTH, "%d) %s", i+1, each->name);
         __clove_pad_right(result, strToPad);
 
         switch(each->result) {
@@ -237,7 +238,10 @@ static void __clove_exec(__clove_test *tests, int numOfTests) {
     return;
 }
 
-#define __CLOVE_TEST_GUARD if (_this->result==__CLOVE_TEST_FAILED) {return;} strcpy_s(_this->file_name, __CLOVE_STRING_LENGTH, __clove_rel_src(__FILE__)); _this->line=__LINE__;
+#define __CLOVE_TEST_GUARD \
+    if (_this->result == __CLOVE_TEST_FAILED) { return; }\
+    if (_this->file_name[0] == '\0') strcpy_s(_this->file_name, __CLOVE_STRING_LENGTH, __clove_rel_src(__FILE__));\
+    _this->line=__LINE__;
 
 #ifdef _WIN32
     #define __CLOVE_PATH_SEPARATOR '\\'
@@ -351,7 +355,7 @@ int main(int argc, char* argv[]) {\
         char *context;\
         if (i==0) { token = strtok_s(functs_as_str, ", ", &context); }\
         else { token = strtok_s(NULL, ", ", &context); }\
-        strcpy_s(tests[i].name, sizeof(tests[i].name), token);\
+        tests[i].name = token;\
         tests[i].funct = (*func_ptr[i]);\
     }\
     __clove_exec(tests, test_count); \
