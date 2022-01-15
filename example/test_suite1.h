@@ -18,3 +18,11 @@ CLOVE_TEST(FailingTest) {
     int b = 2;
     CLOVE_INT_EQ(a, b);
 }
+
+CLOVE_SUITE(TestSuite1) {
+    CLOVE_SUITE_TESTS(
+        FirstTest, 
+        SecondTest, 
+        FailingTest
+    );
+}
