@@ -43,6 +43,14 @@ typedef struct __clove_test_t {
     char err_msg[__CLOVE_STRING_LENGTH];
 } __clove_test;
 
+typedef struct __clove_suite {
+    char* name;
+    __clove_test* tests;
+    int test_count;
+    void (*setup_funct)();
+    void (*teardown_funct)();
+} __clove_suite_t;
+
 
 #define __CLOVE_TEST_PASSED 1
 #define __CLOVE_TEST_FAILED 2
@@ -206,38 +214,32 @@ static const char* __clove_rel_src(const char* path) {
     return subpath+1;
 }
 
-static void __clove_exec(__clove_test *tests, int numOfTests) {
-    printf("%s Executing Test Runner in 'Fail Safe Verbose' mode\n", __CLOVE_INFO);
-    printf("%s Tests found: %d \n", __CLOVE_INFO, numOfTests);
-    unsigned int passed = 0;
-    unsigned int failed = 0;
-    unsigned int skipped = 0;
-    
-    for(int i=0; i<numOfTests; i++) {
-        __clove_test* each = &tests[i];
-        each->result = __CLOVE_TEST_SKIPPED;
-        //if (each.setup) each.setup();
+static void __clove_exec_suite(__clove_suite_t *suite, int test_counter, unsigned int* passed, unsigned int* failed, unsigned int* skipped) {
+    for(int i=0; i<suite->test_count; i++) {
+        __clove_test* each_test = &suite->tests[i];
+        each_test->result = __CLOVE_TEST_SKIPPED;
         
-        each->funct(each);
-        //if (each.teardown) each.teardown();
+        suite->setup_funct();
+        each_test->funct(each_test);
+        suite->teardown_funct();
 
         char result[__CLOVE_STRING_LENGTH], strToPad[__CLOVE_TEST_ENTRY_LENGTH];
-        snprintf(strToPad, __CLOVE_TEST_ENTRY_LENGTH, "%d) %s", i+1, each->name);
+        snprintf(strToPad, __CLOVE_TEST_ENTRY_LENGTH, "%d) %s", test_counter+i, each_test->name);
         __clove_pad_right(result, strToPad);
 
-        switch(each->result) {
+        switch(each_test->result) {
             case __CLOVE_TEST_PASSED: {
-                passed++;
+                *passed++;
                 printf("%s %s%s\n", __CLOVE_INFO, result, __CLOVE_PASSED);
                 break;
             }
             case __CLOVE_TEST_FAILED: {
-                failed++;
-                printf("%s %s%s => %s@%d: %s\n", __CLOVE_ERRO, result, __CLOVE_FAILED, each->file_name, each->line, each->err_msg);
+                *failed++;
+                printf("%s %s%s => %s@%d: %s\n", __CLOVE_ERRO, result, __CLOVE_FAILED, each_test->file_name, each_test->line, each_test->err_msg);
                 break;
             }
             case __CLOVE_TEST_SKIPPED: {
-                skipped++;
+                *skipped++;
                 printf("%s %s%s\n", __CLOVE_WARN, result, __CLOVE_SKIPPED);
                 break;
             }
@@ -245,11 +247,26 @@ static void __clove_exec(__clove_test *tests, int numOfTests) {
                 break;
         }
     }
-    printf("%s Total: %d, Passed: %d, Failed: %d, Skipped: %d\n", __CLOVE_INFO, numOfTests, passed, failed, skipped);
-    if (passed == numOfTests) { printf("%s Test result => SUCCESS :-)\n", __CLOVE_INFO); }
+}
+
+static void __clove_exec_suites(__clove_suite_t* suites, int suite_count, int test_count) {
+    printf("%s Executing Test Runner in 'Fail Safe Verbose' mode\n", __CLOVE_INFO);
+    printf("%s Suite / Tests found: %d / %d \n", __CLOVE_INFO, suite_count, test_count);
+    unsigned int passed = 0;
+    unsigned int failed = 0;
+    unsigned int skipped = 0;
+
+    int test_start_counter = 1;
+    for(int i=0; i < suite_count; ++i) {
+        __clove_suite_t* each_suite = &suites[i];
+        __clove_exec_suite(each_suite, test_start_counter, &passed, &failed, &skipped);
+        test_start_counter += each_suite->test_count;
+    }
+
+    printf("%s Total: %d, Passed: %d, Failed: %d, Skipped: %d\n", __CLOVE_INFO, test_count, passed, failed, skipped);
+    if (passed == test_count) { printf("%s Test result => SUCCESS :-)\n", __CLOVE_INFO); }
     else if (failed > 0) { printf("%s Test result => FAILURE :_(\n", __CLOVE_ERRO); }
     else if (skipped > 0) { printf("%s Test result => OK, but some test has been skipped!\n", __CLOVE_WARN); }
-    return;
 }
 
 #define __CLOVE_TEST_GUARD \
@@ -353,7 +370,8 @@ static char* __clove_basepath(char* path) {
 // MAIN
 // - single # will create a string from the given argument
 // - double ## will create a new token by concatenating the arguments
-#define CLOVE_RUNNER(...) \
+/*
+#define CLOVE_RUNNER__OLD(...) \
 char* __clove_exec_path;\
 char* __clove_exec_base_path;\
 int main(int argc, char* argv[]) {\
@@ -377,8 +395,56 @@ int main(int argc, char* argv[]) {\
     free(__clove_exec_base_path); \
     return 0;\
 }
+*/
+
+#define CLOVE_RUNNER(...) \
+char* __clove_exec_path;\
+char* __clove_exec_base_path;\
+int main(int argc, char* argv[]) {\
+    __clove_setup_ansi_console();\
+    __clove_exec_path = argv[0]; \
+    __clove_exec_base_path = __clove_basepath(argv[0]); \
+    static void (*suite_ptr[])(__clove_suite_t*) = {__VA_ARGS__};\
+    int suite_count = sizeof(suite_ptr) / sizeof(suite_ptr[0]);\
+    __clove_suite_t* suites = (__clove_suite_t*)calloc(suite_count, sizeof(__clove_suite_t));\
+    int test_count = 0;\
+    for(int i=0; i < suite_count; ++i) {\
+        suite_ptr[i](&suites[i]);\
+        test_count += suites[i].test_count;\
+    }\
+    __clove_exec_suites(suites, suite_count, test_count);\
+    free(suites); \
+    free(__clove_exec_base_path); \
+    return 0;\
+}
+
+static void __clove_empty_funct() { }
 
 // ASSERTIONS
+#define CLOVE_SUITE(title) \
+static void title(__clove_suite_t *_this_suite) { \
+    static char* name = #title;\
+    _this_suite->name = name; \
+    _this_suite->setup_funct = __clove_empty_funct; \
+    _this_suite->teardown_funct = __clove_empty_funct;
+#define CLOVE_SUITE_SETUP(funct) _this_suite->setup_funct = funct;
+#define CLOVE_SUITE_TEARDOWN(funct) _this_suite->teardown_funct = funct;
+#define CLOVE_SUITE_TESTS(...) \
+    static void (*func_ptr[])(__clove_test*) = {__VA_ARGS__};\
+    static char* functs_as_str = #__VA_ARGS__;\
+    int test_count = sizeof(func_ptr) / sizeof(func_ptr[0]);\
+    _this_suite->name = name;\
+    _this_suite->test_count = test_count;\
+    _this_suite->tests = (__clove_test*)calloc(test_count, sizeof(__clove_test));\
+    for(int i=0; i < test_count; ++i) {\
+        char *token;\
+        char *context;\
+        if (i==0) { token = strtok_s(functs_as_str, ", ", &context); }\
+        else { token = strtok_s(NULL, ", ", &context); }\
+        _this_suite->tests[i].name = token;\
+        _this_suite->tests[i].funct = (*func_ptr[i]);\
+    }\
+}
 
 /* 
  * Define a new test named 'title'

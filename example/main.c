@@ -1,8 +1,8 @@
 #include "clove.h"
-#include "test1.h"
-#include "test2.h"
+#include "test_suite1.h"
+#include "test_suite2.h"
+#include "test_suite3.h"
 
 CLOVE_RUNNER(
-    FirstTest, SecondTest, FailingTest, CharTest, IntTest, BooleanTest, FloatTest, StringTest,
-    PassTest, FailTest
+   TestSuite1, TestSuite2, TestSuite3
 );

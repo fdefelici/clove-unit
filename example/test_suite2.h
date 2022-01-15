@@ -34,5 +34,10 @@ CLOVE_TEST(FailTest) {
     CLOVE_FAIL();
 }
 
-
-
+CLOVE_SUITE(TestSuite2) {
+    CLOVE_SUITE_TESTS(
+        BooleanTest, CharTest, IntTest,
+        FloatTest, StringTest, 
+        PassTest, FailTest
+    );
+}
