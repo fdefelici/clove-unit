@@ -1,6 +1,6 @@
 /* 
  * clove-unit
- * v1.0.5
+ * v2.0.0
  * Unit Testing library for C
  * https://github.com/fdefelici/clove-unit
  * 
@@ -16,7 +16,7 @@
 #include <math.h>
 
 #define __CLOVE_STRING_LENGTH 256
-#define __CLOVE_TEST_ENTRY_LENGTH 50
+#define __CLOVE_TEST_ENTRY_LENGTH 60
 
 // wrapper for Microsoft API
 #ifndef _WIN32
@@ -224,7 +224,7 @@ static void __clove_exec_suite(__clove_suite_t *suite, int test_counter, unsigne
         suite->teardown_funct();
 
         char result[__CLOVE_STRING_LENGTH], strToPad[__CLOVE_TEST_ENTRY_LENGTH];
-        snprintf(strToPad, __CLOVE_TEST_ENTRY_LENGTH, "%d) %s", test_counter+i, each_test->name);
+        snprintf(strToPad, __CLOVE_TEST_ENTRY_LENGTH, "%d) %s.%s", test_counter+i, suite->name, each_test->name);
         __clove_pad_right(result, strToPad);
 
         switch(each_test->result) {
@@ -367,36 +367,10 @@ static char* __clove_basepath(char* path) {
  */
 #define CLOVE_EXEC_BASE_PATH __clove_exec_base_path
 
-// MAIN
-// - single # will create a string from the given argument
-// - double ## will create a new token by concatenating the arguments
 /*
-#define CLOVE_RUNNER__OLD(...) \
-char* __clove_exec_path;\
-char* __clove_exec_base_path;\
-int main(int argc, char* argv[]) {\
-    __clove_setup_ansi_console();\
-    __clove_exec_path = argv[0]; \
-    __clove_exec_base_path = __clove_basepath(argv[0]); \
-    static void (*func_ptr[])(__clove_test*) = {__VA_ARGS__};\
-    int test_count = sizeof(func_ptr) / sizeof(func_ptr[0]);\
-    __clove_test* tests = (__clove_test*)calloc(test_count, sizeof(__clove_test));\
-    static char functs_as_str[] = #__VA_ARGS__;\
-    for(int i=0; i < test_count; ++i) {\
-        char *token;\
-        char *context;\
-        if (i==0) { token = strtok_s(functs_as_str, ", ", &context); }\
-        else { token = strtok_s(NULL, ", ", &context); }\
-        tests[i].name = token;\
-        tests[i].funct = (*func_ptr[i]);\
-    }\
-    __clove_exec(tests, test_count); \
-    free(tests); \
-    free(__clove_exec_base_path); \
-    return 0;\
-}
-*/
-
+ * Test Execution.
+ * Take as input a list of suites.
+ */
 #define CLOVE_RUNNER(...) \
 char* __clove_exec_path;\
 char* __clove_exec_base_path;\
@@ -417,12 +391,24 @@ int main(int argc, char* argv[]) {\
     free(__clove_exec_base_path); \
     return 0;\
 }
+// - single # will create a string from the given argument
+// - double ## will create a new token by concatenating the arguments
+
 
 static void __clove_empty_funct() { }
 
 // ASSERTIONS
+/*
+ * Suite declaration. (basically a standard method forward declaration)
+ * Useful to work with compilation unit instead of just using header file to implement test and test suite
+ */
+#define CLOVE_SUITE_DECL(title) void title(__clove_suite_t *_this_suite);
+
+/*
+ * Suite Implementation
+ */
 #define CLOVE_SUITE(title) \
-static void title(__clove_suite_t *_this_suite) { \
+void title(__clove_suite_t *_this_suite) { \
     static char* name = #title;\
     _this_suite->name = name; \
     _this_suite->setup_funct = __clove_empty_funct; \
