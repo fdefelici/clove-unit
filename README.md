@@ -76,15 +76,26 @@ Assertions that can be used within a ```CLOVE_TEST```
 | ------------- | ------------- |
 | CLOVE_PASS()  | Assertion that always make the test pass |
 | CLOVE_FAIL()  | Assertion that always make the test fail |
-| CLOVE_CHAR_NE(expected, result)  | Check inequaliy between char |
+| CLOVE_IS_TRUE(result)  | Check if int is not 0 |
+| CLOVE_IS_FALSE(result)  | Check if int is 0 |
 | CLOVE_CHAR_EQ(expected, result)  | Check equality between char |
 | CLOVE_CHAR_NE(expected, result)  | Check inequaliy between char |
 | CLOVE_INT_EQ(expected, result)  | Check equality between int |
 | CLOVE_INT_NE(expected, result)  | Check inequaliy between int |
-| CLOVE_IS_TRUE(result)  | Check if int is not 0 |
-| CLOVE_IS_FALSE(result)  | Check if int is 0 |
+| CLOVE_UINT_EQ(expected, result)  | Check equality between unsigned int |
+| CLOVE_UINT_NE(expected, result)  | Check inequaliy between unsigned int |
+| CLOVE_LONG_EQ(expected, result)  | Check equality between long |
+| CLOVE_LONG_NE(expected, result)  | Check inequaliy between long |
+| CLOVE_ULONG_EQ(expected, result)  | Check equality between unsigned long |
+| CLOVE_ULONG_NE(expected, result)  | Check inequaliy between unsigned long |
+| CLOVE_LLONG_EQ(expected, result)  | Check equality between long long |
+| CLOVE_LLONG_NE(expected, result)  | Check inequaliy between long long |
+| CLOVE_ULLONG_EQ(expected, result)  | Check equality between unsigned long long |
+| CLOVE_ULLONG_NE(expected, result)  | Check inequaliy between unsigned long long |
 | CLOVE_FLOAT_EQ(expected, result)  | Check equality between float |
 | CLOVE_FLOAT_NE(expected, result)  | Check inequaliy between float |
+| CLOVE_DOUBLE_EQ(expected, result)  | Check equality between double |
+| CLOVE_DOUBLE_NE(expected, result)  | Check inequaliy between double |
 | CLOVE_STRING_EQ(expected, result)  | Check equality between string (null terminated char pointer or array) |
 | CLOVE_STRING_NE(expected, result)  | Check inequaliy between string (null terminated char pointer or array) |
 | CLOVE_NULL(result)  | Check if result is NULL |

@@ -61,6 +61,8 @@ typedef struct __clove_suite {
 #define __CLOVE_ASSERT_CHECK_TRUE 3
 #define __CLOVE_ASSERT_CHECK_FALSE 4
 
+#define __CLOVE_FLOATING_PRECISION 0.000001f
+
 #define __CLOVE_INFO "[\x1b[1;34mINFO\x1b[0m]"
 #define __CLOVE_WARN "[\x1b[33mWARN\x1b[0m]"
 #define __CLOVE_ERRO "[\x1b[1;31mERRO\x1b[0m]"
@@ -89,6 +91,76 @@ static void __clove_check_int(const unsigned int check_mode, int expected, int r
     } else {
         char msg[__CLOVE_STRING_LENGTH];
         sprintf(msg, "expected [%d] but was [%d]", expected, result);
+        __clove_fail(msg, _this);
+    }
+}
+
+static void __clove_check_uint(const unsigned int check_mode, unsigned int expected, unsigned int result, __clove_test *_this) {
+    int pass_scenario = 0;
+    if (check_mode == __CLOVE_ASSERT_CHECK_EQUALITY) { pass_scenario = expected == result; }
+    else if (check_mode == __CLOVE_ASSERT_CHECK_DIFFERENCE) { pass_scenario = expected != result; }
+    
+    if (pass_scenario) {
+        __clove_pass("", _this);
+    } else {
+        char msg[__CLOVE_STRING_LENGTH];
+        sprintf(msg, "expected [%u] but was [%u]", expected, result);
+        __clove_fail(msg, _this);
+    }
+}
+
+static void __clove_check_long(const unsigned int check_mode, long expected, long result, __clove_test *_this) {
+    int pass_scenario = 0;
+    if (check_mode == __CLOVE_ASSERT_CHECK_EQUALITY) { pass_scenario = expected == result; }
+    else if (check_mode == __CLOVE_ASSERT_CHECK_DIFFERENCE) { pass_scenario = expected != result; }
+    
+    if (pass_scenario) {
+        __clove_pass("", _this);
+    } else {
+        char msg[__CLOVE_STRING_LENGTH];
+        sprintf(msg, "expected [%ld] but was [%ld]", expected, result);
+        __clove_fail(msg, _this);
+    }
+}
+
+static void __clove_check_ulong(const unsigned int check_mode, unsigned long expected, unsigned long result, __clove_test *_this) {
+    int pass_scenario = 0;
+    if (check_mode == __CLOVE_ASSERT_CHECK_EQUALITY) { pass_scenario = expected == result; }
+    else if (check_mode == __CLOVE_ASSERT_CHECK_DIFFERENCE) { pass_scenario = expected != result; }
+    
+    if (pass_scenario) {
+        __clove_pass("", _this);
+    } else {
+        char msg[__CLOVE_STRING_LENGTH];
+        sprintf(msg, "expected [%lu] but was [%lu]", expected, result);
+        __clove_fail(msg, _this);
+    }
+}
+
+static void __clove_check_llong(const unsigned int check_mode, long long expected, long long result, __clove_test *_this) {
+    int pass_scenario = 0;
+    if (check_mode == __CLOVE_ASSERT_CHECK_EQUALITY) { pass_scenario = expected == result; }
+    else if (check_mode == __CLOVE_ASSERT_CHECK_DIFFERENCE) { pass_scenario = expected != result; }
+    
+    if (pass_scenario) {
+        __clove_pass("", _this);
+    } else {
+        char msg[__CLOVE_STRING_LENGTH];
+        sprintf(msg, "expected [%lld] but was [%lld]", expected, result);
+        __clove_fail(msg, _this);
+    }
+}
+
+static void __clove_check_ullong(const unsigned int check_mode, unsigned long long expected, unsigned long long result, __clove_test *_this) {
+    int pass_scenario = 0;
+    if (check_mode == __CLOVE_ASSERT_CHECK_EQUALITY) { pass_scenario = expected == result; }
+    else if (check_mode == __CLOVE_ASSERT_CHECK_DIFFERENCE) { pass_scenario = expected != result; }
+    
+    if (pass_scenario) {
+        __clove_pass("", _this);
+    } else {
+        char msg[__CLOVE_STRING_LENGTH];
+        sprintf(msg, "expected [%llu] but was [%llu]", expected, result);
         __clove_fail(msg, _this);
     }
 }
@@ -167,8 +239,22 @@ static void __clove_check_ptr(const unsigned int check_mode, void *expected, voi
 
 static void __clove_check_float(const unsigned int check_mode, float expected, float result, __clove_test* _this) {
     int pass_scenario = 0;
-    if (check_mode == __CLOVE_ASSERT_CHECK_EQUALITY) { pass_scenario = fabsf(expected - result) <= 0.000001f; }
-    else if (check_mode == __CLOVE_ASSERT_CHECK_DIFFERENCE) { pass_scenario = fabsf(expected - result) > 0.000001f; }
+    if (check_mode == __CLOVE_ASSERT_CHECK_EQUALITY) { pass_scenario = fabsf(expected - result) <= __CLOVE_FLOATING_PRECISION; }
+    else if (check_mode == __CLOVE_ASSERT_CHECK_DIFFERENCE) { pass_scenario = fabsf(expected - result) > __CLOVE_FLOATING_PRECISION; }
+    
+    if (pass_scenario) {
+        __clove_pass("", _this);
+    } else {
+        char msg[__CLOVE_STRING_LENGTH];
+        sprintf(msg, "expected [%f] but was [%f]", expected, result);
+        __clove_fail(msg, _this);
+    }
+}
+
+static void __clove_check_double(const unsigned int check_mode, double expected, double result, __clove_test* _this) {
+    int pass_scenario = 0;
+    if (check_mode == __CLOVE_ASSERT_CHECK_EQUALITY) { pass_scenario = (float)fabs(expected - result) <= __CLOVE_FLOATING_PRECISION; }
+    else if (check_mode == __CLOVE_ASSERT_CHECK_DIFFERENCE) { pass_scenario = (float)fabs(expected - result) > __CLOVE_FLOATING_PRECISION; }
     
     if (pass_scenario) {
         __clove_pass("", _this);
@@ -438,18 +524,33 @@ void title(__clove_suite_t *_this_suite) { \
 #define CLOVE_TEST(title) static void title(__clove_test *_this) 
 #define CLOVE_PASS() __CLOVE_TEST_GUARD __clove_pass("", _this);
 #define CLOVE_FAIL() __CLOVE_TEST_GUARD __clove_fail("Test meet FAIL assertion!", _this);
-#define CLOVE_INT_EQ(exp, res) __CLOVE_TEST_GUARD __clove_check_int(__CLOVE_ASSERT_CHECK_EQUALITY, exp, res, _this);
-#define CLOVE_INT_NE(exp, res) __CLOVE_TEST_GUARD __clove_check_int(__CLOVE_ASSERT_CHECK_DIFFERENCE, exp, res, _this);
-#define CLOVE_CHAR_EQ(exp, res) __CLOVE_TEST_GUARD __clove_check_char(__CLOVE_ASSERT_CHECK_EQUALITY, exp, res, _this);
-#define CLOVE_CHAR_NE(exp, res) __CLOVE_TEST_GUARD __clove_check_char(__CLOVE_ASSERT_CHECK_DIFFERENCE, exp, res, _this);
 #define CLOVE_IS_TRUE(res) __CLOVE_TEST_GUARD __clove_check_bool(__CLOVE_ASSERT_CHECK_TRUE, res, _this);
 #define CLOVE_IS_FALSE(res) __CLOVE_TEST_GUARD __clove_check_bool(__CLOVE_ASSERT_CHECK_FALSE, res, _this);
+#define CLOVE_CHAR_EQ(exp, res) __CLOVE_TEST_GUARD __clove_check_char(__CLOVE_ASSERT_CHECK_EQUALITY, exp, res, _this);
+#define CLOVE_CHAR_NE(exp, res) __CLOVE_TEST_GUARD __clove_check_char(__CLOVE_ASSERT_CHECK_DIFFERENCE, exp, res, _this);
+#define CLOVE_INT_EQ(exp, res) __CLOVE_TEST_GUARD __clove_check_int(__CLOVE_ASSERT_CHECK_EQUALITY, exp, res, _this);
+#define CLOVE_INT_NE(exp, res) __CLOVE_TEST_GUARD __clove_check_int(__CLOVE_ASSERT_CHECK_DIFFERENCE, exp, res, _this);
+
+#define CLOVE_UINT_EQ(exp, res) __CLOVE_TEST_GUARD __clove_check_uint(__CLOVE_ASSERT_CHECK_EQUALITY, exp, res, _this);
+#define CLOVE_UINT_NE(exp, res) __CLOVE_TEST_GUARD __clove_check_uint(__CLOVE_ASSERT_CHECK_DIFFERENCE, exp, res, _this);
+#define CLOVE_LONG_EQ(exp, res) __CLOVE_TEST_GUARD __clove_check_long(__CLOVE_ASSERT_CHECK_EQUALITY, exp, res, _this);
+#define CLOVE_LONG_NE(exp, res) __CLOVE_TEST_GUARD __clove_check_long(__CLOVE_ASSERT_CHECK_DIFFERENCE, exp, res, _this);
+#define CLOVE_LLONG_EQ(exp, res) __CLOVE_TEST_GUARD __clove_check_llong(__CLOVE_ASSERT_CHECK_EQUALITY, exp, res, _this);
+#define CLOVE_LLONG_NE(exp, res) __CLOVE_TEST_GUARD __clove_check_llong(__CLOVE_ASSERT_CHECK_DIFFERENCE, exp, res, _this);
+#define CLOVE_ULONG_EQ(exp, res) __CLOVE_TEST_GUARD __clove_check_ulong(__CLOVE_ASSERT_CHECK_EQUALITY, exp, res, _this);
+#define CLOVE_ULONG_NE(exp, res) __CLOVE_TEST_GUARD __clove_check_ulong(__CLOVE_ASSERT_CHECK_DIFFERENCE, exp, res, _this);
+#define CLOVE_ULLONG_EQ(exp, res) __CLOVE_TEST_GUARD __clove_check_ullong(__CLOVE_ASSERT_CHECK_EQUALITY, exp, res, _this);
+#define CLOVE_ULLONG_NE(exp, res) __CLOVE_TEST_GUARD __clove_check_ullong(__CLOVE_ASSERT_CHECK_DIFFERENCE, exp, res, _this);
+#define CLOVE_FLOAT_EQ(exp, res) __CLOVE_TEST_GUARD __clove_check_float(__CLOVE_ASSERT_CHECK_EQUALITY, exp, res, _this);
+#define CLOVE_FLOAT_NE(exp, res) __CLOVE_TEST_GUARD __clove_check_float(__CLOVE_ASSERT_CHECK_DIFFERENCE, exp, res, _this);
+#define CLOVE_DOUBLE_EQ(exp, res) __CLOVE_TEST_GUARD __clove_check_double(__CLOVE_ASSERT_CHECK_EQUALITY, exp, res, _this);
+#define CLOVE_DOUBLE_NE(exp, res) __CLOVE_TEST_GUARD __clove_check_double(__CLOVE_ASSERT_CHECK_DIFFERENCE, exp, res, _this);
+
+
 #define CLOVE_NULL(res) __CLOVE_TEST_GUARD __clove_check_null(__CLOVE_ASSERT_CHECK_EQUALITY, res, _this);
 #define CLOVE_NOT_NULL(res) __CLOVE_TEST_GUARD __clove_check_null(__CLOVE_ASSERT_CHECK_DIFFERENCE, res, _this);
 #define CLOVE_PTR_EQ(p1, p2) __CLOVE_TEST_GUARD __clove_check_ptr(__CLOVE_ASSERT_CHECK_EQUALITY, p1, p2, _this);
 #define CLOVE_PTR_NE(p1, p2) __CLOVE_TEST_GUARD __clove_check_ptr(__CLOVE_ASSERT_CHECK_DIFFERENCE, p1, p2, _this);
-#define CLOVE_FLOAT_EQ(exp, res) __CLOVE_TEST_GUARD __clove_check_float(__CLOVE_ASSERT_CHECK_EQUALITY, exp, res, _this);
-#define CLOVE_FLOAT_NE(exp, res) __CLOVE_TEST_GUARD __clove_check_float(__CLOVE_ASSERT_CHECK_DIFFERENCE, exp, res, _this);
 #define CLOVE_STRING_EQ(exp, res) __CLOVE_TEST_GUARD __clove_check_string(__CLOVE_ASSERT_CHECK_EQUALITY, exp, res, _this);
 #define CLOVE_STRING_NE(exp, res) __CLOVE_TEST_GUARD __clove_check_string(__CLOVE_ASSERT_CHECK_DIFFERENCE, exp, res, _this);
 #pragma endregion
