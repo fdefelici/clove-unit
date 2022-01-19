@@ -31,6 +31,8 @@ int strncpy_s(char *strDest, size_t numberOfElements, const char *strSource, siz
 int strcpy_s(char *dest, size_t dest_size, const char *src) {
     return strcpy(dest, src) == NULL;
 }
+
+#define _strdup strdup
 #endif
 
 typedef struct __clove_test_t {
@@ -311,6 +313,7 @@ static void __clove_exec_suite(__clove_suite_t *suite, int test_counter, unsigne
 
         char result[__CLOVE_STRING_LENGTH], strToPad[__CLOVE_TEST_ENTRY_LENGTH];
         snprintf(strToPad, __CLOVE_TEST_ENTRY_LENGTH, "%d) %s.%s", test_counter+i, suite->name, each_test->name);
+	free(each_test->name); // we can safely free here
         __clove_pad_right(result, strToPad);
 
         switch(each_test->result) {
@@ -513,7 +516,7 @@ void title(__clove_suite_t *_this_suite) { \
         char *token;\
         if (i==0) { token = strtok_s(functs_as_str, ", ", &context); }\
         else { token = strtok_s(NULL, ", ", &context); }\
-        _this_suite->tests[i].name = token;\
+        _this_suite->tests[i].name = _strdup(token);\
         _this_suite->tests[i].funct = (*func_ptr[i]);\
     }\
     free(functs_as_str);\
