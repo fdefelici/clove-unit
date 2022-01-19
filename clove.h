@@ -20,18 +20,9 @@
 
 // wrapper for Microsoft API
 #ifndef _WIN32
-char *strtok_s(char *str, const char *delimiters, char **context) {
-    return strtok_r(str, delimiters, context);
-}  
-
-int strncpy_s(char *strDest, size_t numberOfElements, const char *strSource, size_t count) {
-    return strncpy(strDest, strSource, count) == NULL;
-}
-
-int strcpy_s(char *dest, size_t dest_size, const char *src) {
-    return strcpy(dest, src) == NULL;
-}
-
+#define strtok_s(str, delimiters, context) strtok_r(str, delimiters, context)
+#define strncpy_s(strDest, numberOfElements, strSource, count) strncpy(strDest, strSource, count) == NULL
+#define strcpy_s(dest, dest_size, src) strcpy(dest, src) == NULL
 #define _strdup strdup
 #endif
 
