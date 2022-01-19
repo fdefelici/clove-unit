@@ -20,17 +20,10 @@
 
 // wrapper for Microsoft API
 #ifndef _WIN32
-char *strtok_s(char *str, const char *delimiters, char **context) {
-    return strtok_r(str, delimiters, context);
-}  
-
-int strncpy_s(char *strDest, size_t numberOfElements, const char *strSource, size_t count) {
-    return strncpy(strDest, strSource, count) == NULL;
-}
-
-int strcpy_s(char *dest, size_t dest_size, const char *src) {
-    return strcpy(dest, src) == NULL;
-}
+#define strtok_s(str, delimiters, context) strtok_r(str, delimiters, context)
+#define strncpy_s(strDest, numberOfElements, strSource, count) strncpy(strDest, strSource, count) == NULL
+#define strcpy_s(dest, dest_size, src) strcpy(dest, src) == NULL
+#define _strdup strdup
 #endif
 
 typedef struct __clove_test_t {
@@ -503,7 +496,7 @@ void title(__clove_suite_t *_this_suite) { \
 #define CLOVE_SUITE_TEARDOWN(funct) _this_suite->teardown_funct = funct;
 #define CLOVE_SUITE_TESTS(...) \
     static void (*func_ptr[])(__clove_test*) = {__VA_ARGS__};\
-    char* functs_as_str = _strdup(#__VA_ARGS__);\
+    static char functs_as_str[] = #__VA_ARGS__;\
     int test_count = sizeof(func_ptr) / sizeof(func_ptr[0]);\
     _this_suite->name = name;\
     _this_suite->test_count = test_count;\
@@ -516,7 +509,6 @@ void title(__clove_suite_t *_this_suite) { \
         _this_suite->tests[i].name = token;\
         _this_suite->tests[i].funct = (*func_ptr[i]);\
     }\
-    free(functs_as_str);\
 }
 
 /* 
