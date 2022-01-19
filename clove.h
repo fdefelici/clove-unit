@@ -315,17 +315,17 @@ static void __clove_exec_suite(__clove_suite_t *suite, int test_counter, unsigne
 
         switch(each_test->result) {
             case __CLOVE_TEST_PASSED: {
-                *passed++;
+                (*passed)++;
                 printf("%s %s%s\n", __CLOVE_INFO, result, __CLOVE_PASSED);
                 break;
             }
             case __CLOVE_TEST_FAILED: {
-                *failed++;
+                (*failed)++;
                 printf("%s %s%s => %s@%d: %s\n", __CLOVE_ERRO, result, __CLOVE_FAILED, each_test->file_name, each_test->line, each_test->err_msg);
                 break;
             }
             case __CLOVE_TEST_SKIPPED: {
-                *skipped++;
+                (*skipped)++;
                 printf("%s %s%s\n", __CLOVE_WARN, result, __CLOVE_SKIPPED);
                 break;
             }
@@ -503,19 +503,20 @@ void title(__clove_suite_t *_this_suite) { \
 #define CLOVE_SUITE_TEARDOWN(funct) _this_suite->teardown_funct = funct;
 #define CLOVE_SUITE_TESTS(...) \
     static void (*func_ptr[])(__clove_test*) = {__VA_ARGS__};\
-    static char* functs_as_str = #__VA_ARGS__;\
+    char* functs_as_str = _strdup(#__VA_ARGS__);\
     int test_count = sizeof(func_ptr) / sizeof(func_ptr[0]);\
     _this_suite->name = name;\
     _this_suite->test_count = test_count;\
     _this_suite->tests = (__clove_test*)calloc(test_count, sizeof(__clove_test));\
+    char *context = NULL;\
     for(int i=0; i < test_count; ++i) {\
         char *token;\
-        char *context;\
         if (i==0) { token = strtok_s(functs_as_str, ", ", &context); }\
         else { token = strtok_s(NULL, ", ", &context); }\
         _this_suite->tests[i].name = token;\
         _this_suite->tests[i].funct = (*func_ptr[i]);\
     }\
+    free(functs_as_str);\
 }
 
 /* 
