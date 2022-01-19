@@ -304,7 +304,6 @@ static void __clove_exec_suite(__clove_suite_t *suite, int test_counter, unsigne
 
         char result[__CLOVE_STRING_LENGTH], strToPad[__CLOVE_TEST_ENTRY_LENGTH];
         snprintf(strToPad, __CLOVE_TEST_ENTRY_LENGTH, "%d) %s.%s", test_counter+i, suite->name, each_test->name);
-	free(each_test->name); // we can safely free here
         __clove_pad_right(result, strToPad);
 
         switch(each_test->result) {
@@ -497,7 +496,7 @@ void title(__clove_suite_t *_this_suite) { \
 #define CLOVE_SUITE_TEARDOWN(funct) _this_suite->teardown_funct = funct;
 #define CLOVE_SUITE_TESTS(...) \
     static void (*func_ptr[])(__clove_test*) = {__VA_ARGS__};\
-    char* functs_as_str = _strdup(#__VA_ARGS__);\
+    static char functs_as_str[] = #__VA_ARGS__;\
     int test_count = sizeof(func_ptr) / sizeof(func_ptr[0]);\
     _this_suite->name = name;\
     _this_suite->test_count = test_count;\
@@ -507,10 +506,9 @@ void title(__clove_suite_t *_this_suite) { \
         char *token;\
         if (i==0) { token = strtok_s(functs_as_str, ", ", &context); }\
         else { token = strtok_s(NULL, ", ", &context); }\
-        _this_suite->tests[i].name = _strdup(token);\
+        _this_suite->tests[i].name = token;\
         _this_suite->tests[i].funct = (*func_ptr[i]);\
     }\
-    free(functs_as_str);\
 }
 
 /* 
