@@ -1,6 +1,6 @@
 /* 
  * clove-unit
- * v2.0.0
+ * v2.0.1
  * Unit Testing library for C
  * https://github.com/fdefelici/clove-unit
  * 
