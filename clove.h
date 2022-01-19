@@ -488,7 +488,7 @@ static void __clove_empty_funct() { }
  */
 #define CLOVE_SUITE(title) \
 void title(__clove_suite_t *_this_suite) { \
-    static char* name = #title;\
+    static char name[] = #title;\
     _this_suite->name = name; \
     _this_suite->setup_funct = __clove_empty_funct; \
     _this_suite->teardown_funct = __clove_empty_funct;
