@@ -1,11 +1,6 @@
 #define CLOVE_SUITE_NAME MyVeryFirstSuite
 #include "clove.h"
 
-
-__CLOVE_API_EXPORT void daje_symbol() {
-
-}
-
 int setup_once_count = 0;
 int teardown_once_count = 0;
 int setup_count = 0;

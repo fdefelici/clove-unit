@@ -1,6 +1,6 @@
 /* 
  * clove-unit
- * v2.0.1
+ * v2.1.0
  * Unit Testing library for C
  * https://github.com/fdefelici/clove-unit
  * 
@@ -48,7 +48,7 @@ static size_t __clove_vector_count(__clove_vector_t* vector) {
     return vector->count;
 }
 
-static void* __clove_vector_next(__clove_vector_t* vector) {
+static void* __clove_vector_add_empty(__clove_vector_t* vector) {
     if (vector->count == vector->capacity) {
         vector->capacity *= 2;
         vector->items = (unsigned char*)realloc(vector->items, vector->item_size * vector->capacity);
@@ -533,7 +533,7 @@ int main(int argc, char* argv[]) {\
     __clove_vector_init(&suites, &vector_params); \
     int test_count = 0;\
     for(int i=0; i < suite_count; ++i) {\
-        __clove_suite_t* suite = (__clove_suite_t*)__clove_vector_next(&suites); \
+        __clove_suite_t* suite = (__clove_suite_t*)__clove_vector_add_empty(&suites); \
         suite_ptr[i](suite);\
         test_count += suite->test_count;\
     }\
@@ -569,7 +569,7 @@ void title(__clove_suite_t *_this_suite) { \
         char *token;\
         if (i==0) { token = strtok_s(functs_as_str, ", ", &context); }\
         else { token = strtok_s(NULL, ", ", &context); }\
-        __clove_test* test = __clove_vector_next(&_this_suite->tests); \
+        __clove_test* test = __clove_vector_add_empty(&_this_suite->tests); \
         test->name = token;\
         test->funct = (*func_ptr[i]);\
     }\
@@ -702,7 +702,7 @@ static int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clo
         char* each_name = (char*)(base_addr + names_ptr[i]);
         unsigned long each_ordinal = ordinal_base_number + ordinals_ptr[i];
         unsigned long* each_funct_addr = (PDWORD)(base_addr + functs_address_ptr[each_ordinal - ordinal_base_number]); 
-        printf("%lu) %s [0x%p]\n", each_ordinal, each_name, each_funct_addr);
+        //printf("%lu) %s [0x%p]\n", each_ordinal, each_name, each_funct_addr);
         
         if (strncmp(prefix, each_name, prefix_length) == 0) {
             if (!match_ongoing) match_ongoing = 1;
@@ -735,7 +735,7 @@ static void __clove_symbols_function_collect(__clove_symbols_function_t exported
 
     //if suite changes, then set as next suite to collect the tests
     if (context->last_suite == NULL || strcmp(suite_name, context->last_suite->name) != 0 ) {  
-        context->last_suite = (__clove_suite_t*)__clove_vector_next(&context->suites);
+        context->last_suite = (__clove_suite_t*)__clove_vector_add_empty(&context->suites);
         context->last_suite->name = suite_name;
         context->suites_count++;
     }
@@ -750,7 +750,7 @@ static void __clove_symbols_function_collect(__clove_symbols_function_t exported
     } else if (test_name[0] == '1' && test_name[1] == '4') { 
         context->last_suite->fixtures.teardown = (void (*)())exported_funct.pointer;
     } else if (test_name[0] == '2' && test_name[1] == '0') { 
-        __clove_test* test = (__clove_test*)__clove_vector_next(&context->last_suite->tests);
+        __clove_test* test = (__clove_test*)__clove_vector_add_empty(&context->last_suite->tests);
         test->name = test_name + test_separator_length;
         test->funct = (void (*)(struct __clove_test_t *))exported_funct.pointer;
         context->last_suite->test_count++;

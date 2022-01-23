@@ -1,8 +1,5 @@
-#define CLOVE_ENABLE_AUTODISCOVERY
-#include "clove.h"
-
 #define CLOVE_SUITE_NAME MySecondSuite
-
+#include "clove.h"
 
 CLOVE_TEST(FailingTest) {
     int a = 1;
