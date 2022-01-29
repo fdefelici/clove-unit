@@ -82,8 +82,6 @@ static void __clove_vector_free(__clove_vector_t* vector) {
 #pragma endregion //Vector
 
 
-
-
 #define __CLOVE_STRING_LENGTH 256
 #define __CLOVE_TEST_ENTRY_LENGTH 60
 
@@ -117,6 +115,64 @@ typedef struct __clove_suite {
         void (*teardown)();
     } fixtures;
 } __clove_suite_t;
+
+
+static void __clove_empty_funct() { }
+
+static void __clove_vector_test_ctor(void* test) {
+    //cast to __clove_test* not needed
+    memset(test, 0, sizeof(__clove_test));
+}
+
+static void __clove_vector_test_dtor(void* test_ptr) {
+    __clove_test* test = (__clove_test*)test_ptr;
+    free(test->name);
+}
+
+static void __clove_vector_suite_ctor(void* suite_ptr) {
+    __clove_suite_t* suite = (__clove_suite_t*)suite_ptr;
+    suite->name = NULL;
+    suite->fixtures.setup_once = __clove_empty_funct;
+    suite->fixtures.teardown_once = __clove_empty_funct;
+    suite->fixtures.setup = __clove_empty_funct;
+    suite->fixtures.teardown = __clove_empty_funct;
+    
+    __clove_vector_params_t params = __CLOVE_VECTOR_DEFAULT_PARAMS;
+    params.item_size = sizeof(__clove_test);
+    params.item_ctor = __clove_vector_test_ctor;
+    params.item_dtor = __clove_vector_test_dtor;
+    __clove_vector_init(&(suite->tests), &params);
+    suite->test_count = 0;
+}
+
+static void __clove_vector_suite_dtor(void* suite_ptr) {
+    __clove_suite_t* suite = (__clove_suite_t*)suite_ptr;
+    free(suite->name);
+    __clove_vector_free(&suite->tests);
+}
+
+static void __clove_vector_suite_ctor_manual(void* suite_ptr) {
+    __clove_suite_t* suite = (__clove_suite_t*)suite_ptr;
+    suite->name = NULL;
+    suite->fixtures.setup_once = __clove_empty_funct;
+    suite->fixtures.teardown_once = __clove_empty_funct;
+    suite->fixtures.setup = __clove_empty_funct;
+    suite->fixtures.teardown = __clove_empty_funct;
+    
+    /*
+    __clove_vector_params_t params = __CLOVE_VECTOR_DEFAULT_PARAMS;
+    params.item_size = sizeof(__clove_test);
+    params.item_ctor = __clove_vector_test_ctor;
+    __clove_vector_init(&(suite->tests), &params);
+    */
+    suite->test_count = 0;
+}
+static void __clove_vector_suite_dtor_manual(void* suite_ptr) {
+    //When manual, suite name comes from a static address, so dont have to be freed
+    //free(suite->name);
+    __clove_suite_t* suite = (__clove_suite_t*)suite_ptr;
+    __clove_vector_free(&suite->tests);
+}
 
 
 #define __CLOVE_TEST_PASSED 1
@@ -373,13 +429,14 @@ static void __clove_exec_suite(__clove_suite_t *suite, int test_counter, unsigne
     for(int i=0; i<suite->test_count; i++) {
         __clove_test* each_test = (__clove_test*)__clove_vector_get(&suite->tests, i);
         each_test->result = __CLOVE_TEST_SKIPPED;
-        
+            
         suite->fixtures.setup();
         each_test->funct(each_test);
         suite->fixtures.teardown();
-
+      
         char result[__CLOVE_STRING_LENGTH], strToPad[__CLOVE_TEST_ENTRY_LENGTH];
         snprintf(strToPad, __CLOVE_TEST_ENTRY_LENGTH, "%d) %s.%s", test_counter+i, suite->name, each_test->name);
+          
         __clove_pad_right(result, strToPad);
 
         switch(each_test->result) {
@@ -411,7 +468,7 @@ static void __clove_exec_suites(__clove_suite_t* suites, int suite_count, int te
     unsigned int passed = 0;
     unsigned int failed = 0;
     unsigned int skipped = 0;
-
+ 
     int test_start_counter = 1;
     for(int i=0; i < suite_count; ++i) {
         __clove_suite_t* each_suite = &suites[i];
@@ -512,8 +569,6 @@ static char* __clove_basepath(char* path) {
     return base_path;
 }
 
-static void __clove_empty_funct() { }
-
 #pragma region Private APIs - Manual
 #define __CLOVE_RUNNER_MANUAL(...) \
 char* __clove_exec_path;\
@@ -581,7 +636,71 @@ void title(__clove_suite_t *_this_suite) { \
 
 
 #pragma region Private APIs - Autodiscovery
+typedef struct __clove_symbols_context_t {
+    __clove_suite_t* last_suite;
+    __clove_vector_t suites;
+    int suites_count;
+    int tests_count;
+    int prefix_length;
+} __clove_symbols_context_t;
 
+typedef struct __clove_symbols_function_t {
+    char* name;
+    void* pointer;
+} __clove_symbols_function_t;
+
+typedef void (*__clove_symbols_function_action)(__clove_symbols_function_t, void* context);
+
+//For each OS / symbols table format
+static int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symbols_function_action action, void* action_context);
+
+static void __clove_symbols_function_collect(__clove_symbols_function_t exported_funct, void* context_ptr) {
+    static char* end_suite_separator = "___";
+    static int end_suite_separator_length = 3;
+    static char* test_separator = "20_";
+    static int test_separator_length = 3;
+
+    __clove_symbols_context_t* context = (__clove_symbols_context_t*)context_ptr;
+
+    char* test_full_name = exported_funct.name;
+    
+    char* begin_suite_name = test_full_name + context->prefix_length;
+    char* end_suite_name = strstr(begin_suite_name, end_suite_separator);
+    int size = end_suite_name - begin_suite_name;
+
+    char* suite_name = (char*)malloc(size+1); //size+1 for null terminator
+    strncpy_s(suite_name, size+1, begin_suite_name, size);
+    suite_name[size] = '\0'; //maybe could be avoided?!
+
+    //if suite changes, then set as next suite to collect the tests
+    if (context->last_suite == NULL || strcmp(suite_name, context->last_suite->name) != 0 ) {  
+        context->last_suite = (__clove_suite_t*)__clove_vector_add_empty(&context->suites);
+        context->last_suite->name = suite_name;
+        context->suites_count++;
+    }
+
+    char* test_name = end_suite_name + end_suite_separator_length;
+    if (test_name[0] == '1' && test_name[1] == '1') {
+        context->last_suite->fixtures.setup_once = (void (*)())exported_funct.pointer;
+    } else if (test_name[0] == '1' && test_name[1] == '2') {
+        context->last_suite->fixtures.teardown_once = (void (*)())exported_funct.pointer;
+    } else if (test_name[0] == '1' && test_name[1] == '3') { 
+        context->last_suite->fixtures.setup = (void (*)())exported_funct.pointer;
+    } else if (test_name[0] == '1' && test_name[1] == '4') { 
+        context->last_suite->fixtures.teardown = (void (*)())exported_funct.pointer;
+    } else if (test_name[0] == '2' && test_name[1] == '0') { 
+        __clove_test* test = (__clove_test*)__clove_vector_add_empty(&context->last_suite->tests);
+        //Switched to allocation to make indipendent tests from the source memory
+        //test->name = test_name + test_separator_length;
+        test->name = _strdup(test_name + test_separator_length);
+        test->funct = (void (*)(struct __clove_test_t *))exported_funct.pointer;
+        context->last_suite->test_count++;
+        context->tests_count++;
+    }
+
+}
+
+#ifdef _WIN32
 #include <windows.h>
 
 static PIMAGE_EXPORT_DIRECTORY __clove_symbols_get_export_table_from (HMODULE module)
@@ -610,66 +729,6 @@ static PIMAGE_EXPORT_DIRECTORY __clove_symbols_get_export_table_from (HMODULE mo
     DWORD rva = oh->DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress;
     PIMAGE_EXPORT_DIRECTORY edt = (PIMAGE_EXPORT_DIRECTORY)(base + rva);
     return edt;
-}
-
-typedef struct __clove_symbols_context_t {
-    __clove_suite_t* last_suite;
-    __clove_vector_t suites;
-    int suites_count;
-    int tests_count;
-    int prefix_length;
-} __clove_symbols_context_t;
-
-typedef struct {
-    char* name;
-    void* pointer;
-} __clove_symbols_function_t;
-
-typedef void (*__clove_symbols_function_action)(__clove_symbols_function_t, void* context);
-
-
-static void __clove_vector_test_ctor(__clove_test* test) {
-    memset(test, 0, sizeof(__clove_test));
-}
-
-static void __clove_vector_suite_ctor(__clove_suite_t* suite) {
-    suite->name = NULL;
-    suite->fixtures.setup_once = __clove_empty_funct;
-    suite->fixtures.teardown_once = __clove_empty_funct;
-    suite->fixtures.setup = __clove_empty_funct;
-    suite->fixtures.teardown = __clove_empty_funct;
-    
-    __clove_vector_params_t params = __CLOVE_VECTOR_DEFAULT_PARAMS;
-    params.item_size = sizeof(__clove_test);
-    params.item_ctor = __clove_vector_test_ctor;
-    __clove_vector_init(&(suite->tests), &params);
-    suite->test_count = 0;
-}
-
-static void __clove_vector_suite_dtor(__clove_suite_t* suite) {
-    free(suite->name);
-    __clove_vector_free(&suite->tests);
-}
-
-static void __clove_vector_suite_ctor_manual(__clove_suite_t* suite) {
-    suite->name = NULL;
-    suite->fixtures.setup_once = __clove_empty_funct;
-    suite->fixtures.teardown_once = __clove_empty_funct;
-    suite->fixtures.setup = __clove_empty_funct;
-    suite->fixtures.teardown = __clove_empty_funct;
-    
-    /*
-    __clove_vector_params_t params = __CLOVE_VECTOR_DEFAULT_PARAMS;
-    params.item_size = sizeof(__clove_test);
-    params.item_ctor = __clove_vector_test_ctor;
-    __clove_vector_init(&(suite->tests), &params);
-    */
-    suite->test_count = 0;
-}
-
-static void __clove_vector_suite_dtor_manual(__clove_suite_t* suite) {
-    //free(suite->name);
-    __clove_vector_free(&suite->tests);
 }
 
 static int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symbols_function_action action, void* action_context) {    
@@ -715,48 +774,114 @@ static int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clo
     }
     return 0;
 }
+#elif __APPLE__
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/mman.h>
+#include <string.h>
+#include <mach-o/getsect.h>
+#include <mach-o/loader.h>
+#include <mach-o/swap.h>
+#include <mach-o/dyld.h>
 
-static void __clove_symbols_function_collect(__clove_symbols_function_t exported_funct, __clove_symbols_context_t* context) {
-    static char* end_suite_separator = "___";
-    static int end_suite_separator_length = 3;
-    static char* test_separator = "20_";
-    static int test_separator_length = 3;
+typedef struct __clove_symbols_macos_module_t {
+    void* handle;
+    size_t size; //mmap handle size;
+    intptr_t address; //module base address 
+} __clove_symbols_macos_module_t;
 
-
-    char* test_full_name = exported_funct.name;
-
-    char* begin_suite_name = test_full_name + context->prefix_length;
-    char* end_suite_name = strstr(begin_suite_name, end_suite_separator);
-    int size = end_suite_name - begin_suite_name;
-
-    char* suite_name = (char*)malloc(size+1); //size+1 for null terminator
-    strncpy_s(suite_name, size+1, begin_suite_name, size);
-    suite_name[size] = '\0'; //maybe could be avoided?!
-
-    //if suite changes, then set as next suite to collect the tests
-    if (context->last_suite == NULL || strcmp(suite_name, context->last_suite->name) != 0 ) {  
-        context->last_suite = (__clove_suite_t*)__clove_vector_add_empty(&context->suites);
-        context->last_suite->name = suite_name;
-        context->suites_count++;
+static intptr_t __clove_symbols_macos_image_slide(const char* path)
+{
+    for (uint32_t i = 0; i < _dyld_image_count(); i++)
+    {
+        if (strcmp(_dyld_get_image_name(i), path) == 0)
+            return _dyld_get_image_vmaddr_slide(i);
     }
-
-    char* test_name = end_suite_name + end_suite_separator_length;
-    if (test_name[0] == '1' && test_name[1] == '1') {
-        context->last_suite->fixtures.setup_once = (void (*)())exported_funct.pointer;
-    } else if (test_name[0] == '1' && test_name[1] == '2') {
-        context->last_suite->fixtures.teardown_once = (void (*)())exported_funct.pointer;
-    } else if (test_name[0] == '1' && test_name[1] == '3') { 
-        context->last_suite->fixtures.setup = (void (*)())exported_funct.pointer;
-    } else if (test_name[0] == '1' && test_name[1] == '4') { 
-        context->last_suite->fixtures.teardown = (void (*)())exported_funct.pointer;
-    } else if (test_name[0] == '2' && test_name[1] == '0') { 
-        __clove_test* test = (__clove_test*)__clove_vector_add_empty(&context->last_suite->tests);
-        test->name = test_name + test_separator_length;
-        test->funct = (void (*)(struct __clove_test_t *))exported_funct.pointer;
-        context->last_suite->test_count++;
-        context->tests_count++;
-    }
+    return 0;
 }
+
+static int __clove_symbols_macos_open_module_handle(const char* module_path, __clove_symbols_macos_module_t* out_module) {
+    int fd;
+    if ((fd = open(module_path, O_RDONLY)) < 0) {
+        return 1;
+    }
+    
+    lseek(fd, 0, SEEK_SET);
+    struct stat st;
+    if (fstat(fd, &st) < 0) {
+        return 2;
+    }
+    
+    void* map = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+    if (map == MAP_FAILED) {
+        return 3;
+    }
+    //mprotect(map, st.st_size, PROT_WRITE);
+    close(fd);
+
+    out_module->handle = map;
+    out_module->size = st.st_size;
+    out_module->address = __clove_symbols_macos_image_slide(module_path);
+    return 0;
+}
+
+static void __clove_symbols_macos_close_module_handle(__clove_symbols_macos_module_t* module) {
+    munmap(module->handle, module->size);
+    module->handle = NULL;
+    module->size = 0;
+}
+
+static struct load_command* __clove_symbols_macos_find_command(struct mach_header_64* header, uint32_t cmd) {
+    struct load_command* lc = (struct load_command*)((uint64_t)header + sizeof(struct mach_header_64));
+    for (uint32_t i = 0; i < header->ncmds; i++) {
+        if (lc->cmd == cmd) {
+            return lc;
+        }
+        lc = (struct load_command*)((uint64_t)lc + lc->cmdsize);
+    }
+    return NULL;
+}
+
+static int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symbols_function_action action, void* action_context) {
+    const char* module_path = __clove_exec_path;
+
+    __clove_symbols_macos_module_t module;
+    if (__clove_symbols_macos_open_module_handle(module_path, &module) != 0) { return 1; };
+
+    //Handling Mach-o file format x86_64 (little endian)
+    struct mach_header_64* header = (struct mach_header_64*)module.handle; 
+    struct load_command* symbol_lc = __clove_symbols_macos_find_command(header, LC_SYMTAB);
+    struct symtab_command* symbol_cmd = (struct symtab_command*)symbol_lc;
+
+    struct nlist_64 *symbol_table_64 = (struct nlist_64*)((uint64_t)header + symbol_cmd->symoff);
+    char *str_table = (char*)header + symbol_cmd->stroff;
+    
+    const size_t prefix_length = strlen(prefix);
+    uint8_t match_ongoing = 0;
+    for (uint32_t i = 0; i < symbol_cmd->nsyms; i++) {
+        struct nlist_64* sym = &symbol_table_64[i];
+        uint32_t table_index = sym->n_un.n_strx;
+        char* each_name = &str_table[table_index] + 1; //macho add one '_' before each symbol, so with +1 we want to skip it.
+        void* each_funct_addr = (void*)(sym->n_value + module.address); //n_value = offset address within TEXT segment (compreso base addr del TEXT segment)
+        
+        //Symbols seems to be "locally" (at group) sorted, so all clove functions seems to be next to each other and sorted
+        if (strncmp(prefix, each_name, prefix_length) == 0) {
+            if (!match_ongoing) match_ongoing = 1;
+            __clove_symbols_function_t funct = { each_name, each_funct_addr };
+            action(funct, action_context);
+        } else {
+            //At the first failure, if match was ongoing then there are no more symbol with that prefix
+            if (match_ongoing) break;
+        }
+        
+    }
+    __clove_symbols_macos_close_module_handle(&module);
+    return 0;
+}
+#else 
+//NOT MANAGED
+#endif //_WIN32 symbol table
 
 
 #define __CLOVE_RUNNER_AUTO() \
@@ -766,20 +891,20 @@ int main(int argc, char* argv[]) {\
     __clove_setup_ansi_console();\
     __clove_exec_path = argv[0]; \
     __clove_exec_base_path = __clove_basepath(argv[0]); \
-    __clove_symbols_context_t __context; \
+    __clove_symbols_context_t context; \
     __clove_vector_params_t vector_params = __CLOVE_VECTOR_DEFAULT_PARAMS; \
     vector_params.item_size = sizeof(__clove_suite_t); \
     vector_params.item_ctor = __clove_vector_suite_ctor; \
     vector_params.item_dtor = __clove_vector_suite_dtor; \
-    __clove_vector_init(&__context.suites, &vector_params); \
-    __context.suites_count = 0; \
-    __context.last_suite = NULL; \
-    __context.prefix_length = strlen("__clove_sym___"); \
-    __context.tests_count = 0; \
-    __clove_symbols_for_each_function_by_prefix("__clove_sym___", __clove_symbols_function_collect, &__context); \
-    __clove_exec_suites((__clove_suite_t*)(__context.suites.items), __context.suites_count, __context.tests_count); \
+    __clove_vector_init(&context.suites, &vector_params); \
+    context.suites_count = 0; \
+    context.last_suite = NULL; \
+    context.prefix_length = strlen("__clove_sym___"); \
+    context.tests_count = 0; \
+    __clove_symbols_for_each_function_by_prefix("__clove_sym___", __clove_symbols_function_collect, &context); \
+    __clove_exec_suites((__clove_suite_t*)(context.suites.items), context.suites_count, context.tests_count); \
     free(__clove_exec_base_path); \
-    __clove_vector_free(&__context.suites); \
+    __clove_vector_free(&context.suites); \
     return 0;\
 }
 
@@ -891,6 +1016,7 @@ int main(int argc, char* argv[]) {\
 #define CLOVE_TEST(title) __CLOVE_TEST_AUTO(title)
 
 #endif //__CLOVE_MODE_MANUAL
+
 
 #pragma endregion //Public APIs
 
