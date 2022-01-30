@@ -648,7 +648,7 @@ typedef struct __clove_symbols_function_t {
     void* pointer;
 } __clove_symbols_function_t;
 
-typedef void (*__clove_symbols_function_action)(__clove_symbols_function_t, void* context);
+typedef void (*__clove_symbols_function_action)(__clove_symbols_function_t, __clove_symbols_context_t* context);
 
 //For each OS / symbols table format
 static int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symbols_function_action action, __clove_symbols_context_t* action_context);
@@ -852,23 +852,34 @@ static int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clo
 
     struct nlist_64 *symbol_table_64 = (struct nlist_64*)((uint64_t)header + symbol_cmd->symoff);
     char *str_table = (char*)header + symbol_cmd->stroff;
-    
+    //symbol_cmd->nsyms #number of symbols in the symbol table 
+
+    //Loading Dynamic Symbol table to scan only for external symbols symbols in the Symbol Table 
+    struct load_command* dynsymbol_lc = __clove_symbols_macos_find_command(header, LC_DYSYMTAB);
+    struct dysymtab_command* dysymbol_cmd = (struct dysymtab_command*)dynsymbol_lc;
+    uint32_t external_symbol_start_index = dysymbol_cmd->iextdefsym; 
+    uint32_t external_symbol_end_index = external_symbol_start_index + dysymbol_cmd->nextdefsym - 1U;
+
     const size_t prefix_length = strlen(prefix);
     uint8_t match_ongoing = 0;
-    for (uint32_t i = 0; i < symbol_cmd->nsyms; i++) {
+    for (uint32_t i = external_symbol_start_index; i <= external_symbol_end_index; i++) {
         struct nlist_64* sym = &symbol_table_64[i];
         uint32_t table_index = sym->n_un.n_strx;
-        char* each_name = &str_table[table_index] + 1; //macho add one '_' before each symbol, so with +1 we want to skip it.
+        char* each_name = &str_table[table_index + 1]; //macho add one '_' before each symbol, so with +1 we want to skip it.
         void* each_funct_addr = (void*)(sym->n_value + module.address); //n_value = offset address within TEXT segment (includes base addr of the TEXT segment)
-        
-        //Symbols seems to be "locally" (at group) sorted, so all clove functions seems to be next to each other and sorted
+
+        //Symbols seems to be "locally" sorted, so all clove external functions seems to be next to each other and sorted
         if (strncmp(prefix, each_name, prefix_length) == 0) {
-            if (!match_ongoing) match_ongoing = 1;
+            if (!match_ongoing) {
+                match_ongoing = 1;
+            }
             __clove_symbols_function_t funct = { each_name, each_funct_addr };
             action(funct, action_context);
         } else {
             //At the first failure, if match was ongoing then there are no more symbol with that prefix
-            if (match_ongoing) break;
+            if (match_ongoing) {
+                break;
+            }
         }
         
     }
