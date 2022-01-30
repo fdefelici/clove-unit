@@ -3,7 +3,7 @@ Clove is a unit testing single-header library for C, with test autodiscovery fea
 
 Run your tests, gathering information about positives and failures (file, line, reason), with a colored syntax (if supported by your shell).
 
-> Note: By now, Test Autodiscovery is available for Windows users. 
+> Note: By now, Test Autodiscovery is available for Windows and MacOS users. 
 
 ![Clove test run result](./examples/result.png)
 
@@ -16,9 +16,9 @@ The library is implemented around the following concepts:
 
 It is possible to use this libray in two flavours:
 - **Manual** mode, where you have to explicitly register suites/tests for execution, with the advantadge that almost everything is "calculated" at compile time (this is the only feature available for Non-Windows users)
-- **Autodiscovery** mode, where you just need to implement your tests, and than the library will do the magic to discover and execute them. (available for Windows users only)
+- **Autodiscovery** mode, where you just need to implement your tests, and than the library will do the magic to discover and execute them. (available for Windows and MacOS users only)
 
-| Basically only Windows users can use both "Manual" or "Autodiscovery", by now.
+| Basically only Windows and MacOS users can use both "Manual" or "Autodiscovery", by now.
 
 # Usage
 Just add [clove.h](./clove.h) header in your project and starts creating unit tests for your code depending on the two modes: **Manual** and **Autodiscovery**
@@ -66,7 +66,7 @@ CLOVE_RUNNER(TestSuite1, TestSuite2)
 ## Autodiscovery Mode
 First define a Suite name and then implement related test cases:
 
-> By now, only for Windows users
+> By now, only for Windows and MacOS users
 
 ```c
 //file test_suite1.h
