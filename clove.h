@@ -1,6 +1,6 @@
 /* 
  * clove-unit
- * v2.1.0
+ * v2.1.0 (autodiscovery experimental: PE + MACH-O)
  * Unit Testing library for C
  * https://github.com/fdefelici/clove-unit
  * 
@@ -101,11 +101,10 @@ typedef struct __clove_test_t {
     char file_name[__CLOVE_STRING_LENGTH];
     unsigned int line;
     char err_msg[__CLOVE_STRING_LENGTH];
-} __clove_test;
+} __clove_test_t;
 
 typedef struct __clove_suite {
     char* name;
-    //__clove_test* tests;
     __clove_vector_t tests;
     int test_count;
     struct {
@@ -120,12 +119,12 @@ typedef struct __clove_suite {
 static void __clove_empty_funct() { }
 
 static void __clove_vector_test_ctor(void* test) {
-    //cast to __clove_test* not needed
-    memset(test, 0, sizeof(__clove_test));
+    //cast to __clove_test_t* not needed
+    memset(test, 0, sizeof(__clove_test_t));
 }
 
 static void __clove_vector_test_dtor(void* test_ptr) {
-    __clove_test* test = (__clove_test*)test_ptr;
+    __clove_test_t* test = (__clove_test_t*)test_ptr;
     free(test->name);
 }
 
@@ -138,7 +137,7 @@ static void __clove_vector_suite_ctor(void* suite_ptr) {
     suite->fixtures.teardown = __clove_empty_funct;
     
     __clove_vector_params_t params = __CLOVE_VECTOR_DEFAULT_PARAMS;
-    params.item_size = sizeof(__clove_test);
+    params.item_size = sizeof(__clove_test_t);
     params.item_ctor = __clove_vector_test_ctor;
     params.item_dtor = __clove_vector_test_dtor;
     __clove_vector_init(&(suite->tests), &params);
@@ -159,9 +158,9 @@ static void __clove_vector_suite_ctor_manual(void* suite_ptr) {
     suite->fixtures.setup = __clove_empty_funct;
     suite->fixtures.teardown = __clove_empty_funct;
     
-    /*
+    /* Not needed when in Manual mode
     __clove_vector_params_t params = __CLOVE_VECTOR_DEFAULT_PARAMS;
-    params.item_size = sizeof(__clove_test);
+    params.item_size = sizeof(__clove_test_t);
     params.item_ctor = __clove_vector_test_ctor;
     __clove_vector_init(&(suite->tests), &params);
     */
@@ -194,17 +193,17 @@ static void __clove_vector_suite_dtor_manual(void* suite_ptr) {
 #define __CLOVE_FAILED "[\x1b[1;31mFAIL\x1b[0m]"
 
 
-static void __clove_fail(char *msg, __clove_test *_this) {
+static void __clove_fail(char *msg, __clove_test_t *_this) {
     _this->result = __CLOVE_TEST_FAILED;
     strcpy_s(_this->err_msg, __CLOVE_STRING_LENGTH, msg);
 }
 
-static void __clove_pass(char *msg, __clove_test *_this) {
+static void __clove_pass(char *msg, __clove_test_t *_this) {
     _this->result = __CLOVE_TEST_PASSED;
     strcpy_s(_this->err_msg, __CLOVE_STRING_LENGTH, msg);
 }
 
-static void __clove_check_int(const unsigned int check_mode, int expected, int result, __clove_test *_this) {
+static void __clove_check_int(const unsigned int check_mode, int expected, int result, __clove_test_t *_this) {
     int pass_scenario = 0;
     if (check_mode == __CLOVE_ASSERT_CHECK_EQUALITY) { pass_scenario = expected == result; }
     else if (check_mode == __CLOVE_ASSERT_CHECK_DIFFERENCE) { pass_scenario = expected != result; }
@@ -218,7 +217,7 @@ static void __clove_check_int(const unsigned int check_mode, int expected, int r
     }
 }
 
-static void __clove_check_uint(const unsigned int check_mode, unsigned int expected, unsigned int result, __clove_test *_this) {
+static void __clove_check_uint(const unsigned int check_mode, unsigned int expected, unsigned int result, __clove_test_t *_this) {
     int pass_scenario = 0;
     if (check_mode == __CLOVE_ASSERT_CHECK_EQUALITY) { pass_scenario = expected == result; }
     else if (check_mode == __CLOVE_ASSERT_CHECK_DIFFERENCE) { pass_scenario = expected != result; }
@@ -232,7 +231,7 @@ static void __clove_check_uint(const unsigned int check_mode, unsigned int expec
     }
 }
 
-static void __clove_check_long(const unsigned int check_mode, long expected, long result, __clove_test *_this) {
+static void __clove_check_long(const unsigned int check_mode, long expected, long result, __clove_test_t *_this) {
     int pass_scenario = 0;
     if (check_mode == __CLOVE_ASSERT_CHECK_EQUALITY) { pass_scenario = expected == result; }
     else if (check_mode == __CLOVE_ASSERT_CHECK_DIFFERENCE) { pass_scenario = expected != result; }
@@ -246,7 +245,7 @@ static void __clove_check_long(const unsigned int check_mode, long expected, lon
     }
 }
 
-static void __clove_check_ulong(const unsigned int check_mode, unsigned long expected, unsigned long result, __clove_test *_this) {
+static void __clove_check_ulong(const unsigned int check_mode, unsigned long expected, unsigned long result, __clove_test_t *_this) {
     int pass_scenario = 0;
     if (check_mode == __CLOVE_ASSERT_CHECK_EQUALITY) { pass_scenario = expected == result; }
     else if (check_mode == __CLOVE_ASSERT_CHECK_DIFFERENCE) { pass_scenario = expected != result; }
@@ -260,7 +259,7 @@ static void __clove_check_ulong(const unsigned int check_mode, unsigned long exp
     }
 }
 
-static void __clove_check_llong(const unsigned int check_mode, long long expected, long long result, __clove_test *_this) {
+static void __clove_check_llong(const unsigned int check_mode, long long expected, long long result, __clove_test_t *_this) {
     int pass_scenario = 0;
     if (check_mode == __CLOVE_ASSERT_CHECK_EQUALITY) { pass_scenario = expected == result; }
     else if (check_mode == __CLOVE_ASSERT_CHECK_DIFFERENCE) { pass_scenario = expected != result; }
@@ -274,7 +273,7 @@ static void __clove_check_llong(const unsigned int check_mode, long long expecte
     }
 }
 
-static void __clove_check_ullong(const unsigned int check_mode, unsigned long long expected, unsigned long long result, __clove_test *_this) {
+static void __clove_check_ullong(const unsigned int check_mode, unsigned long long expected, unsigned long long result, __clove_test_t *_this) {
     int pass_scenario = 0;
     if (check_mode == __CLOVE_ASSERT_CHECK_EQUALITY) { pass_scenario = expected == result; }
     else if (check_mode == __CLOVE_ASSERT_CHECK_DIFFERENCE) { pass_scenario = expected != result; }
@@ -288,7 +287,7 @@ static void __clove_check_ullong(const unsigned int check_mode, unsigned long lo
     }
 }
 
-static void __clove_check_char(const unsigned int check_mode, char expected, char result, __clove_test *_this) {
+static void __clove_check_char(const unsigned int check_mode, char expected, char result, __clove_test_t *_this) {
     int pass_scenario = 0;
     if (check_mode == __CLOVE_ASSERT_CHECK_EQUALITY) { pass_scenario = expected == result; }
     else if (check_mode == __CLOVE_ASSERT_CHECK_DIFFERENCE) { pass_scenario = expected != result; }
@@ -302,7 +301,7 @@ static void __clove_check_char(const unsigned int check_mode, char expected, cha
     }
 }
 
-static void __clove_check_bool(const unsigned int check_mode, int result, __clove_test *_this) {
+static void __clove_check_bool(const unsigned int check_mode, int result, __clove_test_t *_this) {
     /*
         In C standard:
         - 0 is FALSE
@@ -332,7 +331,7 @@ static void __clove_check_bool(const unsigned int check_mode, int result, __clov
     }
 }
 
-static void __clove_check_null(const unsigned int check_mode, void *result, __clove_test *_this) {
+static void __clove_check_null(const unsigned int check_mode, void *result, __clove_test_t *_this) {
     int pass_scenario;
     if (check_mode == __CLOVE_ASSERT_CHECK_EQUALITY) pass_scenario = result == NULL;
     else pass_scenario = result != NULL;
@@ -346,7 +345,7 @@ static void __clove_check_null(const unsigned int check_mode, void *result, __cl
     }
 }
 
-static void __clove_check_ptr(const unsigned int check_mode, void *expected, void *result, __clove_test* _this) {
+static void __clove_check_ptr(const unsigned int check_mode, void *expected, void *result, __clove_test_t* _this) {
     int pass_scenario;
     if (check_mode == __CLOVE_ASSERT_CHECK_EQUALITY) pass_scenario = expected == result;
     else pass_scenario = expected != result;
@@ -360,7 +359,7 @@ static void __clove_check_ptr(const unsigned int check_mode, void *expected, voi
     }
 }
 
-static void __clove_check_float(const unsigned int check_mode, float expected, float result, __clove_test* _this) {
+static void __clove_check_float(const unsigned int check_mode, float expected, float result, __clove_test_t* _this) {
     int pass_scenario = 0;
     if (check_mode == __CLOVE_ASSERT_CHECK_EQUALITY) { pass_scenario = fabsf(expected - result) <= __CLOVE_FLOATING_PRECISION; }
     else if (check_mode == __CLOVE_ASSERT_CHECK_DIFFERENCE) { pass_scenario = fabsf(expected - result) > __CLOVE_FLOATING_PRECISION; }
@@ -374,7 +373,7 @@ static void __clove_check_float(const unsigned int check_mode, float expected, f
     }
 }
 
-static void __clove_check_double(const unsigned int check_mode, double expected, double result, __clove_test* _this) {
+static void __clove_check_double(const unsigned int check_mode, double expected, double result, __clove_test_t* _this) {
     int pass_scenario = 0;
     if (check_mode == __CLOVE_ASSERT_CHECK_EQUALITY) { pass_scenario = (float)fabs(expected - result) <= __CLOVE_FLOATING_PRECISION; }
     else if (check_mode == __CLOVE_ASSERT_CHECK_DIFFERENCE) { pass_scenario = (float)fabs(expected - result) > __CLOVE_FLOATING_PRECISION; }
@@ -388,7 +387,7 @@ static void __clove_check_double(const unsigned int check_mode, double expected,
     }
 }
 
-static void __clove_check_string(const unsigned int check_mode, const char* expected, const char* result, __clove_test* _this) {
+static void __clove_check_string(const unsigned int check_mode, const char* expected, const char* result, __clove_test_t* _this) {
     int pass_scenario = 0;
     if (check_mode == __CLOVE_ASSERT_CHECK_EQUALITY) { pass_scenario = strcmp(expected, result) == 0; }
     else if (check_mode == __CLOVE_ASSERT_CHECK_DIFFERENCE) { pass_scenario = strcmp(expected, result) != 0; }
@@ -427,7 +426,7 @@ static void __clove_exec_suite(__clove_suite_t *suite, int test_counter, unsigne
     suite->fixtures.setup_once();
 
     for(int i=0; i<suite->test_count; i++) {
-        __clove_test* each_test = (__clove_test*)__clove_vector_get(&suite->tests, i);
+        __clove_test_t* each_test = (__clove_test_t*)__clove_vector_get(&suite->tests, i);
         each_test->result = __CLOVE_TEST_SKIPPED;
             
         suite->fixtures.setup();
@@ -562,7 +561,7 @@ static char* __clove_basepath(char* path) {
     } else {
         bytes_count = last_addr - path;
     }
-    int size = bytes_count + 1; //considera il  null terminator
+    int size = bytes_count + 1; // +1 take into account null terminator
 
     char* base_path = (char*)malloc(sizeof(char) * size);
     strncpy_s(base_path, size, path, bytes_count);
@@ -609,13 +608,13 @@ void title(__clove_suite_t *_this_suite) { \
 #define __CLOVE_SUITE_SETUP_MANUAL(funct) _this_suite->fixtures.setup = funct;
 #define __CLOVE_SUITE_TEARDOWN_MANUAL(funct) _this_suite->fixtures.teardown = funct;
 #define __CLOVE_SUITE_TESTS_MANUAL(...) \
-    static void (*func_ptr[])(__clove_test*) = {__VA_ARGS__};\
+    static void (*func_ptr[])(__clove_test_t*) = {__VA_ARGS__};\
     static char functs_as_str[] = #__VA_ARGS__;\
     int test_count = sizeof(func_ptr) / sizeof(func_ptr[0]);\
     _this_suite->name = name;\
     _this_suite->test_count = test_count;\
     __clove_vector_params_t vector_params = __CLOVE_VECTOR_DEFAULT_PARAMS; \
-    vector_params.item_size = sizeof(__clove_test); \
+    vector_params.item_size = sizeof(__clove_test_t); \
     vector_params.initial_capacity = test_count; \
     vector_params.item_ctor = __clove_vector_test_ctor; \
     __clove_vector_init(&_this_suite->tests, &vector_params); \
@@ -624,13 +623,13 @@ void title(__clove_suite_t *_this_suite) { \
         char *token;\
         if (i==0) { token = strtok_s(functs_as_str, ", ", &context); }\
         else { token = strtok_s(NULL, ", ", &context); }\
-        __clove_test* test = __clove_vector_add_empty(&_this_suite->tests); \
+        __clove_test_t* test = (__clove_test_t*)__clove_vector_add_empty(&_this_suite->tests); \
         test->name = token;\
         test->funct = (*func_ptr[i]);\
     }\
 }
 
-#define __CLOVE_TEST_MANUAL(title) static void title(__clove_test *_this) 
+#define __CLOVE_TEST_MANUAL(title) static void title(__clove_test_t *_this) 
 
 #pragma endregion //Manual
 
@@ -652,15 +651,13 @@ typedef struct __clove_symbols_function_t {
 typedef void (*__clove_symbols_function_action)(__clove_symbols_function_t, void* context);
 
 //For each OS / symbols table format
-static int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symbols_function_action action, void* action_context);
+static int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symbols_function_action action, __clove_symbols_context_t* action_context);
 
-static void __clove_symbols_function_collect(__clove_symbols_function_t exported_funct, void* context_ptr) {
+static void __clove_symbols_function_collect(__clove_symbols_function_t exported_funct, __clove_symbols_context_t* context) {
     static char* end_suite_separator = "___";
     static int end_suite_separator_length = 3;
     static char* test_separator = "20_";
     static int test_separator_length = 3;
-
-    __clove_symbols_context_t* context = (__clove_symbols_context_t*)context_ptr;
 
     char* test_full_name = exported_funct.name;
     
@@ -689,15 +686,14 @@ static void __clove_symbols_function_collect(__clove_symbols_function_t exported
     } else if (test_name[0] == '1' && test_name[1] == '4') { 
         context->last_suite->fixtures.teardown = (void (*)())exported_funct.pointer;
     } else if (test_name[0] == '2' && test_name[1] == '0') { 
-        __clove_test* test = (__clove_test*)__clove_vector_add_empty(&context->last_suite->tests);
-        //Switched to allocation to make indipendent tests from the source memory
+        __clove_test_t* test = (__clove_test_t*)__clove_vector_add_empty(&context->last_suite->tests);
+        //Switched to string allocation to make test structs indipendent from the source memory
         //test->name = test_name + test_separator_length;
         test->name = _strdup(test_name + test_separator_length);
-        test->funct = (void (*)(struct __clove_test_t *))exported_funct.pointer;
+        test->funct = (void (*)(__clove_test_t*))exported_funct.pointer;
         context->last_suite->test_count++;
         context->tests_count++;
     }
-
 }
 
 #ifdef _WIN32
@@ -731,7 +727,7 @@ static PIMAGE_EXPORT_DIRECTORY __clove_symbols_get_export_table_from (HMODULE mo
     return edt;
 }
 
-static int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symbols_function_action action, void* action_context) {    
+static int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symbols_function_action action, __clove_symbols_context_t* action_context) {    
     HMODULE module = GetModuleHandle(0);
     PIMAGE_EXPORT_DIRECTORY export_dir = __clove_symbols_get_export_table_from(module);
     if (!export_dir) {
@@ -843,13 +839,13 @@ static struct load_command* __clove_symbols_macos_find_command(struct mach_heade
     return NULL;
 }
 
-static int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symbols_function_action action, void* action_context) {
+static int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symbols_function_action action, __clove_symbols_context_t* action_context) {
     const char* module_path = __clove_exec_path;
 
     __clove_symbols_macos_module_t module;
     if (__clove_symbols_macos_open_module_handle(module_path, &module) != 0) { return 1; };
 
-    //Handling Mach-o file format x86_64 (little endian)
+    //Handling Mach-o file format x86_64 (little endian). This should works both for Intel and M1 cpus with 64 bits architecture
     struct mach_header_64* header = (struct mach_header_64*)module.handle; 
     struct load_command* symbol_lc = __clove_symbols_macos_find_command(header, LC_SYMTAB);
     struct symtab_command* symbol_cmd = (struct symtab_command*)symbol_lc;
@@ -863,7 +859,7 @@ static int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clo
         struct nlist_64* sym = &symbol_table_64[i];
         uint32_t table_index = sym->n_un.n_strx;
         char* each_name = &str_table[table_index] + 1; //macho add one '_' before each symbol, so with +1 we want to skip it.
-        void* each_funct_addr = (void*)(sym->n_value + module.address); //n_value = offset address within TEXT segment (compreso base addr del TEXT segment)
+        void* each_funct_addr = (void*)(sym->n_value + module.address); //n_value = offset address within TEXT segment (includes base addr of the TEXT segment)
         
         //Symbols seems to be "locally" (at group) sorted, so all clove functions seems to be next to each other and sorted
         if (strncmp(prefix, each_name, prefix_length) == 0) {
@@ -880,7 +876,10 @@ static int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clo
     return 0;
 }
 #else 
-//NOT MANAGED
+//Not managed yet
+static int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symbols_function_action action, __clove_symbols_context_t* action_context) {
+    return 1;
+}
 #endif //_WIN32 symbol table
 
 
@@ -922,7 +921,7 @@ int main(int argc, char* argv[]) {\
 #define __CLOVE_SUITE_TEARDOWN_ONCE_AUTO() __CLOVE_SUITE_METHOD_AUTO_1( CLOVE_SUITE_NAME, 12_teardownonce, void)
 #define __CLOVE_SUITE_SETUP_AUTO() __CLOVE_SUITE_METHOD_AUTO_1( CLOVE_SUITE_NAME, 13_setup, void)
 #define __CLOVE_SUITE_TEARDOWN_AUTO() __CLOVE_SUITE_METHOD_AUTO_1( CLOVE_SUITE_NAME, 14_teardown, void)
-#define __CLOVE_TEST_AUTO(title) __CLOVE_SUITE_METHOD_AUTO_1( CLOVE_SUITE_NAME, 20_ ## title, __clove_test *_this)
+#define __CLOVE_TEST_AUTO(title) __CLOVE_SUITE_METHOD_AUTO_1( CLOVE_SUITE_NAME, 20_ ## title, __clove_test_t *_this)
 #pragma endregion //Autodiscovery
 #pragma endregion // Private APIs
 
