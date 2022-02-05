@@ -1,6 +1,6 @@
 /* 
  * clove-unit
- * v2.1.1 (autodiscovery experimental: PE + MACH-O)
+ * v2.1.2 (autodiscovery experimental: PE + MACH-O 64 + ELF 64)
  * Unit Testing library for C
  * https://github.com/fdefelici/clove-unit
  * 
@@ -9,11 +9,16 @@
 #ifndef CLOVE_H
 #define CLOVE_H
 
+#ifdef __linux
+#define _GNU_SOURCE
+#endif 
+
 #pragma region PRIVATE APIs
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
+#include <stdbool.h>
 
 #pragma region PRIVATE APIs - Vector
 typedef struct __clove_vector_params_t {
@@ -61,11 +66,16 @@ static void* __clove_vector_add_empty(__clove_vector_t* vector) {
 }
 
 static void* __clove_vector_get(__clove_vector_t* vector, size_t index) {
-    if (vector->count == 0) return NULL;
     if (index < 0) return NULL;
     if (index >= vector->count) return NULL;
     size_t byte_index = index * vector->item_size;
     return (void*)&(vector->items[byte_index]);
+}
+
+static void __clove_vector_set(__clove_vector_t* vector, size_t index, void* item) {
+    void* found = __clove_vector_get(vector, index);
+    if (!found) return;
+    memcpy(found, item, vector->item_size);
 }
 
 static void __clove_vector_free(__clove_vector_t* vector) {    
@@ -78,6 +88,30 @@ static void __clove_vector_free(__clove_vector_t* vector) {
     free(vector->items);
     vector->capacity = 0;
     vector->count = 0;
+}
+
+//TODO: Convert to Quick Sort to be O(nlogn)
+static void __clove_vector_sort(__clove_vector_t* vector, int (*comparator)(void*, void*)) {
+    bool has_swap = true;
+    
+    void* temp = malloc(vector->item_size);
+    
+    while(has_swap) {
+        has_swap = false;
+        for(size_t i=0; i< __clove_vector_count(vector) - 1; ++i) {
+            void* curr = __clove_vector_get(vector, i);
+            void* next = __clove_vector_get(vector, i+1);
+            int result = comparator(curr, next);
+            if (result < 0) {
+                memcpy(temp, curr, vector->item_size);
+                __clove_vector_set(vector, i, next);
+                __clove_vector_set(vector, i + 1, temp);
+                has_swap = true;
+            }
+        }
+    }
+    
+    free(temp);
 }
 #pragma endregion //Vector
 
@@ -886,9 +920,157 @@ static int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clo
     __clove_symbols_macos_close_module_handle(&module);
     return 0;
 }
-#else 
-//Not managed yet
+#elif __linux__
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/mman.h>
+#include <string.h>
+#include <elf.h>
+#include <link.h>
+
+typedef struct __clove_symbols_bsd_module_t {
+    void* handle;
+    size_t size; //mmap handle size;
+    uintptr_t address; //module base address 
+} __clove_symbols_bsd_module_t;
+
+static int __clove_symbols_bsd_dl_callback(struct dl_phdr_info *info, size_t size, void *data)
+{
+  const char *cb = (const char *)&__clove_symbols_bsd_dl_callback;
+  const char *base = (const char *)info->dlpi_addr;
+  const ElfW(Phdr) *first_load = NULL;
+
+  for (int j = 0; j < info->dlpi_phnum; j++) {
+    const ElfW(Phdr) *phdr = &info->dlpi_phdr[j];
+
+    if (phdr->p_type == PT_LOAD) {
+      const char *beg = base + phdr->p_vaddr;
+      const char *end = beg + phdr->p_memsz;
+
+      if (first_load == NULL) first_load = phdr;
+      if (beg <= cb && cb < end) {
+        // Found PT_LOAD that "covers" callback().
+        //printf("ELF header is at %p, image linked at 0x%zx, relocation: 0x%zx\n", base + first_load->p_vaddr, first_load->p_vaddr, info->dlpi_addr);
+        uintptr_t* addr_ptr = (uintptr_t*)data;
+        *addr_ptr = info->dlpi_addr;
+        return 1;
+      }
+    }
+  }
+  return 0;
+}
+
+static uintptr_t __clove_symbols_bsd_base_addr(const char* path)
+{
+    uintptr_t base_addr;
+    dl_iterate_phdr(__clove_symbols_bsd_dl_callback, &base_addr);
+    return base_addr;
+}
+
+static int __clove_symbols_bsd_open_module_handle(const char* module_path, __clove_symbols_bsd_module_t* out_module) {
+    int fd;
+    if ((fd = open(module_path, O_RDONLY)) < 0) {
+        return 1;
+    }
+    
+    lseek(fd, 0, SEEK_SET);
+    struct stat st;
+    if (fstat(fd, &st) < 0) {
+        return 2;
+    }
+    
+    void* map = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+    if (map == MAP_FAILED) {
+        return 3;
+    }
+    //mprotect(map, st.st_size, PROT_WRITE);
+    close(fd);
+
+    out_module->handle = map;
+    out_module->size = st.st_size;
+    out_module->address = __clove_symbols_bsd_base_addr(module_path);
+    return 0;
+}
+
+static void __clove_symbols_bsd_close_module_handle(__clove_symbols_bsd_module_t* module) {
+    munmap(module->handle, module->size);
+    module->handle = NULL;
+    module->size = 0;
+}
+
+
+static int __clove_symbols_funct_name_comparator(void* f1, void* f2) {
+    __clove_symbols_function_t* funct1 = (__clove_symbols_function_t*)f1;
+    __clove_symbols_function_t* funct2 = (__clove_symbols_function_t*)f2;
+    return strcmp(funct2->name, funct1->name);
+}
+
 static int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symbols_function_action action, __clove_symbols_context_t* action_context) {
+    const char* module_path = __clove_exec_path;
+
+    __clove_symbols_bsd_module_t module;
+    if (__clove_symbols_bsd_open_module_handle(module_path, &module) != 0) { return 1; }
+
+    Elf64_Ehdr* header = (Elf64_Ehdr*)module.handle; 
+    
+    Elf64_Shdr* sections = (Elf64_Shdr*)( (uint64_t)header + header->e_shoff);
+    size_t section_count = header->e_shnum;
+
+    Elf64_Sym* symbol_table = NULL;
+    Elf64_Shdr* symbol_table_section = NULL;
+    for(int i=0; i < section_count; ++i) {
+        if (sections[i].sh_type == SHT_SYMTAB) {
+            symbol_table = (Elf64_Sym *)((uint64_t)header + sections[i].sh_offset);
+            symbol_table_section = &sections[i];
+            break; 
+        } 
+    }
+
+    Elf64_Shdr* name_table_section = &sections[symbol_table_section->sh_link];
+    char* symbol_name_table = (char*)((uint64_t)header + name_table_section->sh_offset);
+
+    size_t symbol_count = symbol_table_section->sh_size / symbol_table_section->sh_entsize;
+
+    //Vector could be replace with sorted tree to sort while scanning for clove functions
+    __clove_vector_t clove_functions;
+    //do macro with default that accept item size (it is mandatory basically)
+    __clove_vector_params_t params = __CLOVE_VECTOR_DEFAULT_PARAMS;
+    params.item_size = sizeof(__clove_symbols_function_t);
+    __clove_vector_init(&clove_functions, &params); 
+
+    size_t prefix_length = strlen(prefix);
+
+    for (size_t i = 0; i < symbol_count; ++i) {
+        Elf64_Sym* sym = &symbol_table[i];
+        if (ELF64_ST_TYPE(sym->st_info) == STT_FUNC) {
+            size_t name_index = sym->st_name;
+            char* sym_name = symbol_name_table + name_index;
+            if (!strncmp(sym_name, prefix, prefix_length)) {
+                __clove_symbols_function_t* each_funct = (__clove_symbols_function_t*)__clove_vector_add_empty(&clove_functions);
+                each_funct->name = sym_name;
+                each_funct->pointer = (void*)(module.address + sym->st_value);
+            }
+        }
+    }
+
+    //Sort Symbols Alphanumeric ascendent
+    __clove_vector_sort(&clove_functions, __clove_symbols_funct_name_comparator);
+
+    for(size_t i=0; i < __clove_vector_count(&clove_functions); ++i) 
+    {  
+        __clove_symbols_function_t* each_funct = (__clove_symbols_function_t*)__clove_vector_get(&clove_functions, i);
+        action(*each_funct, action_context);
+        //puts(each_funct->name);
+    }
+    __clove_vector_free(&clove_functions);
+    __clove_symbols_bsd_close_module_handle(&module);
+    return 0;
+}
+#else 
+//Not Possible. Shoud be one of the OS cases before
+static int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symbols_function_action action, __clove_symbols_context_t* action_context) {
+    puts("Autodiscovery not yet implemented for this OS!!!");
     return 1;
 }
 #endif //_WIN32 symbol table
