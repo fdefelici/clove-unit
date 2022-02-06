@@ -36,6 +36,7 @@ typedef struct __clove_vector_t {
     size_t item_size;
     void (*item_ctor)(void*);
     void (*item_dtor)(void*);
+    void *swap_temp;
 } __clove_vector_t;
 
 #define __CLOVE_VECTOR_DEFAULT_PARAMS { .item_size = 0, .initial_capacity = 10, .item_ctor = NULL, .item_dtor = NULL }
@@ -47,6 +48,7 @@ static void __clove_vector_init(__clove_vector_t* vector, __clove_vector_params_
     vector->items = (unsigned char*)malloc( vector->item_size * vector->capacity);
     vector->item_ctor = params->item_ctor;
     vector->item_dtor = params->item_dtor;
+    vector->swap_temp = malloc(vector->item_size);
 }
 
 static size_t __clove_vector_count(__clove_vector_t* vector) {    
@@ -86,12 +88,21 @@ static void __clove_vector_free(__clove_vector_t* vector) {
         }
     }
     free(vector->items);
+    free(vector->swap_temp);
     vector->capacity = 0;
     vector->count = 0;
 }
 
-//TODO: Convert to Quick Sort to be O(nlogn)
-static void __clove_vector_sort(__clove_vector_t* vector, int (*comparator)(void*, void*)) {
+static void __clove_vector_swap(__clove_vector_t* vector, size_t index1, size_t index2) {
+    void* curr = __clove_vector_get(vector, index1);
+    void* next = __clove_vector_get(vector, index2);
+    if (!curr || !next ) return;
+    memcpy(vector->swap_temp, curr, vector->item_size);
+    __clove_vector_set(vector, index1, next);
+    __clove_vector_set(vector, index2, vector->swap_temp);
+}
+
+static void __clove_vector_bubblesort(__clove_vector_t* vector, int (*comparator)(void*, void*)) {
     bool has_swap = true;
     
     void* temp = malloc(vector->item_size);
@@ -112,6 +123,64 @@ static void __clove_vector_sort(__clove_vector_t* vector, int (*comparator)(void
     }
     
     free(temp);
+}
+
+//QuickSort
+static size_t __clove_vector_quicksort_partition(__clove_vector_t* vector, int (*comparator)(void*, void*), size_t start_index, size_t end_index) {
+    size_t pivot_index = start_index;
+    size_t left_index = start_index;
+    size_t right_index = end_index;
+
+    void* item = NULL;
+    void* pivot = NULL;
+    while (left_index < right_index) {
+        //Moving pivot to right
+        bool item_is_gte = true;
+        while (item_is_gte && pivot_index < right_index) {
+            item = __clove_vector_get(vector, right_index);
+            pivot = __clove_vector_get(vector, pivot_index);
+            item_is_gte = (comparator(item, pivot) != -1);
+            if (item_is_gte) right_index--; 
+        }
+
+        if (pivot_index != right_index) { 
+            __clove_vector_swap(vector, pivot_index, right_index);
+            //vector->items[pivot_index] = item;
+            //vector->items[right_index] = pivot;
+            pivot_index = right_index;
+        }
+
+        if (left_index == right_index) break;
+
+        //Moving pivot to left
+        bool item_is_lte = true;
+        while (item_is_lte && pivot_index > left_index) {
+            item = __clove_vector_get(vector, left_index);
+            pivot = __clove_vector_get(vector, pivot_index);
+            item_is_lte = (comparator(item, pivot) != 1);
+            if (item_is_lte) left_index++;
+        }
+
+        if (pivot_index != left_index) {  
+            __clove_vector_swap(vector, pivot_index, left_index);
+            //vect->items[pivot_index] = item;
+            //vect->items[left_index] = pivot;
+            pivot_index = left_index;
+        }
+    }
+    return pivot_index;
+}
+
+static void __clove_vector_quicksort_recurs(__clove_vector_t* vector, int (*comparator)(void*, void*), size_t start_index, size_t end_index) {
+    if (start_index >= end_index) return;
+    size_t pivot_index = __clove_vector_quicksort_partition(vector, comparator, start_index, end_index);  //find pivot and put it in right position
+    __clove_vector_quicksort_recurs(vector, comparator, start_index, pivot_index - 1);      //sort left array
+    __clove_vector_quicksort_recurs(vector, comparator, pivot_index + 1, end_index);        //sort left array
+}
+
+
+static void __clove_vector_sort(__clove_vector_t* vector, int (*comparator)(void*, void*)) {
+   __clove_vector_quicksort_recurs(vector, comparator, 0, __clove_vector_count(vector) - 1);
 }
 #pragma endregion //Vector
 
