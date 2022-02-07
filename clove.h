@@ -113,7 +113,7 @@ static void __clove_vector_bubblesort(__clove_vector_t* vector, int (*comparator
             void* curr = __clove_vector_get(vector, i);
             void* next = __clove_vector_get(vector, i+1);
             int result = comparator(curr, next);
-            if (result < 0) {
+            if (result > 0) {
                 memcpy(temp, curr, vector->item_size);
                 __clove_vector_set(vector, i, next);
                 __clove_vector_set(vector, i + 1, temp);
@@ -1069,10 +1069,16 @@ static void __clove_symbols_bsd_close_module_handle(__clove_symbols_bsd_module_t
 }
 
 
+/*
+ * Compare two functions by their name
+ * Return negative if name1 is lesser than name2
+ * Return positive if name1 is greather than name1
+ * Return zero if name1 and name2 are equals 
+ */
 static int __clove_symbols_funct_name_comparator(void* f1, void* f2) {
     __clove_symbols_function_t* funct1 = (__clove_symbols_function_t*)f1;
     __clove_symbols_function_t* funct2 = (__clove_symbols_function_t*)f2;
-    return strcmp(funct2->name, funct1->name);
+    return strcmp(funct1->name, funct2->name);
 }
 
 static int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symbols_function_action action, __clove_symbols_context_t* action_context) {
