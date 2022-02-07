@@ -105,7 +105,7 @@ static void __clove_vector_swap(__clove_vector_t* vector, size_t index1, size_t 
 static void __clove_vector_bubblesort(__clove_vector_t* vector, int (*comparator)(void*, void*)) {
     bool has_swap = true;
     
-    void* temp = malloc(vector->item_size);
+    //void* temp = malloc(vector->item_size);
     
     while(has_swap) {
         has_swap = false;
@@ -114,15 +114,16 @@ static void __clove_vector_bubblesort(__clove_vector_t* vector, int (*comparator
             void* next = __clove_vector_get(vector, i+1);
             int result = comparator(curr, next);
             if (result > 0) {
-                memcpy(temp, curr, vector->item_size);
-                __clove_vector_set(vector, i, next);
-                __clove_vector_set(vector, i + 1, temp);
+                //memcpy(temp, curr, vector->item_size);
+                //__clove_vector_set(vector, i, next);
+                //__clove_vector_set(vector, i + 1, temp);
+                __clove_vector_swap(vector, i, i + 1);
                 has_swap = true;
             }
         }
     }
     
-    free(temp);
+    //free(temp);
 }
 
 //QuickSort
@@ -139,7 +140,7 @@ static size_t __clove_vector_quicksort_partition(__clove_vector_t* vector, int (
         while (item_is_gte && pivot_index < right_index) {
             item = __clove_vector_get(vector, right_index);
             pivot = __clove_vector_get(vector, pivot_index);
-            item_is_gte = (comparator(item, pivot) != -1);
+            item_is_gte = (comparator(item, pivot) >= 0);
             if (item_is_gte) right_index--; 
         }
 
@@ -157,7 +158,7 @@ static size_t __clove_vector_quicksort_partition(__clove_vector_t* vector, int (
         while (item_is_lte && pivot_index > left_index) {
             item = __clove_vector_get(vector, left_index);
             pivot = __clove_vector_get(vector, pivot_index);
-            item_is_lte = (comparator(item, pivot) != 1);
+            item_is_lte = (comparator(item, pivot) <= 0);
             if (item_is_lte) left_index++;
         }
 
@@ -181,6 +182,7 @@ static void __clove_vector_quicksort_recurs(__clove_vector_t* vector, int (*comp
 
 static void __clove_vector_sort(__clove_vector_t* vector, int (*comparator)(void*, void*)) {
    __clove_vector_quicksort_recurs(vector, comparator, 0, __clove_vector_count(vector) - 1);
+   //__clove_vector_bubblesort(vector, comparator);
 }
 #pragma endregion //Vector
 
