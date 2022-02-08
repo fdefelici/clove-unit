@@ -20,6 +20,49 @@
 #include <math.h>
 #include <stdbool.h>
 
+#pragma region PRIVATE APIs - Stack
+
+//Stack not generalized. By now just managing size_t items for implenting Iterative QuickSort 
+typedef struct __clove_stack_t {
+    unsigned char* items;
+    size_t capacity;
+    size_t count;
+    size_t item_size;
+} __clove_stack_t;
+
+static void __clove_stack_init(__clove_stack_t* stack, size_t initial_capacity) {
+    stack->capacity = initial_capacity;
+    stack->count = 0;
+    stack->item_size = sizeof(size_t);
+    stack->items = (unsigned char*)malloc( stack->item_size * stack->capacity);
+}
+
+static bool __clove_stack_is_empty(__clove_stack_t* stack) {    
+    return stack->count == 0;
+}
+
+static void __clove_stack_push(__clove_stack_t* stack, size_t item) {    
+    if (stack->count == stack->capacity) {
+        stack->capacity *= 2;
+        stack->items = (unsigned char*)realloc(stack->items, stack->item_size * stack->capacity);
+    }
+    size_t byte_index = stack->count * stack->item_size;
+    size_t* item_ptr = (size_t*)&(stack->items[byte_index]);
+    *item_ptr = item;
+    stack->count++;
+}
+
+static size_t __clove_stack_pop(__clove_stack_t* stack) {    
+    if (stack->count == 0) return -1; //shouldn't happen
+        
+    size_t byte_index = (stack->count-1) * stack->item_size;
+    size_t* item_ptr = (size_t*)&(stack->items[byte_index]);
+    stack->count--;
+    return *item_ptr;
+}
+
+#pragma endregion
+
 #pragma region PRIVATE APIs - Vector
 typedef struct __clove_vector_params_t {
     size_t item_size;
@@ -174,13 +217,47 @@ static size_t __clove_vector_quicksort_partition(__clove_vector_t* vector, int (
 static void __clove_vector_quicksort_recurs(__clove_vector_t* vector, int (*comparator)(void*, void*), size_t start_index, size_t end_index) {
     if (start_index >= end_index) return;
     size_t pivot_index = __clove_vector_quicksort_partition(vector, comparator, start_index, end_index);  //find pivot and put it in right position
-    __clove_vector_quicksort_recurs(vector, comparator, start_index, pivot_index - 1);      //sort left array
+    if (pivot_index != 0) {
+        __clove_vector_quicksort_recurs(vector, comparator, start_index, pivot_index - 1);      //sort left array
+    }
     __clove_vector_quicksort_recurs(vector, comparator, pivot_index + 1, end_index);        //sort left array
 }
 
 
+static void __clove_vector_quicksort_iterative(__clove_vector_t* vector, int (*comparator)(void*, void*), size_t start_index, size_t end_index) {
+    __clove_stack_t index_pairs_stack;
+    __clove_stack_init(&index_pairs_stack, 10);
+
+    __clove_stack_push(&index_pairs_stack, start_index);
+    __clove_stack_push(&index_pairs_stack, end_index);
+
+    while(!__clove_stack_is_empty(&index_pairs_stack)) {
+        end_index = __clove_stack_pop(&index_pairs_stack);
+        start_index = __clove_stack_pop(&index_pairs_stack);
+
+        if (start_index >= end_index) continue;
+
+        size_t pivot_index = __clove_vector_quicksort_partition(vector, comparator, start_index, end_index);  //find pivot and put it in right position
+
+        //left array indexes
+        if (pivot_index != 0) { //protect size_t overflow (for instance this happen for already sorted items)
+            __clove_stack_push(&index_pairs_stack, start_index);
+            __clove_stack_push(&index_pairs_stack, pivot_index  - 1);
+        }
+
+        //right array indexes
+        if (pivot_index != SIZE_MAX) { //protect size_t overflow (for symmetry)
+            __clove_stack_push(&index_pairs_stack, pivot_index + 1);
+            __clove_stack_push(&index_pairs_stack, end_index);
+        }
+    }       
+}
+
 static void __clove_vector_sort(__clove_vector_t* vector, int (*comparator)(void*, void*)) {
-   __clove_vector_quicksort_recurs(vector, comparator, 0, __clove_vector_count(vector) - 1);
+    if (vector->count <= 1) return;
+   __clove_vector_quicksort_iterative(vector, comparator, 0, __clove_vector_count(vector) - 1);
+   //__clove_vector_quicksort_recurs(vector, comparator, 0, __clove_vector_count(vector) - 1);
+   //__clove_vector_bubblesort(vector, comparator);
 }
 #pragma endregion //Vector
 
