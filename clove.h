@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #pragma region PRIVATE APIs - Stack
 
@@ -59,6 +60,15 @@ static size_t __clove_stack_pop(__clove_stack_t* stack) {
     size_t* item_ptr = (size_t*)&(stack->items[byte_index]);
     stack->count--;
     return *item_ptr;
+}
+
+static void __clove_stack_free(__clove_stack_t* stack) {    
+    if (!stack) return;        
+    free(stack->items);
+    stack->items = NULL;
+    stack->capacity = 0;
+    stack->count = 0;
+    stack->item_size = 0;
 }
 
 #pragma endregion
@@ -253,12 +263,13 @@ static void __clove_vector_quicksort_iterative(__clove_vector_t* vector, int (*c
             __clove_stack_push(&index_pairs_stack, pivot_index + 1);
             __clove_stack_push(&index_pairs_stack, end_index);
         }
-    }       
+    }
+    __clove_stack_free(&index_pairs_stack);      
 }
 
 static void __clove_vector_sort(__clove_vector_t* vector, int (*comparator)(void*, void*)) {
     if (vector->count <= 1) return;
-   __clove_vector_quicksort_iterative(vector, comparator, 0, __clove_vector_count(vector) - 1);
+   __clove_vector_quicksort_iterative(vector, comparator, 0, vector->count - 1);
 }
 #pragma endregion //Vector
 
