@@ -1,6 +1,6 @@
 /* 
  * clove-unit
- * v2.1.2 (autodiscovery experimental: PE + MACH-O 64 + ELF 64)
+ * v2.1.2
  * Unit Testing library for C
  * https://github.com/fdefelici/clove-unit
  * 
