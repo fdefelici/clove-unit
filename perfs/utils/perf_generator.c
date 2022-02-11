@@ -2,6 +2,14 @@
 #include <string.h>
 #include <stdlib.h>
 
+#ifndef _WIN32
+#define strtok_s(str, delimiters, context) strtok_r(str, delimiters, context)
+#define strncpy_s(strDest, numberOfElements, strSource, count) strncpy(strDest, strSource, count) == NULL
+#define strcpy_s(dest, dest_size, src) strcpy(dest, src) == NULL
+#define _strdup strdup
+#endif
+
+
 void write_suite_header(const char* name, FILE* file) {
     fprintf(file, "#define CLOVE_SUITE_NAME %s\n", name);
     fputs("#include \"clove.h\"\n", file);
@@ -32,7 +40,7 @@ const char* base_path(const char* path) {
 
 int main(int argc, char* argv[]) {
 
-    char* path = base_path(argv[0]);
+    const char* path = base_path(argv[0]);
     char* file_path = (char*)calloc(strlen(path) + 2 + strlen("perf_test.c"), sizeof(char));
     strcat(file_path, path);
     strcat(file_path, "\\perf_test.c");

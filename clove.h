@@ -199,7 +199,7 @@ static size_t __clove_vector_quicksort_partition(__clove_vector_t* vector, int (
 
 static void __clove_vector_quicksort_iterative(__clove_vector_t* vector, int (*comparator)(void*, void*), size_t start_index, size_t end_index) {
     __clove_stack_t index_pairs_stack;
-    __clove_stack_init(&index_pairs_stack, 10);
+    __clove_stack_init(&index_pairs_stack, vector->count);
 
     __clove_stack_push(&index_pairs_stack, start_index);
     __clove_stack_push(&index_pairs_stack, end_index);
