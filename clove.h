@@ -999,6 +999,12 @@ static int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clo
     if (__clove_symbols_macos_open_module_handle(module_path, &module) != 0) { return 1; };
 
     //Handling Mach-o file format x86_64 (little endian). This should works both for Intel and M1 cpus with 64 bits architecture
+    uint32_t magic_number = *(uint32_t*)module.handle;
+    if (magic_number == MH_MAGIC_64)  {
+        puts("Current executable format is not supported (it's not Mach-o 64bit little-endian!");
+        return 2; 
+    } 
+    
     struct mach_header_64* header = (struct mach_header_64*)module.handle; 
     struct load_command* symbol_lc = __clove_symbols_macos_find_command(header, LC_SYMTAB);
     struct symtab_command* symbol_cmd = (struct symtab_command*)symbol_lc;
@@ -1218,8 +1224,10 @@ int main(int argc, char* argv[]) {\
     context.last_suite = NULL; \
     context.prefix_length = strlen("__clove_sym___"); \
     context.tests_count = 0; \
-    __clove_symbols_for_each_function_by_prefix("__clove_sym___", __clove_symbols_function_collect, &context); \
-    __clove_exec_suites((__clove_suite_t*)(context.suites.items), context.suites_count, context.tests_count); \
+    int result = __clove_symbols_for_each_function_by_prefix("__clove_sym___", __clove_symbols_function_collect, &context); \
+    if (result == 0) { \
+        __clove_exec_suites((__clove_suite_t*)(context.suites.items), context.suites_count, context.tests_count); \
+    } \
     free(__clove_exec_base_path); \
     __clove_vector_free(&context.suites); \
     return 0;\
