@@ -1143,6 +1143,17 @@ static int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clo
     __clove_symbols_bsd_module_t module;
     if (__clove_symbols_bsd_open_module_handle(module_path, &module) != 0) { return 1; }
 
+    //Check Elf header to be 64 bit little endian
+    unsigned char* magic = (unsigned char*)module.handle;
+    bool is_elf = (magic[0] == 0x7f && magic[1] == 0x45 && magic[2] == 0x4c && magic[3] == 0x46 );
+    bool is_64 = (magic[4] == 0x02); //0x01 is 32 bit
+    bool is_little = (magic[5] == 0x01); //0x02 is big endian
+    
+    if (!(is_elf && is_64 && is_little)) {
+        puts("Current executable format is not supported (it's not ELF 64bit little-endian!");
+        return 2; 
+    }
+
     Elf64_Ehdr* header = (Elf64_Ehdr*)module.handle; 
     
     Elf64_Shdr* sections = (Elf64_Shdr*)( (uint64_t)header + header->e_shoff);
