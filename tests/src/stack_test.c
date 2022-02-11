@@ -1,9 +1,6 @@
 #define CLOVE_SUITE_NAME StackTest
 #include "clove.h"
 
-
-
-
 CLOVE_TEST(StackInitialization) {
     __clove_stack_t stack;
     __clove_stack_init(&stack, 2);

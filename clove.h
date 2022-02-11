@@ -155,30 +155,6 @@ static void __clove_vector_swap(__clove_vector_t* vector, size_t index1, size_t 
     __clove_vector_set(vector, index2, vector->swap_temp);
 }
 
-static void __clove_vector_bubblesort(__clove_vector_t* vector, int (*comparator)(void*, void*)) {
-    bool has_swap = true;
-    
-    //void* temp = malloc(vector->item_size);
-    
-    while(has_swap) {
-        has_swap = false;
-        for(size_t i=0; i< __clove_vector_count(vector) - 1; ++i) {
-            void* curr = __clove_vector_get(vector, i);
-            void* next = __clove_vector_get(vector, i+1);
-            int result = comparator(curr, next);
-            if (result > 0) {
-                //memcpy(temp, curr, vector->item_size);
-                //__clove_vector_set(vector, i, next);
-                //__clove_vector_set(vector, i + 1, temp);
-                __clove_vector_swap(vector, i, i + 1);
-                has_swap = true;
-            }
-        }
-    }
-    
-    //free(temp);
-}
-
 //QuickSort
 static size_t __clove_vector_quicksort_partition(__clove_vector_t* vector, int (*comparator)(void*, void*), size_t start_index, size_t end_index) {
     size_t pivot_index = start_index;
@@ -199,8 +175,6 @@ static size_t __clove_vector_quicksort_partition(__clove_vector_t* vector, int (
 
         if (pivot_index != right_index) { 
             __clove_vector_swap(vector, pivot_index, right_index);
-            //vector->items[pivot_index] = item;
-            //vector->items[right_index] = pivot;
             pivot_index = right_index;
         }
 
@@ -217,25 +191,11 @@ static size_t __clove_vector_quicksort_partition(__clove_vector_t* vector, int (
 
         if (pivot_index != left_index) {  
             __clove_vector_swap(vector, pivot_index, left_index);
-            //vect->items[pivot_index] = item;
-            //vect->items[left_index] = pivot;
             pivot_index = left_index;
         }
     }
     return pivot_index;
 }
-
-static void __clove_vector_quicksort_recurs(__clove_vector_t* vector, int (*comparator)(void*, void*), size_t start_index, size_t end_index) {
-    if (start_index >= end_index) return;
-    size_t pivot_index = __clove_vector_quicksort_partition(vector, comparator, start_index, end_index);  //find pivot and put it in right position
-    if (pivot_index != 0) {
-        __clove_vector_quicksort_recurs(vector, comparator, start_index, pivot_index - 1);      //sort left array
-    }
-    if (pivot_index != SIZE_MAX) {
-        __clove_vector_quicksort_recurs(vector, comparator, pivot_index + 1, end_index);        //sort left array
-    }
-}
-
 
 static void __clove_vector_quicksort_iterative(__clove_vector_t* vector, int (*comparator)(void*, void*), size_t start_index, size_t end_index) {
     __clove_stack_t index_pairs_stack;
@@ -250,7 +210,8 @@ static void __clove_vector_quicksort_iterative(__clove_vector_t* vector, int (*c
 
         if (start_index >= end_index) continue;
 
-        size_t pivot_index = __clove_vector_quicksort_partition(vector, comparator, start_index, end_index);  //find pivot and put it in right position
+         //find pivot and put it in right position
+        size_t pivot_index = __clove_vector_quicksort_partition(vector, comparator, start_index, end_index); 
 
         //left array indexes
         if (pivot_index != 0) { //protect size_t overflow (for instance this happen for already sorted items)
