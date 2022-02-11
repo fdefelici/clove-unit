@@ -1,2 +1,10 @@
+#VSSTUDIO
+.vs/
+out/
+
+#VSCODE
 .vscode/
 build/
+
+#MAC OS
+.DS_Store
