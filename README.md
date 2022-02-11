@@ -1,9 +1,9 @@
-# Clove
-Clove is a unit testing single-header library for C, with test autodiscovery feature.
+# CLove-Unit
+CLove is a unit testing single-header library for C, with test autodiscovery feature.
 
-Run your tests, gathering information about positives and failures (file, line, reason), with a colored syntax (if supported by your shell).
+The aim of this library is to reduce at the minimum the boilder-plate and just focus on unit test development (such as adding manually the tests to an execution list).
 
-> Note: By now, Test Autodiscovery is available for Windows and MacOS users. 
+CLove is able to discover and run your tests, gathering information about positives and failures (file, line, reason), with a colored syntax (if supported by your shell).
 
 ![Clove test run result](./examples/result.png)
 
@@ -15,10 +15,16 @@ The library is implemented around the following concepts:
 - **Runner**: a runner allow execution of a set of Suites and provide results
 
 It is possible to use this libray in two flavours:
-- **Manual** mode, where you have to explicitly register suites/tests for execution, with the advantadge that almost everything is "calculated" at compile time (this is the only feature available for Non-Windows users)
-- **Autodiscovery** mode, where you just need to implement your tests, and than the library will do the magic to discover and execute them. (available for Windows and MacOS users only)
+- **Manual** mode, where you have to explicitly register suites/tests for execution, with the advantadge that almost everything is "calculated" at compile time (but more work to do manually)
+- **Autodiscovery** mode, where you just need to implement your tests, and than the library will do the magic to discover and execute them. 
 
-| Basically only Windows and MacOS users can use both "Manual" or "Autodiscovery", by now.
+> NOTE: **Autodiscovery** works parsing the symbol table in the test executable. At the moment this feature is available for the following OS / Architecture / Executable Format:
+> - Windows / 64 bit little-endian / PE (Portable Executable)
+> - MacOS / 64 bit little-endian / Mach-o (Mach Object)
+> - Linux / 64 bit little-endian / ELF (Executable and Linkable Format)
+> 
+> Further compatibilities in terms of OS, Architecture and Format can be implement later on as needed.
+
 
 # Usage
 Just add [clove.h](./clove.h) header in your project and starts creating unit tests for your code depending on the two modes: **Manual** and **Autodiscovery**
@@ -27,6 +33,7 @@ Just add [clove.h](./clove.h) header in your project and starts creating unit te
 First define a Suite and related test cases:
 ```c
 //file test_suite1.h
+#define CLOVE_ENABLE_MANUAL
 #include "clove.h"
 
 CLOVE_TEST(FirstTest) {
@@ -51,6 +58,7 @@ Than include the test suite files in the one that will be the main program and e
 
 ```c
 //file main.c
+#define CLOVE_ENABLE_MANUAL
 #include "clove.h"
 #include "test_suite1.h"
 #include "test_suite2.h"
@@ -66,10 +74,8 @@ CLOVE_RUNNER(TestSuite1, TestSuite2)
 ## Autodiscovery Mode
 First define a Suite name and then implement related test cases:
 
-> By now, only for Windows and MacOS users
-
 ```c
-//file test_suite1.h
+//file test_suite1.c
 #define CLOVE_SUITE_NAME MySuite01
 #include "clove.h"
 
@@ -88,7 +94,6 @@ Than setup a translation unit to be the main program with autodiscovery feature:
 
 ```c
 //file main.c
-#define CLOVE_ENABLE_AUTODISCOVERY
 #include "clove.h"
 
 CLOVE_RUNNER()
@@ -100,7 +105,7 @@ CLOVE_RUNNER()
 > - assertions works the same as the [manual example](./examples/manual).
 
 # Apis
-Here a list of availables apis
+Here a list of availables "public" apis.
 ## Test Definition
 Apis to be used for defining suite and tests.
 
@@ -108,6 +113,7 @@ Apis to be used for defining suite and tests.
 Available apis when in manual mode:
 | Api | Description |
 | ------------- | ------------- |
+| CLOVE_ENABLE_MANUAL  | Macro to be put before including clove header to enable manual mode |
 | CLOVE_RUNNER(...)  | List test suites to run (implemented with CLOVE_SUITE) and generate program entry point  |
 | CLOVE_SUITE(name)  | Define test suite named "name" |
 | CLOVE_SUITE_DECL(name)  | Forward declaring a suite named "name" (Optional) |
@@ -116,7 +122,7 @@ Available apis when in manual mode:
 | CLOVE_SUITE_SETUP(func_name)  | Assign a function `void func_name()` to be executed before each test case (Optional. To be used within CLOVE_SUITE(Name) block) |
 | CLOVE_SUITE_TEARDOWN(func_name)  | Assign a function `void func_name()` to be executed after each test case (Optional. To be used within CLOVE_SUITE(Name) block) |
 | CLOVE_SUITE_TESTS(...)  | Assign a list of test defined with ```CLOVE_TEST(Name)``` to the suite (To be used within ```CLOVE_SUITE(Name)``` block) |
-| CLOVE_TEST(Name)  | Define test case named "Name" |
+| CLOVE_TEST(name)  | Define test case named "name" |
 
 
 ### Autodiscovery Mode
@@ -173,5 +179,5 @@ Assertions that can be used within a ```CLOVE_TEST```
 Helper apis to support test implementation
 | Api | Description |
 | ------------- | ------------- |
-| CLOVE_EXEC_PATH  | Macro to easily retrive executable path |
-| CLOVE_EXEC_BASE_PATH  | Macro to easily retrive executable base path |
+| CLOVE_EXEC_PATH()  | Macro to easily retrive executable path |
+| CLOVE_EXEC_BASE_PATH() | Macro to easily retrive executable base path |

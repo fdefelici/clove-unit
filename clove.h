@@ -1054,15 +1054,15 @@ static int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clo
 #include <elf.h>
 #include <link.h>
 
-typedef struct __clove_symbols_bsd_module_t {
+typedef struct __clove_symbols_lixux_module_t {
     void* handle;
     size_t size; //mmap handle size;
     uintptr_t address; //module base address 
-} __clove_symbols_bsd_module_t;
+} __clove_symbols_lixux_module_t;
 
-static int __clove_symbols_bsd_dl_callback(struct dl_phdr_info *info, size_t size, void *data)
+static int __clove_symbols_lixux_dl_callback(struct dl_phdr_info *info, size_t size, void *data)
 {
-  const char *cb = (const char *)&__clove_symbols_bsd_dl_callback;
+  const char *cb = (const char *)&__clove_symbols_lixux_dl_callback;
   const char *base = (const char *)info->dlpi_addr;
   const ElfW(Phdr) *first_load = NULL;
 
@@ -1086,14 +1086,14 @@ static int __clove_symbols_bsd_dl_callback(struct dl_phdr_info *info, size_t siz
   return 0;
 }
 
-static uintptr_t __clove_symbols_bsd_base_addr(const char* path)
+static uintptr_t __clove_symbols_lixux_base_addr(const char* path)
 {
     uintptr_t base_addr;
-    dl_iterate_phdr(__clove_symbols_bsd_dl_callback, &base_addr);
+    dl_iterate_phdr(__clove_symbols_lixux_dl_callback, &base_addr);
     return base_addr;
 }
 
-static int __clove_symbols_bsd_open_module_handle(const char* module_path, __clove_symbols_bsd_module_t* out_module) {
+static int __clove_symbols_lixux_open_module_handle(const char* module_path, __clove_symbols_lixux_module_t* out_module) {
     int fd;
     if ((fd = open(module_path, O_RDONLY)) < 0) {
         return 1;
@@ -1114,11 +1114,11 @@ static int __clove_symbols_bsd_open_module_handle(const char* module_path, __clo
 
     out_module->handle = map;
     out_module->size = st.st_size;
-    out_module->address = __clove_symbols_bsd_base_addr(module_path);
+    out_module->address = __clove_symbols_lixux_base_addr(module_path);
     return 0;
 }
 
-static void __clove_symbols_bsd_close_module_handle(__clove_symbols_bsd_module_t* module) {
+static void __clove_symbols_lixux_close_module_handle(__clove_symbols_lixux_module_t* module) {
     munmap(module->handle, module->size);
     module->handle = NULL;
     module->size = 0;
@@ -1140,8 +1140,8 @@ static int __clove_symbols_funct_name_comparator(void* f1, void* f2) {
 static int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symbols_function_action action, __clove_symbols_context_t* action_context) {
     const char* module_path = __clove_exec_path;
 
-    __clove_symbols_bsd_module_t module;
-    if (__clove_symbols_bsd_open_module_handle(module_path, &module) != 0) { return 1; }
+    __clove_symbols_lixux_module_t module;
+    if (__clove_symbols_lixux_open_module_handle(module_path, &module) != 0) { return 1; }
 
     //Check Elf header to be 64 bit little endian
     unsigned char* magic = (unsigned char*)module.handle;
@@ -1206,7 +1206,7 @@ static int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clo
         //puts(each_funct->name);
     }
     __clove_vector_free(&clove_functions);
-    __clove_symbols_bsd_close_module_handle(&module);
+    __clove_symbols_lixux_close_module_handle(&module);
     return 0;
 }
 #else 
@@ -1244,6 +1244,14 @@ int main(int argc, char* argv[]) {\
     return 0;\
 }
 
+static const char* __clove_get_exec_path() {
+    return __clove_exec_path;
+}
+static const char* __clove_get_exec_base_path() {
+    return __clove_exec_base_path;
+}
+
+
 #ifdef _WIN32
     #define __CLOVE_API_EXPORT __declspec(dllexport)
 #else 
@@ -1267,11 +1275,11 @@ int main(int argc, char* argv[]) {\
 /*
  * Provide the executable path
  */
-#define CLOVE_EXEC_PATH __clove_exec_base_path
+#define CLOVE_EXEC_PATH() __clove_get_exec_path()
 /*
  * Provide the executable base path
  */
-#define CLOVE_EXEC_BASE_PATH __clove_exec_base_path
+#define CLOVE_EXEC_BASE_PATH() __clove_get_exec_base_path()
 #pragma endregion //UTILS
 
 #pragma region Public APIs - ASSERTIONS
@@ -1306,7 +1314,7 @@ int main(int argc, char* argv[]) {\
 #pragma endregion //ASSERTIONS
 
 
-#if defined(CLOVE_ENABLE_AUTODISCOVERY) || defined(CLOVE_SUITE_NAME)
+#if !defined(CLOVE_ENABLE_MANUAL) || defined(CLOVE_SUITE_NAME)
     #define __CLOVE_MODE_AUTO
 #else 
     #define __CLOVE_MODE_MANUAL

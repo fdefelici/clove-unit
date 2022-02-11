@@ -1,3 +1,4 @@
+#define CLOVE_ENABLE_MANUAL
 #include "clove.h"
 
 CLOVE_TEST(FirstTest) {
