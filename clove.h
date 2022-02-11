@@ -1000,7 +1000,7 @@ static int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clo
 
     //Handling Mach-o file format x86_64 (little endian). This should works both for Intel and M1 cpus with 64 bits architecture
     uint32_t magic_number = *(uint32_t*)module.handle;
-    if (magic_number == MH_MAGIC_64)  {
+    if (magic_number != MH_MAGIC_64)  {
         puts("Current executable format is not supported (it's not Mach-o 64bit little-endian!");
         return 2; 
     } 
