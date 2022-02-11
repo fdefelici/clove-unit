@@ -1004,7 +1004,7 @@ static int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clo
         puts("Current executable format is not supported (it's not Mach-o 64bit little-endian!");
         return 2; 
     } 
-    
+
     struct mach_header_64* header = (struct mach_header_64*)module.handle; 
     struct load_command* symbol_lc = __clove_symbols_macos_find_command(header, LC_SYMTAB);
     struct symtab_command* symbol_cmd = (struct symtab_command*)symbol_lc;
