@@ -1,7 +1,7 @@
 # CLove-Unit
 CLove is a unit testing single-header library for C, with test autodiscovery feature.
 
-The aim of this library is to reduce at the minimum the boilder-plate and just focus on unit test development (such as adding manually the tests to an execution list).
+The aim of this library is to reduce at the minimum the boilder-plate and just focus on unit test development (such as avoiding to register manually the tests to an execution list).
 
 CLove is able to discover and run your tests, gathering information about positives and failures (file, line, reason), with a colored syntax (if supported by your shell).
 
