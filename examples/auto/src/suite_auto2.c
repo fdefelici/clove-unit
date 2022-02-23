@@ -7,3 +7,15 @@ CLOVE_TEST(FailingTest) {
     CLOVE_INT_EQ(a, b);
 }
 
+
+CLOVE_TEST(ChecNotNull) {
+    int* null_ptr = NULL;
+    CLOVE_NOT_NULL(null_ptr);
+}
+
+
+CLOVE_TEST(CheckNull) {
+    int myvalue = 1;
+    CLOVE_NULL(&myvalue);
+}
+
