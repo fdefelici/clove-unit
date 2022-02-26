@@ -1,6 +1,6 @@
 /*
  * clove-unit
- * v2.1.3
+ * v2.X.X (vscode-clove-ext)
  * Unit Testing library for C
  * https://github.com/fdefelici/clove-unit
  *
@@ -12,6 +12,12 @@
 #ifdef __linux
 #define _GNU_SOURCE
 #endif 
+
+#ifdef _WIN32
+    #define __CLOVE_PATH_SEPARATOR '\\'
+#else 
+    #define __CLOVE_PATH_SEPARATOR '/'
+#endif //_WIN32
 
 #pragma region PRIVATE APIs
 #include <stdio.h>
@@ -247,6 +253,35 @@ static void __clove_vector_sort(__clove_vector_t* vector, int (*comparator)(void
 #define sprintf_s(dest, dest_size, format, ...) sprintf(dest, format, __VA_ARGS__)
 #endif
 
+typedef union __clove_generic_u {
+    bool               _bool;
+    char               _char;
+    int                _int;
+    unsigned int       _uint;
+    long               _long;
+    unsigned long      _ulong;
+    long long          _llong;
+    unsigned long long _ullong;
+    float              _float;
+    double             _double;
+    const char*        _string;
+    void*              _ptr;
+} __clove_generic_u;
+
+typedef enum __clove_generic_type_e {
+    __CLOVE_GENERIC_BOOL,
+    __CLOVE_GENERIC_CHAR,
+    __CLOVE_GENERIC_INT,
+    __CLOVE_GENERIC_UINT,
+    __CLOVE_GENERIC_LONG,
+    __CLOVE_GENERIC_ULONG,
+    __CLOVE_GENERIC_LLONG,
+    __CLOVE_GENERIC_ULLONG,
+    __CLOVE_GENERIC_FLOAT,
+    __CLOVE_GENERIC_DOUBLE,
+    __CLOVE_GENERIC_STRING,
+    __CLOVE_GENERIC_PTR
+} __clove_generic_type_e;
 
 typedef struct __clove_test_t {
     //char name[__CLOVE_TEST_ENTRY_LENGTH];
@@ -256,6 +291,9 @@ typedef struct __clove_test_t {
     char file_name[__CLOVE_STRING_LENGTH];
     unsigned int line;
     char err_msg[__CLOVE_STRING_LENGTH];
+    __clove_generic_type_e check_type;
+    __clove_generic_u check_expected;
+    __clove_generic_u check_actual;
 } __clove_test_t;
 
 typedef struct __clove_suite {
@@ -347,6 +385,202 @@ static void __clove_vector_suite_dtor_manual(void* suite_ptr) {
 #define __CLOVE_SKIPPED "[\x1b[33mSKIP\x1b[0m]"
 #define __CLOVE_FAILED "[\x1b[1;31mFAIL\x1b[0m]"
 
+static void __clove_setup_ansi_console();
+
+static void __clove_pad_right(char* result, char* strToPad) {
+    int targetStrLen = __CLOVE_TEST_ENTRY_LENGTH;           // Target output length  
+    const char* padding = "...................................................................................";
+
+    int padLen = targetStrLen - (int)strlen(strToPad); // Calc Padding length
+    if (padLen < 0) padLen = 0;    // Avoid negative length
+
+    // FORMAT SPECIFIER: https://www.tutorialspoint.com/format-specifiers-in-c
+    // %* => minimal length taken from the padding string
+    // .* => precision, exact length of the string taken from the padding string
+    sprintf_s(result, __CLOVE_STRING_LENGTH, "%s%*.*s", strToPad, padLen, padLen, padding);  // LEFT Padding 
+}
+
+typedef struct __clove_report_t {
+    void (*start)(struct __clove_report_t* this, int suite_count, int test_count);
+    void (*end)(struct __clove_report_t* this, int test_count, int passed, int skipped, int failed);
+    void (*test_executed)(struct __clove_report_t* this, __clove_suite_t* suite, __clove_test_t* test, size_t test_number);
+    bool is_initialized;
+} __clove_report_t;
+
+static void __clove_report_console_start(__clove_report_t* this, int suite_count, int test_count) {
+    __clove_setup_ansi_console();
+
+    printf("%s Executing Test Runner in 'Fail Safe Verbose' mode\n", __CLOVE_INFO);
+    printf("%s Suite / Tests found: %d / %d \n", __CLOVE_INFO, suite_count, test_count);
+}
+
+static void __clove_report_console_end(__clove_report_t* this, int test_count, int passed, int skipped, int failed) {
+    printf("%s Total: %d, Passed: %d, Failed: %d, Skipped: %d\n", __CLOVE_INFO, test_count, passed, failed, skipped);
+    if (passed == test_count) { printf("%s Test result => SUCCESS :-)\n", __CLOVE_INFO); }
+    else if (failed > 0) { printf("%s Test result => FAILURE :_(\n", __CLOVE_ERRO); }
+    else if (skipped > 0) { printf("%s Test result => OK, but some test has been skipped!\n", __CLOVE_WARN); }
+}
+
+static void __clove_report_console_test_executed(struct __clove_report_t* this, __clove_suite_t* suite, __clove_test_t* test, size_t test_number) {
+    char result[__CLOVE_STRING_LENGTH], strToPad[__CLOVE_TEST_ENTRY_LENGTH];
+    snprintf(strToPad, __CLOVE_TEST_ENTRY_LENGTH, "%llu) %s.%s", test_number, suite->name, test->name);
+    __clove_pad_right(result, strToPad);
+
+    if (test->result == __CLOVE_TEST_PASSED) {
+        printf("%s %s%s\n", __CLOVE_INFO, result, __CLOVE_PASSED);
+    } else if (test->result == __CLOVE_TEST_FAILED) {
+        char msg[__CLOVE_STRING_LENGTH] = "ERROR but NO MESSAGE!!!";
+
+        switch (test->check_type)
+        {
+        case __CLOVE_GENERIC_BOOL:
+            const char* expected = test->check_expected._bool ? "true" : "false";
+            const char* actual = test->check_actual._bool ? "true" : "false";
+            sprintf_s(msg, sizeof(msg), "expected [%s] but was [%s]", expected, actual);
+            break;
+        case __CLOVE_GENERIC_INT:
+            sprintf_s(msg, sizeof(msg), "expected [%d] but was [%d]", test->check_expected._int, test->check_actual._int);
+            break;
+        default:
+            break;
+        }
+
+
+        printf("%s %s%s => %s@%d: %s\n", __CLOVE_ERRO, result, __CLOVE_FAILED, test->file_name, test->line, msg);
+    } else if (test->result == __CLOVE_TEST_SKIPPED) {
+        printf("%s %s%s\n", __CLOVE_WARN, result, __CLOVE_SKIPPED);
+    }
+}
+
+static __clove_report_t* __clove_report_console() {
+    static __clove_report_t result = { .is_initialized = false };
+    if (!result.is_initialized) {
+        result.start = __clove_report_console_start;
+        result.end = __clove_report_console_end;
+        result.test_executed = __clove_report_console_test_executed;
+        result.is_initialized = true;
+    }
+    return &result;
+}
+
+
+static const char* __clove_get_exec_base_path();
+static void __clove_replace_char(char* path, char find, char replace);
+
+static char* __clove_path_concat(const char separator, const char* path1, const char* path2) {
+    size_t count = strlen(path1) + 1 + strlen(path2) + 1;
+    char* path = (char*)calloc(count, sizeof(char));
+    
+    strcat(path, path1);
+    strncat(path, &separator, 1);
+    strcat(path, path2);
+
+    __clove_replace_char(path, '/', separator);
+    __clove_replace_char(path, '\\', separator);
+
+    return path;
+}
+
+static char* __clove_get_exec_abs_path(const char* rel_path) {
+    const char* base_path =  __clove_get_exec_base_path();
+    char* abs_path = __clove_path_concat(__CLOVE_PATH_SEPARATOR, base_path, rel_path);
+    return abs_path;
+}
+
+typedef struct __clove_report_json_t {
+    __clove_report_t base;
+    const char* file_path;
+    FILE* file;
+    __clove_suite_t* current_suite;
+    size_t test_count;
+} __clove_report_json_t;
+
+
+
+static void __clove_report_json_start(__clove_report_t* this, int suite_count, int test_count) {
+    __clove_report_json_t* instance = (__clove_report_json_t*)this;
+    
+    instance->file = fopen(instance->file_path, "wb"); //binary mode so \n will stay \n (and not converted to \r\n on windows)
+    if (instance->file == NULL) { printf("ERROR OPENING FILE: %s\n", instance->file_path); }
+
+    fprintf(instance->file, "{\n");
+    fprintf(instance->file, "\t\"suite_count\" : %d,\n", suite_count);
+    fprintf(instance->file, "\t\"test_count\" : %d,\n", test_count);
+    fprintf(instance->file, "\t\"suites\" : {\n");
+}
+
+static void __clove_report_json_end(__clove_report_t* this, int test_count, int passed, int skipped, int failed) {
+    __clove_report_json_t* instance = (__clove_report_json_t*)this;
+    
+    int status = -1;
+    if (passed == test_count) status = __CLOVE_TEST_PASSED;
+    else if (failed > 0) status = __CLOVE_TEST_FAILED;
+    else if (skipped > 0) status = __CLOVE_TEST_SKIPPED;
+
+    fprintf(instance->file, "\t},\n");
+    fprintf(instance->file, "\t\"test_passed\" : %d,\n", passed);
+    fprintf(instance->file, "\t\"test_skipped\" : %d,\n", skipped);
+    fprintf(instance->file, "\t\"test_failed\" : %d,\n", failed);
+    fprintf(instance->file, "\t\"status\" : %d\n", status);
+    fprintf(instance->file, "}");
+
+    fclose(instance->file);
+}
+
+static void __clove_report_json_test_executed(struct __clove_report_t* this, __clove_suite_t* suite, __clove_test_t* test, size_t test_number) {
+    __clove_report_json_t* instance = (__clove_report_json_t*)this;
+    //case for suites > 1
+    if (instance->current_suite != NULL && instance->current_suite != suite) {
+        fseek(instance->file, -1L, SEEK_CUR); //replacing "\n" with ",\n"
+        fprintf(instance->file, ",\n");
+    }
+
+    if (instance->current_suite == NULL || instance->current_suite != suite) {
+        char escaped_file[__CLOVE_STRING_LENGTH];
+        strcpy_s(escaped_file, __CLOVE_STRING_LENGTH, test->file_name);
+        __clove_replace_char(escaped_file, '\\', '/');
+
+        fprintf(instance->file, "\t\t\"%s\" : {\n", suite->name);
+        fprintf(instance->file, "\t\t\t\"_data\" : {\n");
+        fprintf(instance->file, "\t\t\t\t\"file\" : \"%s\"\n", escaped_file);
+        fprintf(instance->file, "\t\t\t},\n");
+        instance->current_suite = suite;
+        instance->test_count = 0;
+    }
+
+    instance->test_count++;
+    fprintf(instance->file, "\t\t\t\"%s\" : {\n", test->name);
+    fprintf(instance->file, "\t\t\t\t\"status\" : %d", test->result);
+    if (test->result == __CLOVE_TEST_FAILED) {
+        fprintf(instance->file, ",\n");
+        fprintf(instance->file, "\t\t\t\t\"line\" : %lu,\n", test->line);
+        fprintf(instance->file, "\t\t\t\t\"message\" : \"%s\"\n", test->err_msg);
+    } else {
+        fprintf(instance->file, "\n");
+    }
+    fprintf(instance->file, "\t\t\t}");
+
+
+    if (instance->test_count < suite->test_count) {
+        fprintf(instance->file, ",\n");
+    } else {
+        fprintf(instance->file, "\n");
+        fprintf(instance->file, "\t\t}\n"); //close suite
+    }
+}
+
+static __clove_report_json_t* __clove_report_json() {
+    static __clove_report_json_t result = { .base.is_initialized = false };
+    if (!result.base.is_initialized) {
+        result.base.start = __clove_report_json_start;
+        result.base.end = __clove_report_json_end;
+        result.base.test_executed = __clove_report_json_test_executed;
+        result.file_path = __clove_get_exec_abs_path("clove_report.json");
+        result.current_suite = NULL;
+        result.test_count = 0;
+    }
+    return &result;
+}
 
 static void __clove_fail(char* msg, __clove_test_t* _this) {
     _this->result = __CLOVE_TEST_FAILED;
@@ -359,17 +593,25 @@ static void __clove_pass(char* msg, __clove_test_t* _this) {
 }
 
 static void __clove_check_int(const unsigned int check_mode, int expected, int result, __clove_test_t* _this) {
-    int pass_scenario = 0;
+    bool pass_scenario = false;
     if (check_mode == __CLOVE_ASSERT_CHECK_EQUALITY) { pass_scenario = expected == result; }
     else if (check_mode == __CLOVE_ASSERT_CHECK_DIFFERENCE) { pass_scenario = expected != result; }
 
     if (pass_scenario) {
-        __clove_pass("", _this);
+//        __clove_pass("", _this);
+        _this->result = __CLOVE_TEST_PASSED;
     }
     else {
+        /*
         char msg[__CLOVE_STRING_LENGTH];
         sprintf_s(msg, sizeof(msg), "expected [%d] but was [%d]", expected, result);
         __clove_fail(msg, _this);
+        */
+        _this->result = __CLOVE_TEST_FAILED;
+
+        _this->check_type = __CLOVE_GENERIC_INT;
+        _this->check_expected._int = expected;
+        _this->check_actual._int = result;
     }
 }
 
@@ -385,6 +627,10 @@ static void __clove_check_uint(const unsigned int check_mode, unsigned int expec
         char msg[__CLOVE_STRING_LENGTH];
         sprintf_s(msg, sizeof(msg), "expected [%u] but was [%u]", expected, result);
         __clove_fail(msg, _this);
+
+        _this->check_type = __CLOVE_GENERIC_UINT;
+        _this->check_expected._uint = expected;
+        _this->check_actual._uint = result;
     }
 }
 
@@ -400,6 +646,10 @@ static void __clove_check_long(const unsigned int check_mode, long expected, lon
         char msg[__CLOVE_STRING_LENGTH];
         sprintf_s(msg, sizeof(msg), "expected [%ld] but was [%ld]", expected, result);
         __clove_fail(msg, _this);
+
+        _this->check_type = __CLOVE_GENERIC_LONG;
+        _this->check_expected._long = expected;
+        _this->check_actual._long = result;
     }
 }
 
@@ -415,6 +665,10 @@ static void __clove_check_ulong(const unsigned int check_mode, unsigned long exp
         char msg[__CLOVE_STRING_LENGTH];
         sprintf_s(msg, sizeof(msg), "expected [%lu] but was [%lu]", expected, result);
         __clove_fail(msg, _this);
+
+        _this->check_type = __CLOVE_GENERIC_ULONG;
+        _this->check_expected._ulong = expected;
+        _this->check_actual._ulong = result;
     }
 }
 
@@ -430,6 +684,10 @@ static void __clove_check_llong(const unsigned int check_mode, long long expecte
         char msg[__CLOVE_STRING_LENGTH];
         sprintf_s(msg, sizeof(msg), "expected [%lld] but was [%lld]", expected, result);
         __clove_fail(msg, _this);
+        
+        _this->check_type = __CLOVE_GENERIC_LLONG;
+        _this->check_expected._llong = expected;
+        _this->check_actual._llong = result;
     }
 }
 
@@ -445,6 +703,10 @@ static void __clove_check_ullong(const unsigned int check_mode, unsigned long lo
         char msg[__CLOVE_STRING_LENGTH];
         sprintf_s(msg, sizeof(msg), "expected [%llu] but was [%llu]", expected, result);
         __clove_fail(msg, _this);
+        
+        _this->check_type = __CLOVE_GENERIC_ULLONG;
+        _this->check_expected._ullong = expected;
+        _this->check_actual._ullong = result;
     }
 }
 
@@ -460,38 +722,27 @@ static void __clove_check_char(const unsigned int check_mode, char expected, cha
         char msg[__CLOVE_STRING_LENGTH];
         sprintf_s(msg, sizeof(msg), "expected [%c] but was [%c]", expected, result);
         __clove_fail(msg, _this);
+
+        _this->check_type = __CLOVE_GENERIC_CHAR;
+        _this->check_expected._char = expected;
+        _this->check_actual._char = result;
     }
 }
 
 static void __clove_check_bool(const unsigned int check_mode, int result, __clove_test_t* _this) {
-    /*
-        In C standard:
-        - 0 is FALSE
-        - 1 is TRUE
-        NOTE: in practice anything different from 0 is considered TRUE
-    */
-    int pass_scenario = 0;
-    char expectedBool[6];
-    char resultBool[6];
-
-    if (check_mode == __CLOVE_ASSERT_CHECK_TRUE) {
-        pass_scenario = 0 != result; // not(0) is TRUE
-        strcpy_s(expectedBool, 6, "true");
-        strcpy_s(resultBool, 6, "false");
-    }
-    else if (check_mode == __CLOVE_ASSERT_CHECK_FALSE) {
-        pass_scenario = 0 == result; // 0 is FALSE
-        strcpy_s(expectedBool, 6, "false");
-        strcpy_s(resultBool, 6, "true");
-    }
-
+    bool pass_scenario = false;
+    if (check_mode == __CLOVE_ASSERT_CHECK_TRUE) pass_scenario = 0 != result;
+    else if (check_mode == __CLOVE_ASSERT_CHECK_FALSE) pass_scenario = 0 == result;
+    
     if (pass_scenario) {
-        __clove_pass("", _this);
+        _this->result = __CLOVE_TEST_PASSED;
     }
     else {
-        char msg[__CLOVE_STRING_LENGTH];
-        sprintf_s(msg, sizeof(msg), "expected [%s] but was [%s]", expectedBool, resultBool);
-        __clove_fail(msg, _this);
+        _this->result = __CLOVE_TEST_FAILED;
+
+        _this->check_type = __CLOVE_GENERIC_BOOL;
+        _this->check_expected._bool = check_mode == __CLOVE_ASSERT_CHECK_TRUE ? true : false;
+        _this->check_actual._bool = result;
     }
 }
 
@@ -507,6 +758,10 @@ static void __clove_check_null(const unsigned int check_mode, const char* expect
         char msg[__CLOVE_STRING_LENGTH];
         sprintf_s(msg, sizeof(msg), "expected [%s] but was [%p]", expected, result);
         __clove_fail(msg, _this);
+
+        //CHECK MODE?
+        _this->check_type = __CLOVE_GENERIC_PTR;
+        _this->check_actual._ptr = result;
     }
 }
 
@@ -522,6 +777,10 @@ static void __clove_check_ptr(const unsigned int check_mode, void* expected, voi
         char msg[__CLOVE_STRING_LENGTH];
         sprintf_s(msg, sizeof(msg), "expected [%p] but was [%p]", expected, result);
         __clove_fail(msg, _this);
+
+        _this->check_type = __CLOVE_GENERIC_PTR;
+        _this->check_expected._ptr = expected;
+        _this->check_actual._ptr = result;
     }
 }
 
@@ -537,6 +796,10 @@ static void __clove_check_float(const unsigned int check_mode, float expected, f
         char msg[__CLOVE_STRING_LENGTH];
         sprintf_s(msg, sizeof(msg), "expected [%f] but was [%f]", expected, result);
         __clove_fail(msg, _this);
+
+        _this->check_type = __CLOVE_GENERIC_FLOAT;
+        _this->check_expected._float = expected;
+        _this->check_actual._float = result;
     }
 }
 
@@ -553,6 +816,10 @@ static void __clove_check_double(const unsigned int check_mode, double expected,
         sprintf_s(msg, sizeof(msg), "expected [%f] but was [%f]", expected, result);
         __clove_fail(msg, _this);
     }
+
+        _this->check_type = __CLOVE_GENERIC_DOUBLE;
+        _this->check_expected._double = expected;
+        _this->check_actual._double = result;
 }
 
 static void __clove_check_string(const unsigned int check_mode, const char* expected, const char* result, __clove_test_t* _this) {
@@ -567,20 +834,12 @@ static void __clove_check_string(const unsigned int check_mode, const char* expe
         char msg[__CLOVE_STRING_LENGTH];
         sprintf_s(msg, sizeof(msg), "expected [%s] but was [%s]", expected, result);
         __clove_fail(msg, _this);
+
+        //TODO: Evalute if could be better to strdup
+        _this->check_type = __CLOVE_GENERIC_STRING;
+        _this->check_expected._string = expected;
+        _this->check_actual._string = result;
     }
-}
-
-static void __clove_pad_right(char* result, char* strToPad) {
-    int targetStrLen = __CLOVE_TEST_ENTRY_LENGTH;           // Target output length  
-    const char* padding = "...................................................................................";
-
-    int padLen = targetStrLen - (int)strlen(strToPad); // Calc Padding length
-    if (padLen < 0) padLen = 0;    // Avoid negative length
-
-    // FORMAT SPECIFIER: https://www.tutorialspoint.com/format-specifiers-in-c
-    // %* => minimal length taken from the padding string
-    // .* => precision, exact length of the string taken from the padding string
-    sprintf_s(result, __CLOVE_STRING_LENGTH, "%s%*.*s", strToPad, padLen, padLen, padding);  // LEFT Padding 
 }
 
 static const char* __clove_rel_src(const char* path) {
@@ -591,7 +850,7 @@ static const char* __clove_rel_src(const char* path) {
     return subpath + 1;
 }
 
-static void __clove_exec_suite(__clove_suite_t* suite, int test_counter, unsigned int* passed, unsigned int* failed, unsigned int* skipped) {
+static void __clove_exec_suite(__clove_suite_t* suite, int test_counter, unsigned int* passed, unsigned int* failed, unsigned int* skipped, __clove_report_t* report) {
     suite->fixtures.setup_once();
 
     for (int i = 0; i < suite->test_count; i++) {
@@ -602,52 +861,41 @@ static void __clove_exec_suite(__clove_suite_t* suite, int test_counter, unsigne
         each_test->funct(each_test);
         suite->fixtures.teardown();
 
-        char result[__CLOVE_STRING_LENGTH], strToPad[__CLOVE_TEST_ENTRY_LENGTH];
-        snprintf(strToPad, __CLOVE_TEST_ENTRY_LENGTH, "%d) %s.%s", test_counter + i, suite->name, each_test->name);
-
-        __clove_pad_right(result, strToPad);
-
         switch (each_test->result) {
         case __CLOVE_TEST_PASSED: {
             (*passed)++;
-            printf("%s %s%s\n", __CLOVE_INFO, result, __CLOVE_PASSED);
             break;
         }
         case __CLOVE_TEST_FAILED: {
             (*failed)++;
-            printf("%s %s%s => %s@%d: %s\n", __CLOVE_ERRO, result, __CLOVE_FAILED, each_test->file_name, each_test->line, each_test->err_msg);
             break;
         }
         case __CLOVE_TEST_SKIPPED: {
             (*skipped)++;
-            printf("%s %s%s\n", __CLOVE_WARN, result, __CLOVE_SKIPPED);
             break;
         }
         default:
             break;
         }
+        report->test_executed(report, suite, each_test, test_counter + i);
     }
     suite->fixtures.teardown_once();
 }
 
-static void __clove_exec_suites(__clove_suite_t* suites, int suite_count, int test_count) {
-    printf("%s Executing Test Runner in 'Fail Safe Verbose' mode\n", __CLOVE_INFO);
-    printf("%s Suite / Tests found: %d / %d \n", __CLOVE_INFO, suite_count, test_count);
-    unsigned int passed = 0;
-    unsigned int failed = 0;
-    unsigned int skipped = 0;
+static void __clove_exec_suites(__clove_suite_t* suites, int suite_count, int test_count, __clove_report_t* report) {
+    report->start(report, suite_count, test_count);
+
+    int passed = 0;
+    int failed = 0;
+    int skipped = 0;
 
     int test_start_counter = 1;
     for (int i = 0; i < suite_count; ++i) {
         __clove_suite_t* each_suite = &suites[i];
-        __clove_exec_suite(each_suite, test_start_counter, &passed, &failed, &skipped);
+        __clove_exec_suite(each_suite, test_start_counter, &passed, &failed, &skipped, report);
         test_start_counter += each_suite->test_count;
     }
-
-    printf("%s Total: %d, Passed: %d, Failed: %d, Skipped: %d\n", __CLOVE_INFO, test_count, passed, failed, skipped);
-    if (passed == test_count) { printf("%s Test result => SUCCESS :-)\n", __CLOVE_INFO); }
-    else if (failed > 0) { printf("%s Test result => FAILURE :_(\n", __CLOVE_ERRO); }
-    else if (skipped > 0) { printf("%s Test result => OK, but some test has been skipped!\n", __CLOVE_WARN); }
+    report->end(report, test_count, passed, skipped, failed);
 }
 
 #define __CLOVE_TEST_GUARD \
@@ -656,8 +904,6 @@ static void __clove_exec_suites(__clove_suite_t* suites, int suite_count, int te
     _this->line=__LINE__;
 
 #ifdef _WIN32
-#define __CLOVE_PATH_SEPARATOR '\\'
-
 #pragma region SetupAnsiConsoleForWindows
 #include <windows.h>
 #ifndef ENABLE_VIRTUAL_TERMINAL_PROCESSING
@@ -695,8 +941,6 @@ static void __clove_setup_ansi_console() {
 }
 #pragma endregion //SetupAnsiConsoleForWindows
 #else
-#define __CLOVE_PATH_SEPARATOR '/'
-
 static void __clove_setup_ansi_console() {
     /* Nothing to do at the moment for other OS */
 }
@@ -743,7 +987,6 @@ static char* __clove_basepath(char* path) {
 char* __clove_exec_path;\
 char* __clove_exec_base_path;\
 int main(int argc, char* argv[]) {\
-    __clove_setup_ansi_console();\
     __clove_exec_path = argv[0]; \
     __clove_exec_base_path = __clove_basepath(argv[0]); \
     static void (*suite_ptr[])(__clove_suite_t*) = {__VA_ARGS__};\
@@ -761,7 +1004,8 @@ int main(int argc, char* argv[]) {\
         suite_ptr[i](suite);\
         test_count += suite->test_count;\
     }\
-    __clove_exec_suites((__clove_suite_t*)(suites.items), suite_count, test_count);\
+    __clove_report_t* report = __clove_report_console(); \
+    __clove_exec_suites((__clove_suite_t*)(suites.items), suite_count, test_count, report);\
     free(__clove_exec_base_path); \
     __clove_vector_free(&suites); \
     return 0;\
@@ -1245,7 +1489,6 @@ static int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clo
 char* __clove_exec_path;\
 char* __clove_exec_base_path;\
 int main(int argc, char* argv[]) {\
-    __clove_setup_ansi_console();\
     __clove_exec_path = argv[0]; \
     __clove_exec_base_path = __clove_basepath(argv[0]); \
     __clove_symbols_context_t context; \
@@ -1260,7 +1503,10 @@ int main(int argc, char* argv[]) {\
     context.tests_count = 0; \
     int result = __clove_symbols_for_each_function_by_prefix("__clove_sym___", __clove_symbols_function_collect, &context); \
     if (result == 0) { \
-        __clove_exec_suites((__clove_suite_t*)(context.suites.items), context.suites_count, context.tests_count); \
+        __clove_report_t* report; \
+        if (argc == 2 && strcmp("json", argv[1]) == 0) report = (__clove_report_t*)__clove_report_json(); \
+        else report = (__clove_report_t* )__clove_report_console(); \
+        __clove_exec_suites((__clove_suite_t*)(context.suites.items), context.suites_count, context.tests_count, report); \
     } \
     free(__clove_exec_base_path); \
     __clove_vector_free(&context.suites); \
@@ -1328,8 +1574,8 @@ static const char* __clove_get_exec_base_path() {
 #define CLOVE_FLOAT_NE(exp, res) __CLOVE_TEST_GUARD __clove_check_float(__CLOVE_ASSERT_CHECK_DIFFERENCE, exp, res, _this);
 #define CLOVE_DOUBLE_EQ(exp, res) __CLOVE_TEST_GUARD __clove_check_double(__CLOVE_ASSERT_CHECK_EQUALITY, exp, res, _this);
 #define CLOVE_DOUBLE_NE(exp, res) __CLOVE_TEST_GUARD __clove_check_double(__CLOVE_ASSERT_CHECK_DIFFERENCE, exp, res, _this);
-#define CLOVE_NULL(res) __CLOVE_TEST_GUARD __clove_check_null(__CLOVE_ASSERT_CHECK_EQUALITY, "NULL", res, _this);
-#define CLOVE_NOT_NULL(res) __CLOVE_TEST_GUARD __clove_check_null(__CLOVE_ASSERT_CHECK_DIFFERENCE, "!NULL", res, _this);
+#define CLOVE_NULL(res) __CLOVE_TEST_GUARD __clove_check_null(__CLOVE_ASSERT_CHECK_EQUALITY, "NULL", (void*)res, _this);
+#define CLOVE_NOT_NULL(res) __CLOVE_TEST_GUARD __clove_check_null(__CLOVE_ASSERT_CHECK_DIFFERENCE, "!NULL", (void*)res, _this);
 #define CLOVE_PTR_EQ(p1, p2) __CLOVE_TEST_GUARD __clove_check_ptr(__CLOVE_ASSERT_CHECK_EQUALITY, p1, p2, _this);
 #define CLOVE_PTR_NE(p1, p2) __CLOVE_TEST_GUARD __clove_check_ptr(__CLOVE_ASSERT_CHECK_DIFFERENCE, p1, p2, _this);
 #define CLOVE_STRING_EQ(exp, res) __CLOVE_TEST_GUARD __clove_check_string(__CLOVE_ASSERT_CHECK_EQUALITY, exp, res, _this);

@@ -19,3 +19,7 @@ CLOVE_TEST(CheckNull) {
     CLOVE_NULL(&myvalue);
 }
 
+CLOVE_TEST(SkippedTest) {
+    
+}
+
