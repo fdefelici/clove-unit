@@ -1,6 +1,6 @@
 /*
  * clove-unit
- * v2.1.3
+ * v2.1.4
  * Unit Testing library for C
  * https://github.com/fdefelici/clove-unit
  *
@@ -353,7 +353,7 @@ static void __clove_fail(char* msg, __clove_test_t* _this) {
     strcpy_s(_this->err_msg, __CLOVE_STRING_LENGTH, msg);
 }
 
-static void __clove_pass(char* msg, __clove_test_t* _this) {
+static void __clove_pass(const char* msg, __clove_test_t* _this) {
     _this->result = __CLOVE_TEST_PASSED;
     strcpy_s(_this->err_msg, __CLOVE_STRING_LENGTH, msg);
 }
@@ -824,9 +824,9 @@ typedef void (*__clove_symbols_function_action)(__clove_symbols_function_t, __cl
 static int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symbols_function_action action, __clove_symbols_context_t* action_context);
 
 static void __clove_symbols_function_collect(__clove_symbols_function_t exported_funct, __clove_symbols_context_t* context) {
-    static char* end_suite_separator = "___";
+    static const char* end_suite_separator = "___";
     static int end_suite_separator_length = 3;
-    static char* test_separator = "20_";
+    static const char* test_separator = "20_";
     static int test_separator_length = 3;
 
     char* test_full_name = exported_funct.name;
@@ -1275,10 +1275,16 @@ static const char* __clove_get_exec_base_path() {
 }
 
 
-#ifdef _WIN32
-#define __CLOVE_API_EXPORT __declspec(dllexport)
+#ifdef __cplusplus
+#define __CLOVE_API_EXTERN extern "C"
 #else 
-#define __CLOVE_API_EXPORT
+#define __CLOVE_API_EXTERN
+#endif //__cplusplus
+
+#ifdef _WIN32
+#define __CLOVE_API_EXPORT  __CLOVE_API_EXTERN __declspec(dllexport)
+#else 
+#define __CLOVE_API_EXPORT __CLOVE_API_EXTERN
 #endif //_WIN32
 
 
