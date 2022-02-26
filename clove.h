@@ -291,6 +291,7 @@ typedef struct __clove_test_t {
     char file_name[__CLOVE_STRING_LENGTH];
     unsigned int line;
     char err_msg[__CLOVE_STRING_LENGTH];
+    int check_mode; //TODO: Transform to enum
     __clove_generic_type_e check_type;
     __clove_generic_u check_expected;
     __clove_generic_u check_actual;
@@ -373,9 +374,7 @@ static void __clove_vector_suite_dtor_manual(void* suite_ptr) {
 
 #define __CLOVE_ASSERT_CHECK_EQUALITY 1
 #define __CLOVE_ASSERT_CHECK_DIFFERENCE 2
-#define __CLOVE_ASSERT_CHECK_TRUE 3
-#define __CLOVE_ASSERT_CHECK_FALSE 4
-
+#define __CLOVE_ASSERT_CHECK_FAIL 3
 #define __CLOVE_FLOATING_PRECISION 0.000001f
 
 #define __CLOVE_INFO "[\x1b[1;34mINFO\x1b[0m]"
@@ -429,23 +428,100 @@ static void __clove_report_console_test_executed(struct __clove_report_t* this, 
     if (test->result == __CLOVE_TEST_PASSED) {
         printf("%s %s%s\n", __CLOVE_INFO, result, __CLOVE_PASSED);
     } else if (test->result == __CLOVE_TEST_FAILED) {
-        char msg[__CLOVE_STRING_LENGTH] = "ERROR but NO MESSAGE!!!";
+        char msg[__CLOVE_STRING_LENGTH] = "FAILURE but NO MESSAGE!!!";
 
-        switch (test->check_type)
-        {
-        case __CLOVE_GENERIC_BOOL:
-            const char* expected = test->check_expected._bool ? "true" : "false";
-            const char* actual = test->check_actual._bool ? "true" : "false";
-            sprintf_s(msg, sizeof(msg), "expected [%s] but was [%s]", expected, actual);
-            break;
-        case __CLOVE_GENERIC_INT:
-            sprintf_s(msg, sizeof(msg), "expected [%d] but was [%d]", test->check_expected._int, test->check_actual._int);
-            break;
-        default:
-            break;
+        if (test->check_mode == __CLOVE_ASSERT_CHECK_FAIL) {
+            sprintf_s(msg, sizeof(msg), "A FAIL assertion was met!");
+        } else {
+            switch (test->check_type)
+            {
+            case __CLOVE_GENERIC_BOOL: {
+                const char* exp = test->check_expected._bool ? "true" : "false";
+                const char* act = test->check_actual._bool ? "true" : "false";
+                sprintf_s(msg, sizeof(msg), "expected [%s] but was [%s]", exp, act);
+                break;
+            }
+            case __CLOVE_GENERIC_CHAR: {
+                const char* not = test->check_mode == __CLOVE_ASSERT_CHECK_EQUALITY ? "" : "not ";
+                const char exp = test->check_expected._char;
+                const char act = test->check_actual._char;
+                sprintf_s(msg, sizeof(msg), "%sexpected [%c] but was [%c]", not, exp, act);
+                break;
+            }
+            case __CLOVE_GENERIC_INT: {
+                const char* not = test->check_mode == __CLOVE_ASSERT_CHECK_EQUALITY ? "" : "not ";
+                const int exp = test->check_expected._int;
+                const int act = test->check_actual._int;
+                sprintf_s(msg, sizeof(msg), "%sexpected [%d] but was [%d]", not, exp, act);
+                break;
+            }
+            case __CLOVE_GENERIC_UINT: {
+                const char* not = test->check_mode == __CLOVE_ASSERT_CHECK_EQUALITY ? "" : "not ";
+                const unsigned int exp = test->check_expected._uint;
+                const unsigned int act = test->check_actual._uint;
+                sprintf_s(msg, sizeof(msg), "%sexpected [%u] but was [%u]", not, exp, act);
+                break;
+            }
+            case __CLOVE_GENERIC_LONG: {
+                const char* not = test->check_mode == __CLOVE_ASSERT_CHECK_EQUALITY ? "" : "not ";
+                const long exp = test->check_expected._long;
+                const long act = test->check_actual._long;
+                sprintf_s(msg, sizeof(msg), "%sexpected [%ld] but was [%ld]", not, exp, act);
+                break;
+            }
+            case __CLOVE_GENERIC_ULONG: {
+                const char* not = test->check_mode == __CLOVE_ASSERT_CHECK_EQUALITY ? "" : "not ";
+                const unsigned long exp = test->check_expected._ulong;
+                const unsigned long act = test->check_actual._ulong;
+                sprintf_s(msg, sizeof(msg), "%sexpected [%lu] but was [%lu]", not, exp, act);
+                break;
+            }
+            case __CLOVE_GENERIC_LLONG: {
+                const char* not = test->check_mode == __CLOVE_ASSERT_CHECK_EQUALITY ? "" : "not ";
+                const long long exp = test->check_expected._llong;
+                const long long act = test->check_actual._llong;
+                sprintf_s(msg, sizeof(msg), "%sexpected [%lld] but was [%lld]", not, exp, act);
+                break;
+            }
+            case __CLOVE_GENERIC_ULLONG: {
+                const char* not = test->check_mode == __CLOVE_ASSERT_CHECK_EQUALITY ? "" : "not ";
+                const unsigned long long exp = test->check_expected._ullong;
+                const unsigned long long act = test->check_actual._ullong;
+                sprintf_s(msg, sizeof(msg), "%sexpected [%llu] but was [%llu]", not, exp, act);
+                break;
+            }
+            case __CLOVE_GENERIC_FLOAT: {
+                const char* not = test->check_mode == __CLOVE_ASSERT_CHECK_EQUALITY ? "" : "not ";
+                const float exp = test->check_expected._float;
+                const float act = test->check_actual._float;
+                sprintf_s(msg, sizeof(msg), "%sexpected [%f] but was [%f]", not, exp, act);
+                break;
+            }
+            case __CLOVE_GENERIC_DOUBLE: {
+                const char* not = test->check_mode == __CLOVE_ASSERT_CHECK_EQUALITY ? "" : "not ";
+                const float exp = test->check_expected._double;
+                const float act = test->check_actual._double;
+                sprintf_s(msg, sizeof(msg), "%sexpected [%f] but was [%f]", not, exp, act);
+                break;
+            }
+            case __CLOVE_GENERIC_STRING: {
+                const char* not = test->check_mode == __CLOVE_ASSERT_CHECK_EQUALITY ? "" : "not ";
+                const char* exp = test->check_expected._string;
+                const char* act = test->check_actual._string;
+                sprintf_s(msg, sizeof(msg), "%sexpected [%s] but was [%s]", not, exp, act);
+                break;
+            }
+            case __CLOVE_GENERIC_PTR: {
+                const char* not = test->check_mode == __CLOVE_ASSERT_CHECK_EQUALITY ? "" : "not ";
+                const void* exp = test->check_expected._ptr;
+                const void* act = test->check_actual._ptr;
+                sprintf_s(msg, sizeof(msg), "%sexpected [%p] but was [%p]", not, exp, act);
+                break;
+            }
+            default:
+                break;
+            }
         }
-
-
         printf("%s %s%s => %s@%d: %s\n", __CLOVE_ERRO, result, __CLOVE_FAILED, test->file_name, test->line, msg);
     } else if (test->result == __CLOVE_TEST_SKIPPED) {
         printf("%s %s%s\n", __CLOVE_WARN, result, __CLOVE_SKIPPED);
@@ -582,221 +658,79 @@ static __clove_report_json_t* __clove_report_json() {
     return &result;
 }
 
-static void __clove_fail(char* msg, __clove_test_t* _this) {
+#define __CLOVE_ASSERTION_CHECK(mode, exp, act, type, field, test) \
+    bool pass_scenario = false;\
+    if (check_mode == __CLOVE_ASSERT_CHECK_EQUALITY) { pass_scenario = exp == act; }\
+    else if (check_mode == __CLOVE_ASSERT_CHECK_DIFFERENCE) { pass_scenario = exp != act; }\
+    if (pass_scenario) _this->result =  __CLOVE_TEST_PASSED;\
+    else { \
+        _this->result =  __CLOVE_TEST_FAILED;\
+        _this->check_mode = mode;\
+        _this->check_type = type;\
+        _this->check_expected.field = exp;\
+        _this->check_actual.field = act;\
+    }
+
+static void __clove_check_fail(__clove_test_t* _this) {
     _this->result = __CLOVE_TEST_FAILED;
-    strcpy_s(_this->err_msg, __CLOVE_STRING_LENGTH, msg);
+    _this->check_mode = __CLOVE_ASSERT_CHECK_FAIL;
 }
 
-static void __clove_pass(char* msg, __clove_test_t* _this) {
+static void __clove_check_pass(__clove_test_t* _this) {
     _this->result = __CLOVE_TEST_PASSED;
-    strcpy_s(_this->err_msg, __CLOVE_STRING_LENGTH, msg);
 }
 
 static void __clove_check_int(const unsigned int check_mode, int expected, int result, __clove_test_t* _this) {
-    bool pass_scenario = false;
-    if (check_mode == __CLOVE_ASSERT_CHECK_EQUALITY) { pass_scenario = expected == result; }
-    else if (check_mode == __CLOVE_ASSERT_CHECK_DIFFERENCE) { pass_scenario = expected != result; }
-
-    if (pass_scenario) {
-//        __clove_pass("", _this);
-        _this->result = __CLOVE_TEST_PASSED;
-    }
-    else {
-        /*
-        char msg[__CLOVE_STRING_LENGTH];
-        sprintf_s(msg, sizeof(msg), "expected [%d] but was [%d]", expected, result);
-        __clove_fail(msg, _this);
-        */
-        _this->result = __CLOVE_TEST_FAILED;
-
-        _this->check_type = __CLOVE_GENERIC_INT;
-        _this->check_expected._int = expected;
-        _this->check_actual._int = result;
-    }
+    __CLOVE_ASSERTION_CHECK(check_mode, expected, result, __CLOVE_GENERIC_INT, _int, _this)
 }
 
 static void __clove_check_uint(const unsigned int check_mode, unsigned int expected, unsigned int result, __clove_test_t* _this) {
-    int pass_scenario = 0;
-    if (check_mode == __CLOVE_ASSERT_CHECK_EQUALITY) { pass_scenario = expected == result; }
-    else if (check_mode == __CLOVE_ASSERT_CHECK_DIFFERENCE) { pass_scenario = expected != result; }
-
-    if (pass_scenario) {
-        __clove_pass("", _this);
-    }
-    else {
-        char msg[__CLOVE_STRING_LENGTH];
-        sprintf_s(msg, sizeof(msg), "expected [%u] but was [%u]", expected, result);
-        __clove_fail(msg, _this);
-
-        _this->check_type = __CLOVE_GENERIC_UINT;
-        _this->check_expected._uint = expected;
-        _this->check_actual._uint = result;
-    }
+__CLOVE_ASSERTION_CHECK(check_mode, expected, result, __CLOVE_GENERIC_UINT, _uint, _this)
 }
 
 static void __clove_check_long(const unsigned int check_mode, long expected, long result, __clove_test_t* _this) {
-    int pass_scenario = 0;
-    if (check_mode == __CLOVE_ASSERT_CHECK_EQUALITY) { pass_scenario = expected == result; }
-    else if (check_mode == __CLOVE_ASSERT_CHECK_DIFFERENCE) { pass_scenario = expected != result; }
-
-    if (pass_scenario) {
-        __clove_pass("", _this);
-    }
-    else {
-        char msg[__CLOVE_STRING_LENGTH];
-        sprintf_s(msg, sizeof(msg), "expected [%ld] but was [%ld]", expected, result);
-        __clove_fail(msg, _this);
-
-        _this->check_type = __CLOVE_GENERIC_LONG;
-        _this->check_expected._long = expected;
-        _this->check_actual._long = result;
-    }
+    __CLOVE_ASSERTION_CHECK(check_mode, expected, result, __CLOVE_GENERIC_LONG, _long, _this)
 }
 
 static void __clove_check_ulong(const unsigned int check_mode, unsigned long expected, unsigned long result, __clove_test_t* _this) {
-    int pass_scenario = 0;
-    if (check_mode == __CLOVE_ASSERT_CHECK_EQUALITY) { pass_scenario = expected == result; }
-    else if (check_mode == __CLOVE_ASSERT_CHECK_DIFFERENCE) { pass_scenario = expected != result; }
-
-    if (pass_scenario) {
-        __clove_pass("", _this);
-    }
-    else {
-        char msg[__CLOVE_STRING_LENGTH];
-        sprintf_s(msg, sizeof(msg), "expected [%lu] but was [%lu]", expected, result);
-        __clove_fail(msg, _this);
-
-        _this->check_type = __CLOVE_GENERIC_ULONG;
-        _this->check_expected._ulong = expected;
-        _this->check_actual._ulong = result;
-    }
+    __CLOVE_ASSERTION_CHECK(check_mode, expected, result, __CLOVE_GENERIC_ULONG, _ulong, _this)
 }
 
 static void __clove_check_llong(const unsigned int check_mode, long long expected, long long result, __clove_test_t* _this) {
-    int pass_scenario = 0;
-    if (check_mode == __CLOVE_ASSERT_CHECK_EQUALITY) { pass_scenario = expected == result; }
-    else if (check_mode == __CLOVE_ASSERT_CHECK_DIFFERENCE) { pass_scenario = expected != result; }
-
-    if (pass_scenario) {
-        __clove_pass("", _this);
-    }
-    else {
-        char msg[__CLOVE_STRING_LENGTH];
-        sprintf_s(msg, sizeof(msg), "expected [%lld] but was [%lld]", expected, result);
-        __clove_fail(msg, _this);
-        
-        _this->check_type = __CLOVE_GENERIC_LLONG;
-        _this->check_expected._llong = expected;
-        _this->check_actual._llong = result;
-    }
+    __CLOVE_ASSERTION_CHECK(check_mode, expected, result, __CLOVE_GENERIC_LLONG, _llong, _this)
 }
 
 static void __clove_check_ullong(const unsigned int check_mode, unsigned long long expected, unsigned long long result, __clove_test_t* _this) {
-    int pass_scenario = 0;
-    if (check_mode == __CLOVE_ASSERT_CHECK_EQUALITY) { pass_scenario = expected == result; }
-    else if (check_mode == __CLOVE_ASSERT_CHECK_DIFFERENCE) { pass_scenario = expected != result; }
-
-    if (pass_scenario) {
-        __clove_pass("", _this);
-    }
-    else {
-        char msg[__CLOVE_STRING_LENGTH];
-        sprintf_s(msg, sizeof(msg), "expected [%llu] but was [%llu]", expected, result);
-        __clove_fail(msg, _this);
-        
-        _this->check_type = __CLOVE_GENERIC_ULLONG;
-        _this->check_expected._ullong = expected;
-        _this->check_actual._ullong = result;
-    }
+    __CLOVE_ASSERTION_CHECK(check_mode, expected, result, __CLOVE_GENERIC_ULLONG, _ullong, _this)
 }
 
 static void __clove_check_char(const unsigned int check_mode, char expected, char result, __clove_test_t* _this) {
-    int pass_scenario = 0;
-    if (check_mode == __CLOVE_ASSERT_CHECK_EQUALITY) { pass_scenario = expected == result; }
-    else if (check_mode == __CLOVE_ASSERT_CHECK_DIFFERENCE) { pass_scenario = expected != result; }
-
-    if (pass_scenario) {
-        __clove_pass("", _this);
-    }
-    else {
-        char msg[__CLOVE_STRING_LENGTH];
-        sprintf_s(msg, sizeof(msg), "expected [%c] but was [%c]", expected, result);
-        __clove_fail(msg, _this);
-
-        _this->check_type = __CLOVE_GENERIC_CHAR;
-        _this->check_expected._char = expected;
-        _this->check_actual._char = result;
-    }
+    __CLOVE_ASSERTION_CHECK(check_mode, expected, result, __CLOVE_GENERIC_CHAR, _char, _this)
 }
 
-static void __clove_check_bool(const unsigned int check_mode, int result, __clove_test_t* _this) {
+static void __clove_check_bool(const unsigned int check_mode, bool expected, bool result, __clove_test_t* _this) {
+    __CLOVE_ASSERTION_CHECK(check_mode, expected, result, __CLOVE_GENERIC_BOOL, _bool, _this)
+}
+
+static void __clove_check_null(const unsigned int check_mode, void* expected, void* result, __clove_test_t* _this) {
+    __CLOVE_ASSERTION_CHECK(check_mode, expected, result, __CLOVE_GENERIC_PTR, _ptr, _this)
+}
+
+static void __clove_check_ptr(const unsigned int check_mode, void* expected, void* result, __clove_test_t* _this) {
+    __CLOVE_ASSERTION_CHECK(check_mode, expected, result, __CLOVE_GENERIC_PTR, _ptr, _this)
+}
+
+static void __clove_check_float(const unsigned int check_mode, float expected, float result, __clove_test_t* _this) {
     bool pass_scenario = false;
-    if (check_mode == __CLOVE_ASSERT_CHECK_TRUE) pass_scenario = 0 != result;
-    else if (check_mode == __CLOVE_ASSERT_CHECK_FALSE) pass_scenario = 0 == result;
-    
+    if (check_mode == __CLOVE_ASSERT_CHECK_EQUALITY) { pass_scenario = (fabsf(expected - result) <= __CLOVE_FLOATING_PRECISION); }
+    else if (check_mode == __CLOVE_ASSERT_CHECK_DIFFERENCE) { pass_scenario = (fabsf(expected - result) > __CLOVE_FLOATING_PRECISION); }
+
     if (pass_scenario) {
         _this->result = __CLOVE_TEST_PASSED;
     }
     else {
         _this->result = __CLOVE_TEST_FAILED;
-
-        _this->check_type = __CLOVE_GENERIC_BOOL;
-        _this->check_expected._bool = check_mode == __CLOVE_ASSERT_CHECK_TRUE ? true : false;
-        _this->check_actual._bool = result;
-    }
-}
-
-static void __clove_check_null(const unsigned int check_mode, const char* expected, void* result, __clove_test_t* _this) {
-    int pass_scenario;
-    if (check_mode == __CLOVE_ASSERT_CHECK_EQUALITY) pass_scenario = result == NULL;
-    else pass_scenario = result != NULL;
-
-    if (pass_scenario) {
-        __clove_pass("", _this);
-    }
-    else {
-        char msg[__CLOVE_STRING_LENGTH];
-        sprintf_s(msg, sizeof(msg), "expected [%s] but was [%p]", expected, result);
-        __clove_fail(msg, _this);
-
-        //CHECK MODE?
-        _this->check_type = __CLOVE_GENERIC_PTR;
-        _this->check_actual._ptr = result;
-    }
-}
-
-static void __clove_check_ptr(const unsigned int check_mode, void* expected, void* result, __clove_test_t* _this) {
-    int pass_scenario;
-    if (check_mode == __CLOVE_ASSERT_CHECK_EQUALITY) pass_scenario = expected == result;
-    else pass_scenario = expected != result;
-
-    if (pass_scenario) {
-        __clove_pass("", _this);
-    }
-    else {
-        char msg[__CLOVE_STRING_LENGTH];
-        sprintf_s(msg, sizeof(msg), "expected [%p] but was [%p]", expected, result);
-        __clove_fail(msg, _this);
-
-        _this->check_type = __CLOVE_GENERIC_PTR;
-        _this->check_expected._ptr = expected;
-        _this->check_actual._ptr = result;
-    }
-}
-
-static void __clove_check_float(const unsigned int check_mode, float expected, float result, __clove_test_t* _this) {
-    int pass_scenario = 0;
-    if (check_mode == __CLOVE_ASSERT_CHECK_EQUALITY) { pass_scenario = fabsf(expected - result) <= __CLOVE_FLOATING_PRECISION; }
-    else if (check_mode == __CLOVE_ASSERT_CHECK_DIFFERENCE) { pass_scenario = fabsf(expected - result) > __CLOVE_FLOATING_PRECISION; }
-
-    if (pass_scenario) {
-        __clove_pass("", _this);
-    }
-    else {
-        char msg[__CLOVE_STRING_LENGTH];
-        sprintf_s(msg, sizeof(msg), "expected [%f] but was [%f]", expected, result);
-        __clove_fail(msg, _this);
-
+        _this->check_mode = check_mode;
         _this->check_type = __CLOVE_GENERIC_FLOAT;
         _this->check_expected._float = expected;
         _this->check_actual._float = result;
@@ -804,37 +738,33 @@ static void __clove_check_float(const unsigned int check_mode, float expected, f
 }
 
 static void __clove_check_double(const unsigned int check_mode, double expected, double result, __clove_test_t* _this) {
-    int pass_scenario = 0;
-    if (check_mode == __CLOVE_ASSERT_CHECK_EQUALITY) { pass_scenario = (float)fabs(expected - result) <= __CLOVE_FLOATING_PRECISION; }
-    else if (check_mode == __CLOVE_ASSERT_CHECK_DIFFERENCE) { pass_scenario = (float)fabs(expected - result) > __CLOVE_FLOATING_PRECISION; }
+    bool pass_scenario = false;
+    if (check_mode == __CLOVE_ASSERT_CHECK_EQUALITY) { pass_scenario = ((float)fabs(expected - result) <= __CLOVE_FLOATING_PRECISION); }
+    else if (check_mode == __CLOVE_ASSERT_CHECK_DIFFERENCE) { pass_scenario = ((float)fabs(expected - result) > __CLOVE_FLOATING_PRECISION); }
 
     if (pass_scenario) {
-        __clove_pass("", _this);
+        _this->result = __CLOVE_TEST_PASSED;
     }
     else {
-        char msg[__CLOVE_STRING_LENGTH];
-        sprintf_s(msg, sizeof(msg), "expected [%f] but was [%f]", expected, result);
-        __clove_fail(msg, _this);
-    }
-
+        _this->result = __CLOVE_TEST_FAILED;
+        _this->check_mode = check_mode;
         _this->check_type = __CLOVE_GENERIC_DOUBLE;
         _this->check_expected._double = expected;
         _this->check_actual._double = result;
+    }
 }
 
 static void __clove_check_string(const unsigned int check_mode, const char* expected, const char* result, __clove_test_t* _this) {
-    int pass_scenario = 0;
+    bool pass_scenario = false;
     if (check_mode == __CLOVE_ASSERT_CHECK_EQUALITY) { pass_scenario = strcmp(expected, result) == 0; }
     else if (check_mode == __CLOVE_ASSERT_CHECK_DIFFERENCE) { pass_scenario = strcmp(expected, result) != 0; }
 
     if (pass_scenario) {
-        __clove_pass("", _this);
+        _this->result = __CLOVE_TEST_PASSED;
     }
     else {
-        char msg[__CLOVE_STRING_LENGTH];
-        sprintf_s(msg, sizeof(msg), "expected [%s] but was [%s]", expected, result);
-        __clove_fail(msg, _this);
-
+        _this->result = __CLOVE_TEST_FAILED;
+        _this->check_mode = check_mode;
         //TODO: Evalute if could be better to strdup
         _this->check_type = __CLOVE_GENERIC_STRING;
         _this->check_expected._string = expected;
@@ -1552,10 +1482,10 @@ static const char* __clove_get_exec_base_path() {
 #pragma endregion //UTILS
 
 #pragma region Public APIs - ASSERTIONS
-#define CLOVE_PASS() __CLOVE_TEST_GUARD __clove_pass("", _this);
-#define CLOVE_FAIL() __CLOVE_TEST_GUARD __clove_fail("A FAIL assertion was met!", _this);
-#define CLOVE_IS_TRUE(res) __CLOVE_TEST_GUARD __clove_check_bool(__CLOVE_ASSERT_CHECK_TRUE, res, _this);
-#define CLOVE_IS_FALSE(res) __CLOVE_TEST_GUARD __clove_check_bool(__CLOVE_ASSERT_CHECK_FALSE, res, _this);
+#define CLOVE_PASS() __CLOVE_TEST_GUARD __clove_check_pass(_this);
+#define CLOVE_FAIL() __CLOVE_TEST_GUARD __clove_check_fail(_this);
+#define CLOVE_IS_TRUE(res) __CLOVE_TEST_GUARD __clove_check_bool(__CLOVE_ASSERT_CHECK_EQUALITY, true, res, _this);
+#define CLOVE_IS_FALSE(res) __CLOVE_TEST_GUARD __clove_check_bool(__CLOVE_ASSERT_CHECK_EQUALITY, false, res, _this);
 #define CLOVE_CHAR_EQ(exp, res) __CLOVE_TEST_GUARD __clove_check_char(__CLOVE_ASSERT_CHECK_EQUALITY, exp, res, _this);
 #define CLOVE_CHAR_NE(exp, res) __CLOVE_TEST_GUARD __clove_check_char(__CLOVE_ASSERT_CHECK_DIFFERENCE, exp, res, _this);
 #define CLOVE_INT_EQ(exp, res) __CLOVE_TEST_GUARD __clove_check_int(__CLOVE_ASSERT_CHECK_EQUALITY, exp, res, _this);
@@ -1574,10 +1504,10 @@ static const char* __clove_get_exec_base_path() {
 #define CLOVE_FLOAT_NE(exp, res) __CLOVE_TEST_GUARD __clove_check_float(__CLOVE_ASSERT_CHECK_DIFFERENCE, exp, res, _this);
 #define CLOVE_DOUBLE_EQ(exp, res) __CLOVE_TEST_GUARD __clove_check_double(__CLOVE_ASSERT_CHECK_EQUALITY, exp, res, _this);
 #define CLOVE_DOUBLE_NE(exp, res) __CLOVE_TEST_GUARD __clove_check_double(__CLOVE_ASSERT_CHECK_DIFFERENCE, exp, res, _this);
-#define CLOVE_NULL(res) __CLOVE_TEST_GUARD __clove_check_null(__CLOVE_ASSERT_CHECK_EQUALITY, "NULL", (void*)res, _this);
-#define CLOVE_NOT_NULL(res) __CLOVE_TEST_GUARD __clove_check_null(__CLOVE_ASSERT_CHECK_DIFFERENCE, "!NULL", (void*)res, _this);
-#define CLOVE_PTR_EQ(p1, p2) __CLOVE_TEST_GUARD __clove_check_ptr(__CLOVE_ASSERT_CHECK_EQUALITY, p1, p2, _this);
-#define CLOVE_PTR_NE(p1, p2) __CLOVE_TEST_GUARD __clove_check_ptr(__CLOVE_ASSERT_CHECK_DIFFERENCE, p1, p2, _this);
+#define CLOVE_NULL(res) __CLOVE_TEST_GUARD __clove_check_null(__CLOVE_ASSERT_CHECK_EQUALITY, NULL, (void*)res, _this);
+#define CLOVE_NOT_NULL(res) __CLOVE_TEST_GUARD __clove_check_null(__CLOVE_ASSERT_CHECK_DIFFERENCE, NULL, (void*)res, _this);
+#define CLOVE_PTR_EQ(p1, p2) __CLOVE_TEST_GUARD __clove_check_ptr(__CLOVE_ASSERT_CHECK_EQUALITY, (void*)p1, (void*)p2, _this);
+#define CLOVE_PTR_NE(p1, p2) __CLOVE_TEST_GUARD __clove_check_ptr(__CLOVE_ASSERT_CHECK_DIFFERENCE, (void*)p1, (void*)p2, _this);
 #define CLOVE_STRING_EQ(exp, res) __CLOVE_TEST_GUARD __clove_check_string(__CLOVE_ASSERT_CHECK_EQUALITY, exp, res, _this);
 #define CLOVE_STRING_NE(exp, res) __CLOVE_TEST_GUARD __clove_check_string(__CLOVE_ASSERT_CHECK_DIFFERENCE, exp, res, _this);
 #pragma endregion //ASSERTIONS
