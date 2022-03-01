@@ -1,7 +1,7 @@
 /*
  * clove-unit
- * v2.1.4
- * Unit Testing library for C
+ * v2.1.5
+ * Unit Testing library for C (mainly, but C++ also)
  * https://github.com/fdefelici/clove-unit
  *
  */
@@ -81,6 +81,14 @@ typedef struct __clove_vector_params_t {
     void (*item_dtor)(void*);
 } __clove_vector_params_t;
 
+static __clove_vector_params_t __clove_vector_params_defaulted(size_t item_size) {
+    __clove_vector_params_t params;
+    params.item_size = item_size;
+    params.initial_capacity = 10;
+    params.item_ctor = NULL;
+    params.item_dtor = NULL;
+    return params;
+}
 
 typedef struct __clove_vector_t {
     unsigned char* items;
@@ -91,8 +99,6 @@ typedef struct __clove_vector_t {
     void (*item_dtor)(void*);
     void* swap_temp;
 } __clove_vector_t;
-
-#define __CLOVE_VECTOR_DEFAULT_PARAMS { .item_size = 0, .initial_capacity = 10, .item_ctor = NULL, .item_dtor = NULL }
 
 static void __clove_vector_init(__clove_vector_t* vector, __clove_vector_params_t* params) {
     vector->capacity = params->initial_capacity;
@@ -135,7 +141,7 @@ static void __clove_vector_set(__clove_vector_t* vector, size_t index, void* ite
 
 static void __clove_vector_free(__clove_vector_t* vector) {
     if (vector->item_dtor) {
-        for (int i = 0; i < vector->count; ++i) {
+        for (size_t i = 0; i < vector->count; ++i) {
             void* item = __clove_vector_get(vector, i);
             vector->item_dtor(item);
         }
@@ -291,8 +297,7 @@ static void __clove_vector_suite_ctor(void* suite_ptr) {
     suite->fixtures.setup = __clove_empty_funct;
     suite->fixtures.teardown = __clove_empty_funct;
 
-    __clove_vector_params_t params = __CLOVE_VECTOR_DEFAULT_PARAMS;
-    params.item_size = sizeof(__clove_test_t);
+    __clove_vector_params_t params = __clove_vector_params_defaulted(sizeof(__clove_test_t));
     params.item_ctor = __clove_vector_test_ctor;
     params.item_dtor = __clove_vector_test_dtor;
     __clove_vector_init(&(suite->tests), &params);
@@ -314,8 +319,7 @@ static void __clove_vector_suite_ctor_manual(void* suite_ptr) {
     suite->fixtures.teardown = __clove_empty_funct;
 
     /* Not needed when in Manual mode
-    __clove_vector_params_t params = __CLOVE_VECTOR_DEFAULT_PARAMS;
-    params.item_size = sizeof(__clove_test_t);
+    __clove_vector_params_t params = __clove_vector_params_defaulted(sizeof(__clove_test_t));
     params.item_ctor = __clove_vector_test_ctor;
     __clove_vector_init(&(suite->tests), &params);
     */
@@ -748,8 +752,7 @@ int main(int argc, char* argv[]) {\
     __clove_exec_base_path = __clove_basepath(argv[0]); \
     static void (*suite_ptr[])(__clove_suite_t*) = {__VA_ARGS__};\
     int suite_count = sizeof(suite_ptr) / sizeof(suite_ptr[0]); \
-    __clove_vector_params_t vector_params = __CLOVE_VECTOR_DEFAULT_PARAMS; \
-    vector_params.item_size = sizeof(__clove_suite_t); \
+    __clove_vector_params_t vector_params = __clove_vector_params_defaulted(sizeof(__clove_suite_t)); \
     vector_params.initial_capacity = suite_count; \
     vector_params.item_ctor = __clove_vector_suite_ctor_manual; \
     vector_params.item_dtor = __clove_vector_suite_dtor_manual; \
@@ -783,8 +786,7 @@ void title(__clove_suite_t *_this_suite) { \
     int test_count = sizeof(func_ptr) / sizeof(func_ptr[0]);\
     _this_suite->name = name;\
     _this_suite->test_count = test_count;\
-    __clove_vector_params_t vector_params = __CLOVE_VECTOR_DEFAULT_PARAMS; \
-    vector_params.item_size = sizeof(__clove_test_t); \
+    __clove_vector_params_t vector_params = __clove_vector_params_defaulted(sizeof(__clove_test_t)); \
     vector_params.initial_capacity = test_count; \
     vector_params.item_ctor = __clove_vector_test_ctor; \
     __clove_vector_init(&_this_suite->tests, &vector_params); \
@@ -1200,8 +1202,7 @@ static int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clo
     //Vector could be replace with sorted tree to sort while scanning for clove functions
     __clove_vector_t clove_functions;
     //do macro with default that accept item size (it is mandatory basically)
-    __clove_vector_params_t params = __CLOVE_VECTOR_DEFAULT_PARAMS;
-    params.item_size = sizeof(__clove_symbols_function_t);
+    __clove_vector_params_t params = __clove_vector_params_defaulted(sizeof(__clove_symbols_function_t));
     __clove_vector_init(&clove_functions, &params);
 
     size_t prefix_length = strlen(prefix);
@@ -1249,8 +1250,7 @@ int main(int argc, char* argv[]) {\
     __clove_exec_path = argv[0]; \
     __clove_exec_base_path = __clove_basepath(argv[0]); \
     __clove_symbols_context_t context; \
-    __clove_vector_params_t vector_params = __CLOVE_VECTOR_DEFAULT_PARAMS; \
-    vector_params.item_size = sizeof(__clove_suite_t); \
+    __clove_vector_params_t vector_params = __clove_vector_params_defaulted(sizeof(__clove_suite_t)); \
     vector_params.item_ctor = __clove_vector_suite_ctor; \
     vector_params.item_dtor = __clove_vector_suite_dtor; \
     __clove_vector_init(&context.suites, &vector_params); \
