@@ -9,8 +9,7 @@ static int ints_comparator(void* v1ptr, void* v2ptr) {
 
 CLOVE_TEST(SortEmpty) {
     __clove_vector_t vector;
-    __clove_vector_params_t params = __CLOVE_VECTOR_DEFAULT_PARAMS;
-    params.item_size = sizeof(int);
+    __clove_vector_params_t params = __clove_vector_params_defaulted(sizeof(int));
     __clove_vector_init(&vector, &params);
     __clove_vector_sort(&vector, ints_comparator);
 
@@ -19,8 +18,7 @@ CLOVE_TEST(SortEmpty) {
 
 CLOVE_TEST(SortOneItem) {
     __clove_vector_t vector;
-    __clove_vector_params_t params = __CLOVE_VECTOR_DEFAULT_PARAMS;
-    params.item_size = sizeof(int);
+    __clove_vector_params_t params = __clove_vector_params_defaulted(sizeof(int));
     __clove_vector_init(&vector, &params);
 
     int* slot = (int*) __clove_vector_add_empty(&vector);
@@ -34,8 +32,7 @@ CLOVE_TEST(SortOneItem) {
 
 CLOVE_TEST(SortTwoItemsAlreadySorted) {
     __clove_vector_t vector;
-    __clove_vector_params_t params = __CLOVE_VECTOR_DEFAULT_PARAMS;
-    params.item_size = sizeof(int);
+    __clove_vector_params_t params = __clove_vector_params_defaulted(sizeof(int));
     __clove_vector_init(&vector, &params);
 
     int* slot;
@@ -55,8 +52,7 @@ CLOVE_TEST(SortTwoItemsAlreadySorted) {
 
 CLOVE_TEST(SortTwoItemsNotAlreadySorted) {
     __clove_vector_t vector;
-    __clove_vector_params_t params = __CLOVE_VECTOR_DEFAULT_PARAMS;
-    params.item_size = sizeof(int);
+    __clove_vector_params_t params = __clove_vector_params_defaulted(sizeof(int));
     __clove_vector_init(&vector, &params);
 
     int* slot;
