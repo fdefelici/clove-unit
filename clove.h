@@ -111,10 +111,15 @@ static __clove_time_t __clove_time_now() {
     return result;
 }
 #else 
+#include <time.h>
+#include <unistd.h>
 static __clove_time_t __clove_time_now() { 
+    struct timespec time_data;
+    clock_gettime(CLOCK_REALTIME, &time_data);
+
     __clove_time_t result;
-    result.seconds = 0;
-    result.nanos_after_seconds = 0;
+    result.seconds = time_data.tv_sec;
+    result.nanos_after_seconds = time_data.tv_nsec;
     return result;
 }
 #endif //_WIN32
