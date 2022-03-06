@@ -13,7 +13,12 @@ CLOVE_TEST(PathConcatConvertingSeparator) {
     CLOVE_STRING_EQ("path\\to\\first\\second", result);
 } 
 
-CLOVE_TEST(PathAbsPathFromExecPath) {
-    char* result = __clove_get_exec_abs_path("path/to/append");
+CLOVE_TEST(AbsolutePathFromExecBasePath) {
+    char* result = __clove_path_rel_to_abs_exec_path("path/to/append");
     CLOVE_NOT_NULL(result);
 }   
+
+CLOVE_TEST(BasePathForJustExecutable) {
+    char* result = __clove_path_basepath("file.exe");
+    CLOVE_STRING_EQ(".\\", result);
+}  
