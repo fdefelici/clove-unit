@@ -1258,18 +1258,16 @@ static char* __clove_path_basepath(char* path) {
     const char* last_addr = strrchr((const char*)path, __CLOVE_PATH_SEPARATOR);
     int bytes_count;
 
-    char dot_path[2] = { '.', __CLOVE_PATH_SEPARATOR };
+    char dot_path[3] = { '.', __CLOVE_PATH_SEPARATOR, '\0' };
     if (!last_addr) {
-        //bytes_count = (int)strlen(path);
-        bytes_count = 2;
+        bytes_count = sizeof(dot_path) - 1; //equivalent to strlen
         path = dot_path;
-    }
-    else {
+    } else {
         bytes_count = (int)(last_addr - path);
     }
-    int size = bytes_count + 1; // +1 take into account null terminator
+    int count = bytes_count + 1; // +1 take into account null terminator
 
-    char* base_path = (char*)malloc(sizeof(char) * size);
+    char* base_path = (char*)calloc(count, sizeof(char));
     strncpy_s(base_path, size, path, bytes_count);
     return base_path;
 }
