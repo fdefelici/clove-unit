@@ -112,7 +112,10 @@ static __clove_time_t __clove_time_now() {
 }
 #else 
 static __clove_time_t __clove_time_now() { 
-    //TODO: Implement for Unix
+    __clove_time_t result;
+    result.seconds = 0;
+    result.nanos_after_seconds = 0;
+    return result;
 }
 #endif //_WIN32
 #pragma endregion
@@ -657,56 +660,9 @@ static void __clove_report_console_string_ellipse(
     }
 }
 
-/*
-static void __clove_report_console_string_ellipse(const char* exp, size_t exp_size, 
-                                             char* act, size_t act_size, 
-                                             char* exp_short, char* act_short, size_t short_len) 
-{
-    if (short_len < 5) return;
-    size_t residual_max_len = short_len - 4;
-
-
-    size_t iter_len = exp_size < act_size ? exp_size : act_size;
-
-    for(size_t i = 0; i < iter_len; ++i) {
-        if (exp[i] != act[i]) {
-            size_t source_index = i <= 3 ? 0 : i - 3; 
-            size_t dest_index = 0;
-            if (source_index > 0) {
-                exp_short[0] = '.'; exp_short[1] = '.'; exp_short[2] = '.';
-                act_short[0] = '.'; act_short[1] = '.'; act_short[2] = '.';
-                dest_index = 3;
-            }
-
-            size_t residual_len = iter_len - source_index - 1;
-            size_t fill_size = residual_len < residual_max_len ? residual_len : residual_max_len;
-            for(size_t j = 0; j < fill_size; ++j) {
-                exp_short[dest_index + j] = exp[source_index + j];
-                act_short[dest_index + j] = act[source_index + j];
-            }
-            size_t exp_term_pos = dest_index + fill_size;
-            size_t act_term_pos = dest_index + fill_size;
-            for(size_t k = 0; k < 3; ++k) {
-                if (exp_size >= short_len) {
-                    exp_short[dest_index + fill_size + k] = '.';
-                    exp_term_pos++;
-                }
-                if (act_size >= short_len) {
-                    act_short[dest_index + fill_size + k] = '.';
-                    act_term_pos++;
-                }
-            }
-            exp_short[exp_term_pos] = '\0';
-            act_short[act_term_pos] = '\0';
-            return;
-        }
-    }
-}
-*/
-
 static void __clove_report_console_test_executed(struct __clove_report_t* this, __clove_suite_t* suite, __clove_test_t* test, size_t test_number) {
     char result[__CLOVE_STRING_LENGTH], strToPad[__CLOVE_TEST_ENTRY_LENGTH];
-    snprintf(strToPad, __CLOVE_TEST_ENTRY_LENGTH, "%llu) %s.%s", test_number, suite->name, test->name);
+    snprintf(strToPad, __CLOVE_TEST_ENTRY_LENGTH, "%zu) %s.%s", test_number, suite->name, test->name);
     __clove_pad_right(result, strToPad);
 
     if (test->result == __CLOVE_TEST_PASSED) {
@@ -717,7 +673,7 @@ static void __clove_report_console_test_executed(struct __clove_report_t* this, 
         char msg[__CLOVE_STRING_LENGTH] = "FAILURE but NO MESSAGE!!!";
 
         if (test->issue.assert == __CLOVE_ASSERT_FAIL) {
-            sprintf_s(msg, sizeof(msg), "A FAIL assertion was met!");
+            sprintf_s(msg, sizeof(msg), "%s", "A FAIL assertion was met!");
         } else {
             switch (test->issue.data_type)
             {
@@ -812,7 +768,7 @@ static void __clove_report_console_test_executed(struct __clove_report_t* this, 
 
                     char* exp_escaped = __clove_string_escape(exp_short);
                     char* act_escaped = __clove_string_escape(act_short);
-                    sprintf_s(msg, sizeof(msg), "%sexpected [%llu]\"%s\" but was [%llu]\"%s\"", not, exp_len, exp_escaped, act_len, act_escaped);
+                    sprintf_s(msg, sizeof(msg), "%sexpected [%zu]\"%s\" but was [%zu]\"%s\"", not, exp_len, exp_escaped, act_len, act_escaped);
                     free(exp_escaped);
                     free(act_escaped);
                 } 
@@ -893,7 +849,7 @@ static void __clove_report_json_start(__clove_report_t* this, int suite_count, i
 
     fprintf(instance->file, "{\n");
     fprintf(instance->file, "\t\"clove_version\" : \"%s\",\n", instance->clove_version);
-    fprintf(instance->file, "\t\"api_version\" : %lu,\n", instance->api_version);
+    fprintf(instance->file, "\t\"api_version\" : %u,\n", instance->api_version);
     fprintf(instance->file, "\t\"result\" : {\n");
     fprintf(instance->file, "\t\t\"suite_count\" : %d,\n", suite_count);
     fprintf(instance->file, "\t\t\"test_count\" : %d,\n", test_count);
@@ -1007,7 +963,7 @@ static void __clove_report_json_test_executed(__clove_report_t* this, __clove_su
     fprintf(instance->file, "\t\t\t\t\t\"duration\" : %llu", __clove_time_to_nanos(&(test->duration)));
     if (test->result == __CLOVE_TEST_FAILED) {
         fprintf(instance->file, ",\n");
-        fprintf(instance->file, "\t\t\t\t\t\"line\" : %lu,\n", test->issue.line);
+        fprintf(instance->file, "\t\t\t\t\t\"line\" : %u,\n", test->issue.line);
         fprintf(instance->file, "\t\t\t\t\t\"assert\" : %d,\n", test->issue.assert);    
         fprintf(instance->file, "\t\t\t\t\t\"type\" : %d,\n", test->issue.data_type); 
         fprintf(instance->file, "\t\t\t\t\t\"expected\" : \"");
@@ -1213,9 +1169,9 @@ static void __clove_exec_suite(__clove_suite_t* suite, int test_counter, unsigne
 static void __clove_exec_suites(__clove_suite_t* suites, int suite_count, int test_count, __clove_report_t* report) {
     report->start(report, suite_count, test_count);
 
-    int passed = 0;
-    int failed = 0;
-    int skipped = 0;
+    unsigned int passed = 0;
+    unsigned int failed = 0;
+    unsigned int skipped = 0;
 
     int test_start_counter = 1;
     for (int i = 0; i < suite_count; ++i) {

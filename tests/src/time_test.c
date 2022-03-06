@@ -4,7 +4,8 @@
 CLOVE_TEST(TimeElapsedAfterSleep1Second) {
     __clove_time_t start = __clove_time_now();
 
-    Sleep(1000); //1s  NOTA: Sleep su windows, mentre sleep su unix
+    //TODO: Generalizzare Sleep
+    //Sleep(1000); //1s  NOTA: Sleep su windows, mentre sleep su unix
 
     __clove_time_t end = __clove_time_now();
 
