@@ -19,6 +19,8 @@ CLOVE_TEST(AbsolutePathFromExecBasePath) {
 }   
 
 CLOVE_TEST(BasePathForJustExecutable) {
+    char expected[3] = { '.', __CLOVE_PATH_SEPARATOR, '\0' };
+
     char* result = __clove_path_basepath("file.exe");
-    CLOVE_STRING_EQ(".\\", result);
+    CLOVE_STRING_EQ(expected, result);
 }  
