@@ -426,7 +426,7 @@ typedef struct __clove_test_t {
 typedef struct __clove_suite {
     char* name;
     __clove_vector_t tests;
-    int test_count;
+    size_t test_count;
     struct {
         void (*setup_once)();
         void (*teardown_once)();
@@ -1148,11 +1148,11 @@ static const char* __clove_rel_src(const char* path) {
     return subpath + 1;
 }
 
-static void __clove_exec_suite(__clove_suite_t* suite, int test_counter, unsigned int* passed, unsigned int* failed, unsigned int* skipped, __clove_report_t* report) {
+static void __clove_exec_suite(__clove_suite_t* suite, size_t test_counter, unsigned int* passed, unsigned int* failed, unsigned int* skipped, __clove_report_t* report) {
     __clove_time_t suite_start = __clove_time_now();
     suite->fixtures.setup_once();
 
-    for (int i = 0; i < suite->test_count; i++) {
+    for (size_t i = 0; i < suite->test_count; i++) {
         __clove_test_t* each_test = (__clove_test_t*)__clove_vector_get(&suite->tests, i);
         each_test->result = __CLOVE_TEST_SKIPPED;
 
@@ -1193,7 +1193,7 @@ static void __clove_exec_suites(__clove_suite_t* suites, int suite_count, int te
     unsigned int failed = 0;
     unsigned int skipped = 0;
 
-    int test_start_counter = 1;
+    size_t test_start_counter = 1;
     for (int i = 0; i < suite_count; ++i) {
         __clove_suite_t* each_suite = &suites[i];
         __clove_exec_suite(each_suite, test_start_counter, &passed, &failed, &skipped, report);
