@@ -30,9 +30,6 @@
 
 
 #pragma region PRIVATE APIs - Time
-#include <windows.h>
-#include <time.h>
-
 typedef enum __clove_time_traslation_e {
     __CLOVE_TIME_TRASL_NANOS_PER_SEC = 1000000000, //1 BILLION
     __CLOVE_TIME_TRASL_MILLIS_PER_SEC = 1000,
@@ -86,6 +83,9 @@ static unsigned long long __clove_time_to_nanos(__clove_time_t* t) {
 }
 
 #ifdef _WIN32
+#include <windows.h>
+#include <time.h>
+
 static __clove_time_t __clove_time_now() {
     static bool first_time = true;
     static LARGE_INTEGER count_per_sec;
