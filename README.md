@@ -1,5 +1,5 @@
 # CLove-Unit
-CLove is a unit testing single-header library for C, with test autodiscovery feature.
+CLove is a unit testing single-header library for C (mainly, but could also work with C++), with test autodiscovery feature.
 
 The aim of this library is to reduce at the minimum the boilder-plate and just focus on unit test development (such as avoiding to register manually the tests to an execution list).
 
@@ -19,7 +19,7 @@ It is possible to use this libray in two flavours:
 - **Autodiscovery** mode, where you just need to implement your tests, and than the library will do the magic to discover and execute them. 
 
 > NOTE: **Autodiscovery** works parsing the symbol table in the test executable. At the moment this feature is available for the following OS / Architecture / Executable Format:
-> - Windows / 64 bit little-endian / PE (Portable Executable)
+> - Windows / 32-64 bit little-endian / PE (Portable Executable)
 > - MacOS / 64 bit little-endian / Mach-o (Mach Object)
 > - Linux / 64 bit little-endian / ELF (Executable and Linkable Format)
 > 
