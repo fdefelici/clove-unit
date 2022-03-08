@@ -28,3 +28,10 @@ CLOVE_TEST(StringEscaping) {
     CLOVE_STRING_EQ(expected, actual);
     free(actual);
 }
+
+CLOVE_TEST(StringStartsWith) {
+    const char* str1 = "-v";
+    const char* prefix = "-";
+    bool result = __clove_string_startswith(str1, prefix);
+    CLOVE_IS_TRUE(result);
+}
