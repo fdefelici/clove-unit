@@ -1,6 +1,6 @@
 /*
  * clove-unit
- * v2.2.0
+ * v2.2.1
  * Unit Testing library for C/C++
  * https://github.com/fdefelici/clove-unit
  *
@@ -8,11 +8,16 @@
 #ifndef __CLOVE_H
 #define __CLOVE_H
 
-#define __CLOVE_VERSION "2.2.0"
+#define __CLOVE_VERSION_MAJOR 2
+#define __CLOVE_VERSION_MINOR 2
+#define __CLOVE_VERSION_PATCH 1
+#define __CLOVE_VERSION "2.2.1"
 
 #ifdef __linux
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
-#endif 
+#endif //_GNU_SOURCE
+#endif //__linux
 
 #ifdef _WIN32
 #define __CLOVE_PATH_SEPARATOR '\\'
@@ -28,6 +33,15 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#pragma region PRIVATE APIs - String
+static bool __clove_string_equal(const char* str1, const char* str2) {
+    return strcmp(str1, str2) == 0;
+}
+
+static bool __clove_string_startswith(const char* str1, const char* prefix) {
+    return strncmp(str1, prefix, strlen(prefix)) == 0;
+}
+#pragma endregion //String
 
 #pragma region PRIVATE APIs - Time
 typedef enum __clove_time_traslation_e {
@@ -846,6 +860,13 @@ static char* __clove_path_rel_to_abs_exec_path(const char* rel_path) {
     const char* base_path = __clove_get_exec_base_path();
     char* abs_path = __clove_path_concat(__CLOVE_PATH_SEPARATOR, base_path, rel_path);
     return abs_path;
+}
+
+static bool __clove_path_is_relative(const char* path) {    
+    if (__clove_string_startswith(path, "\\")) return false; //windows
+    if (strlen(path) > 2 && path[1] == ':') return false;    //windows
+    if (__clove_string_startswith(path, "/")) return false;  //unix
+    return true;
 }
 
 typedef struct __clove_report_json_t {
@@ -1789,33 +1810,149 @@ static int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clo
 #endif //_WIN32 symbol table
 
 
+#pragma region PRIVATE APIs - CommandLine
+typedef struct __clove_cmdline_t {
+    int arg_index;
+    int argc;
+    char* *argv;
+} __clove_cmdline_t;
+
+static __clove_cmdline_t __clove_cmdline_create(char** argv, int argc) {
+    __clove_cmdline_t cmd;
+    cmd.argv = argv;
+    cmd.argc = argc;
+    cmd.arg_index = 1;
+    return cmd;
+}
+
+static bool __clove_cmdline_next_opt(__clove_cmdline_t* cmdline, char** opt_out) {
+    if (cmdline->arg_index >= cmdline->argc) return false;
+    
+    char* current = cmdline->argv[cmdline->arg_index];
+    if (strlen(current) == 2 && __clove_string_startswith(current, "-")) {
+        *opt_out = current+1;
+    }
+    cmdline->arg_index++;
+    return true;
+}
+
+static bool __clove_cmdline_next_arg(__clove_cmdline_t* cmdline, char** arg_out) {
+    if (cmdline->arg_index >= cmdline->argc) return false;
+    *arg_out = cmdline->argv[cmdline->arg_index];
+    cmdline->arg_index++;
+    return true;
+}
+
+#pragma endregion
+
+static int __clove_run_tests_with_report(__clove_report_t* report) {
+    int run_result = 0;
+
+    __clove_symbols_context_t context;
+    
+    __clove_vector_params_t vector_params = __clove_vector_params_defaulted(sizeof(__clove_suite_t));
+    vector_params.item_ctor = __clove_vector_suite_ctor;
+    vector_params.item_dtor = __clove_vector_suite_dtor;
+    __clove_vector_init(&context.suites, &vector_params);
+    context.suites_count = 0;
+    context.last_suite = NULL;
+    context.prefix_length = strlen("__clove_sym___");
+    context.tests_count = 0;
+    
+    int result = __clove_symbols_for_each_function_by_prefix("__clove_sym___", __clove_symbols_function_collect, &context);
+    if (result == 0) {
+        __clove_exec_suites((__clove_suite_t*)(context.suites.items), context.suites_count, context.tests_count, report);
+    } else {
+        run_result = -1;
+    }
+    __clove_vector_free(&context.suites);
+    return run_result;
+}
+
+
+typedef enum __clove_cmdline_errno_t {
+    __CLOVE_CMD_ERRNO_OK = 0,
+    __CLOVE_CMD_ERRNO_GENERIC = 1,
+    __CLOVE_CMD_ERRNO_INVALID_PARAM = 2,
+} __clove_cmdline_errno_t;
+
+static __clove_cmdline_errno_t __clove_cmdline_handle_version(__clove_cmdline_t* ctx) {
+    printf("%s", __CLOVE_VERSION); //to avoid new_line character(s)
+    return __CLOVE_CMD_ERRNO_OK;
+}
+
+static __clove_cmdline_errno_t __clove_cmdline_handle_report(__clove_cmdline_t* cmdline) {
+    char* arg;
+    bool found = __clove_cmdline_next_arg(cmdline, &arg);
+    if (!found) return __CLOVE_CMD_ERRNO_INVALID_PARAM;
+
+    __clove_report_t* report;
+    if (__clove_string_equal("json", arg)) {
+        char* file_path = "clove_report.json";
+        found = __clove_cmdline_next_opt(cmdline, &arg);
+        if (found && __clove_string_equal("f", arg)) {
+            found = __clove_cmdline_next_arg(cmdline, &arg);
+            if (found) file_path = arg;
+        }
+        char* report_path;
+        if (__clove_path_is_relative(file_path)) {
+            report_path = __clove_path_rel_to_abs_exec_path(file_path);
+        } else {
+            report_path = file_path;
+        }
+        report = (__clove_report_t*)__clove_report_json_new(report_path, __CLOVE_VERSION);
+    } else if (__clove_string_equal("console", arg)) {
+        report = (__clove_report_t* )__clove_report_console_new();
+    } else {
+        return __CLOVE_CMD_ERRNO_INVALID_PARAM;
+    }
+
+    int run_result = __clove_run_tests_with_report(report);
+    report->free(report);
+
+    if (run_result == 0) {
+        return __CLOVE_CMD_ERRNO_OK;
+    } 
+    return __CLOVE_CMD_ERRNO_GENERIC;
+}
+
+static int __clove_runner_auto(int argc, char* argv[]) {
+    __clove_exec_path = argv[0];
+    __clove_exec_base_path = __clove_path_basepath(argv[0]);
+
+
+    /* Supported Commands 
+       > <exe>                      Run with console report
+       > <exe> -r console           Run with console report (to implement: -m verbose or brief)
+       > <exe> -r json              Run with json mode (to implement: -f <report-path.json>)
+       > <exe> -v                   Print CLove-Unit version
+    */
+    __clove_cmdline_t cmdline = __clove_cmdline_create(argv, argc);
+    __clove_cmdline_errno_t cmd_result = __CLOVE_CMD_ERRNO_OK;
+    char* opt;
+    bool found_opt = __clove_cmdline_next_opt(&cmdline, &opt);
+    if (found_opt) {
+        if (__clove_string_equal("v", opt)) {
+            cmd_result = __clove_cmdline_handle_version(&cmdline);
+        } else if (__clove_string_equal("r", opt)) {
+            cmd_result = __clove_cmdline_handle_report(&cmdline);
+        }
+    } else {
+        __clove_report_t* report = (__clove_report_t* )__clove_report_console_new();
+        int run_result = __clove_run_tests_with_report(report);
+        report->free(report);
+        if (run_result != 0) cmd_result = __CLOVE_CMD_ERRNO_GENERIC;
+    }
+    free(__clove_exec_base_path);
+    return cmd_result;
+}
+
+
 #define __CLOVE_RUNNER_AUTO() \
 char* __clove_exec_path;\
 char* __clove_exec_base_path;\
 int main(int argc, char* argv[]) {\
-    __clove_exec_path = argv[0]; \
-    __clove_exec_base_path = __clove_path_basepath(argv[0]); \
-    __clove_symbols_context_t context; \
-    __clove_vector_params_t vector_params = __clove_vector_params_defaulted(sizeof(__clove_suite_t)); \
-    vector_params.item_ctor = __clove_vector_suite_ctor; \
-    vector_params.item_dtor = __clove_vector_suite_dtor; \
-    __clove_vector_init(&context.suites, &vector_params); \
-    context.suites_count = 0; \
-    context.last_suite = NULL; \
-    context.prefix_length = strlen("__clove_sym___"); \
-    context.tests_count = 0; \
-    int result = __clove_symbols_for_each_function_by_prefix("__clove_sym___", __clove_symbols_function_collect, &context); \
-    if (result == 0) { \
-        const char* report_path = __clove_path_rel_to_abs_exec_path("clove_report.json");\
-        __clove_report_t* report; \
-        if (argc == 2 && strcmp("json", argv[1]) == 0) report = (__clove_report_t*)__clove_report_json_new(report_path, __CLOVE_VERSION); \
-        else report = (__clove_report_t* )__clove_report_console_new(); \
-        __clove_exec_suites((__clove_suite_t*)(context.suites.items), context.suites_count, context.tests_count, report); \
-        report->free(report);\
-    } \
-    free(__clove_exec_base_path); \
-    __clove_vector_free(&context.suites); \
-    return 0;\
+    return __clove_runner_auto(argc, argv);\
 }
 
 static const char* __clove_get_exec_path() {

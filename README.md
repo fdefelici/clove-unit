@@ -7,6 +7,7 @@ CLove is able to discover and run your tests, gathering information about positi
 
 ![Clove test run result](./examples/result.png)
 
+> Futhermore an Extension for `Visual Studio Code` IDE is available in the [market place](https://marketplace.visualstudio.com/items?itemName=fdefelici.vscode-clove-unit). Have a look and enjoy ;-)
 
 # How it works
 The library is implemented around the following concepts:

@@ -40,7 +40,7 @@ const char* base_path(const char* path) {
 
 int main(int argc, char* argv[]) {
 
-    const char* path = base_path(argv[0]);
+    char* path = base_path(argv[0]);
     char* file_path = (char*)calloc(strlen(path) + 2 + strlen("perf_test.c"), sizeof(char));
     strcat(file_path, path);
     strcat(file_path, "\\perf_test.c");
