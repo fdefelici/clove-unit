@@ -1,5 +1,5 @@
 #define CLOVE_SUITE_NAME MySecondSuite
-#include "clove.h"
+#include "clove-unit.h"
 
 CLOVE_TEST(FailingTest) {
     int a = 1;
@@ -17,5 +17,9 @@ CLOVE_TEST(ChecNotNull) {
 CLOVE_TEST(CheckNull) {
     int myvalue = 1;
     CLOVE_NULL(&myvalue);
+}
+
+CLOVE_TEST(SkippedTest) {
+    
 }
 

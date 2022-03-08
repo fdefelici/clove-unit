@@ -1,5 +1,5 @@
 file(GLOB_RECURSE SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.c)
-add_executable(CLovePerfTest ${SOURCES} ../clove.h)
+add_executable(CLovePerfTest ${SOURCES} ../clove-unit.h)
 target_include_directories(CLovePerfTest PRIVATE ../)
 set_property(TARGET CLovePerfTest PROPERTY C_STANDARD 11)
 

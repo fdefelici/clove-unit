@@ -19,7 +19,7 @@ It is possible to use this libray in two flavours:
 - **Autodiscovery** mode, where you just need to implement your tests, and than the library will do the magic to discover and execute them. 
 
 > NOTE: **Autodiscovery** works parsing the symbol table in the test executable. At the moment this feature is available for the following OS / Architecture / Executable Format:
-> - Windows / 64 bit little-endian / PE (Portable Executable)
+> - Windows / 32-64 bit little-endian / PE (Portable Executable)
 > - MacOS / 64 bit little-endian / Mach-o (Mach Object)
 > - Linux / 64 bit little-endian / ELF (Executable and Linkable Format)
 > 
@@ -27,14 +27,14 @@ It is possible to use this libray in two flavours:
 
 
 # Usage
-Just add [clove.h](./clove.h) header in your project and starts creating unit tests for your code depending on the two modes: **Manual** and **Autodiscovery**
+Just add [clove-unit.h](./clove-unit.h) header in your project and starts creating unit tests for your code depending on the two modes: **Manual** and **Autodiscovery**
 
 ## Manual Mode
 First define a Suite and related test cases:
 ```c
 //file test_suite1.h
 #define CLOVE_ENABLE_MANUAL
-#include "clove.h"
+#include "clove-unit.h"
 
 CLOVE_TEST(FirstTest) {
     int a = 1;
@@ -59,7 +59,7 @@ Than include the test suite files in the one that will be the main program and e
 ```c
 //file main.c
 #define CLOVE_ENABLE_MANUAL
-#include "clove.h"
+#include "clove-unit.h"
 #include "test_suite1.h"
 #include "test_suite2.h"
 
@@ -77,7 +77,7 @@ First define a Suite name and then implement related test cases:
 ```c
 //file test_suite1.c
 #define CLOVE_SUITE_NAME MySuite01
-#include "clove.h"
+#include "clove-unit.h"
 
 CLOVE_TEST(FirstTest) {
     int a = 1;
@@ -94,7 +94,7 @@ Than setup a translation unit to be the main program with autodiscovery feature:
 
 ```c
 //file main.c
-#include "clove.h"
+#include "clove-unit.h"
 
 CLOVE_RUNNER()
 ```

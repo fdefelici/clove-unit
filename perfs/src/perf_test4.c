@@ -1,5 +1,5 @@
 #define CLOVE_SUITE_NAME Suite5
-#include "clove.h"
+#include "clove-unit.h"
 CLOVE_TEST(Test0) {
 	CLOVE_PASS();
 }

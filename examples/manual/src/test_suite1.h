@@ -1,5 +1,5 @@
 #define CLOVE_ENABLE_MANUAL
-#include "clove.h"
+#include "clove-unit.h"
 
 CLOVE_TEST(FirstTest) {
     int a = 1;

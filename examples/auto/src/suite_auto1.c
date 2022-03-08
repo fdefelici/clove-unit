@@ -1,5 +1,5 @@
 #define CLOVE_SUITE_NAME MyVeryFirstSuite
-#include "clove.h"
+#include "clove-unit.h"
 
 int setup_once_count = 0;
 int teardown_once_count = 0;
