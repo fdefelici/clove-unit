@@ -1,5 +1,5 @@
 #define CLOVE_SUITE_NAME PathTest
-#include "clove.h"
+#include "clove-unit.h"
 
 CLOVE_TEST(PathConcatenation) {
     char* result = __clove_path_concat('/', "path/to/first", "second");

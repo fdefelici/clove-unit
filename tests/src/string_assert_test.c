@@ -1,5 +1,5 @@
 #define CLOVE_SUITE_NAME StringAssertsTest
-#include "clove.h"
+#include "clove-unit.h"
 
 CLOVE_TEST(StringStaticallyAllocated) {
     CLOVE_STRING_EQ("hello", "hello");

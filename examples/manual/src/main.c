@@ -1,5 +1,5 @@
 #define CLOVE_ENABLE_MANUAL
-#include "clove.h"
+#include "clove-unit.h"
 #include "test_suite1.h"
 #include "test_suite2.h"
 

@@ -12,7 +12,7 @@
 
 void write_suite_header(const char* name, FILE* file) {
     fprintf(file, "#define CLOVE_SUITE_NAME %s\n", name);
-    fputs("#include \"clove.h\"\n", file);
+    fputs("#include \"clove-unit.h\"\n", file);
 }
 
 void write_suite_test(const char* name, FILE* file) {

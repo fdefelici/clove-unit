@@ -1,5 +1,5 @@
 #define CLOVE_SUITE_NAME ReportConsoleTest
-#include "clove.h"
+#include "clove-unit.h"
 
 CLOVE_TEST(SameLengthFirstCharDiff) {
     char exp[] = "H123456789012345111111111111111111111111";

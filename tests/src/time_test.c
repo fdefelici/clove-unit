@@ -1,5 +1,5 @@
 #define CLOVE_SUITE_NAME TimeTest
-#include "clove.h"
+#include "clove-unit.h"
 
 
 CLOVE_TEST(TimeElapsedAfterSleep1Second) {

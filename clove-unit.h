@@ -1,14 +1,14 @@
 /*
  * clove-unit
- * v2.X.X (vscode-clove-ext)
- * Unit Testing library for C
+ * v2.2.0
+ * Unit Testing library for C/C++
  * https://github.com/fdefelici/clove-unit
  *
  */
 #ifndef __CLOVE_H
 #define __CLOVE_H
 
-#define __CLOVE_VERSION "2.X.X"
+#define __CLOVE_VERSION "2.2.0"
 
 #ifdef __linux
 #define _GNU_SOURCE

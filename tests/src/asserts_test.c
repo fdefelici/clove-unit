@@ -1,5 +1,5 @@
 #define CLOVE_SUITE_NAME AssertsFailTest
-#include "clove.h"
+#include "clove-unit.h"
 
 CLOVE_TEST(IsTrue) {
     CLOVE_IS_TRUE(true);
