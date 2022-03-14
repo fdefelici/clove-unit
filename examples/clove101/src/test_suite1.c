@@ -1,4 +1,4 @@
-#define CLOVE_ENABLE_MANUAL
+#define CLOVE_SUITE_NAME MySuite01
 #include "clove-unit.h"
 
 CLOVE_TEST(BooleanTest) {
@@ -55,13 +55,4 @@ CLOVE_TEST(PassTest) {
 
 CLOVE_TEST(FailTest) {
     CLOVE_FAIL();
-}
-
-CLOVE_SUITE(TestSuite2) {
-    CLOVE_SUITE_TESTS(
-        BooleanTest, CharTest, 
-        IntTest, UIntTest, LongfamilyTest,
-        FloatTest, DoubleTest, StringTest, 
-        PassTest, FailTest
-    );
 }

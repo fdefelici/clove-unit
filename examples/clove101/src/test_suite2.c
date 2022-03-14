@@ -1,4 +1,4 @@
-#define CLOVE_SUITE_NAME MyVeryFirstSuite
+#define CLOVE_SUITE_NAME MySuite02
 #include "clove-unit.h"
 
 int setup_once_count = 0;

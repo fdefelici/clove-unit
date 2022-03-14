@@ -1,4 +1,4 @@
-#define CLOVE_SUITE_NAME MySecondSuite
+#define CLOVE_SUITE_NAME MySuite03
 #include "clove-unit.h"
 
 CLOVE_TEST(FailingTest) {
@@ -7,8 +7,8 @@ CLOVE_TEST(FailingTest) {
     CLOVE_INT_EQ(a, b);
 }
 
-
-CLOVE_TEST(ChecNotNull) {
+/*
+CLOVE_TEST(CheckNotNull) {
     int* null_ptr = NULL;
     CLOVE_NOT_NULL(null_ptr);
 }
@@ -17,6 +17,11 @@ CLOVE_TEST(ChecNotNull) {
 CLOVE_TEST(CheckNull) {
     int myvalue = 1;
     CLOVE_NULL(&myvalue);
+}
+*/
+
+CLOVE_TEST(StringFailTest) {
+    CLOVE_STRING_EQ("Hello", "World");
 }
 
 CLOVE_TEST(SkippedTest) {
