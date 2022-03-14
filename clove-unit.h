@@ -1309,71 +1309,6 @@ static char* __clove_path_basepath(char* path) {
     return base_path;
 }
 
-#pragma region Private APIs - Manual
-#define __CLOVE_RUNNER_MANUAL(...) \
-char* __clove_exec_path;\
-char* __clove_exec_base_path;\
-int main(int argc, char* argv[]) {\
-    __clove_exec_path = argv[0]; \
-    __clove_exec_base_path = __clove_path_basepath(argv[0]); \
-    static void (*suite_ptr[])(__clove_suite_t*) = {__VA_ARGS__};\
-    int suite_count = sizeof(suite_ptr) / sizeof(suite_ptr[0]); \
-    __clove_vector_params_t vector_params = __clove_vector_params_defaulted(sizeof(__clove_suite_t)); \
-    vector_params.initial_capacity = suite_count; \
-    vector_params.item_ctor = __clove_vector_suite_ctor_manual; \
-    vector_params.item_dtor = __clove_vector_suite_dtor_manual; \
-    __clove_vector_t suites; \
-    __clove_vector_init(&suites, &vector_params); \
-    int test_count = 0;\
-    for(int i=0; i < suite_count; ++i) {\
-        __clove_suite_t* suite = (__clove_suite_t*)__clove_vector_add_empty(&suites); \
-        suite_ptr[i](suite);\
-        test_count += suite->test_count;\
-    }\
-    __clove_report_t* report = (__clove_report_t*)__clove_report_console_new(); \
-    __clove_exec_suites((__clove_suite_t*)(suites.items), suite_count, test_count, report);\
-    report->free(report);\
-    free(__clove_exec_base_path); \
-    __clove_vector_free(&suites); \
-    return 0;\
-}
-
-#define __CLOVE_SUITE_DECL_MANUAL(title) void title(__clove_suite_t *_this_suite);
-
-#define __CLOVE_SUITE_MANUAL(title) \
-void title(__clove_suite_t *_this_suite) { \
-    static char name[] = #title;\
-    _this_suite->name = name;
-#define __CLOVE_SUITE_SETUP_ONCE_MANUAL(funct) _this_suite->fixtures.setup_once = funct;
-#define __CLOVE_SUITE_TEARDOWN_ONCE_MANUAL(funct) _this_suite->fixtures.teardown_once = funct;
-#define __CLOVE_SUITE_SETUP_MANUAL(funct) _this_suite->fixtures.setup = funct;
-#define __CLOVE_SUITE_TEARDOWN_MANUAL(funct) _this_suite->fixtures.teardown = funct;
-#define __CLOVE_SUITE_TESTS_MANUAL(...) \
-    static void (*func_ptr[])(__clove_test_t*) = {__VA_ARGS__};\
-    static char functs_as_str[] = #__VA_ARGS__;\
-    int test_count = sizeof(func_ptr) / sizeof(func_ptr[0]);\
-    _this_suite->name = name;\
-    _this_suite->test_count = test_count;\
-    __clove_vector_params_t vector_params = __clove_vector_params_defaulted(sizeof(__clove_test_t)); \
-    vector_params.initial_capacity = test_count; \
-    vector_params.item_ctor = __clove_vector_test_ctor; \
-    __clove_vector_init(&_this_suite->tests, &vector_params); \
-    char *context = NULL;\
-    for(int i=0; i < test_count; ++i) {\
-        char *token;\
-        if (i==0) { token = strtok_s(functs_as_str, ", ", &context); }\
-        else { token = strtok_s(NULL, ", ", &context); }\
-        __clove_test_t* test = (__clove_test_t*)__clove_vector_add_empty(&_this_suite->tests); \
-        test->name = token;\
-        test->funct = (*func_ptr[i]);\
-    }\
-}
-
-#define __CLOVE_TEST_MANUAL(title) static void title(__clove_test_t *_this) 
-
-#pragma endregion //Manual
-
-
 #pragma region Private APIs - Autodiscovery
 typedef struct __clove_symbols_context_t {
     __clove_suite_t* last_suite;
@@ -2028,44 +1963,6 @@ static const char* __clove_get_exec_base_path() {
 #define CLOVE_STRING_NE(exp, res) __CLOVE_TEST_GUARD __clove_check_string(__CLOVE_ASSERT_NE, exp, res, _this);
 #pragma endregion //ASSERTIONS
 
-
-#if !defined(CLOVE_ENABLE_MANUAL) || defined(CLOVE_SUITE_NAME)
-#define __CLOVE_MODE_AUTO
-#else 
-#define __CLOVE_MODE_MANUAL
-#endif
-
-#ifdef __CLOVE_MODE_MANUAL
-
-  /*
-   * Test Execution.
-   * Take as input a list of suites.
-   */
-#define CLOVE_RUNNER(...) __CLOVE_RUNNER_MANUAL(__VA_ARGS__)
-
-   /*
-    * Suite declaration. (basically a standard method forward declaration)
-    * Useful to work with compilation unit instead of just using header file to implement test and test suite
-    */
-#define CLOVE_SUITE_DECL(title) __CLOVE_SUITE_DECL_MANUAL(title);
-
-    /*
-     * Suite Implementation
-     */
-#define CLOVE_SUITE(title) __CLOVE_SUITE_MANUAL(title)
-#define CLOVE_SUITE_SETUP_ONCE(funct) __CLOVE_SUITE_SETUP_ONCE_MANUAL(funct)
-#define CLOVE_SUITE_TEARDOWN_ONCE(funct) __CLOVE_SUITE_TEARDOWN_ONCE_MANUAL(funct)
-#define CLOVE_SUITE_SETUP(funct) __CLOVE_SUITE_SETUP_MANUAL(funct)
-#define CLOVE_SUITE_TEARDOWN(funct) __CLOVE_SUITE_TEARDOWN_MANUAL(funct)
-#define CLOVE_SUITE_TESTS(...) __CLOVE_SUITE_TESTS_MANUAL(__VA_ARGS__)
-     /*
-      * Define a new test named 'title'
-      */
-#define CLOVE_TEST(title) __CLOVE_TEST_MANUAL(title)
-
-
-#else // AUTODISCOVERY ENABLED
-
 #define CLOVE_RUNNER() __CLOVE_RUNNER_AUTO()
   //Need CLOVE_SUITE_NAME
 #define CLOVE_SUITE_SETUP_ONCE() __CLOVE_SUITE_SETUP_ONCE_AUTO()
@@ -2073,9 +1970,6 @@ static const char* __clove_get_exec_base_path() {
 #define CLOVE_SUITE_SETUP() __CLOVE_SUITE_SETUP_AUTO()
 #define CLOVE_SUITE_TEARDOWN() __CLOVE_SUITE_TEARDOWN_AUTO()
 #define CLOVE_TEST(title) __CLOVE_TEST_AUTO(title)
-
-#endif //__CLOVE_MODE_MANUAL
-
 
 #pragma endregion //Public APIs
 
