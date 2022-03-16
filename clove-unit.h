@@ -782,6 +782,7 @@ void __clove_stack_free(__clove_stack_t* stack) {
 
 #pragma region PRIVATE - Vector Impl
 #include <stdlib.h>
+#include <stdint.h>
 __clove_vector_params_t __clove_vector_params_defaulted(size_t item_size) {
     __clove_vector_params_t params;
     params.item_size = item_size;
