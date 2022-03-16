@@ -46,10 +46,13 @@ CLOVE_TEST(SecondTest) {
 }
 ```
 
-Than setup a translation unit to be the main program with autodiscovery feature: 
+Than setup a translation unit to be the main program with autodiscovery feature.
+
+Using `CLOVE_IMPLEMENTATION` definition **once** before `clove-unit.h` will include whole library implementation.
 
 ```c
 //file main.c
+#define CLOVE_IMPLEMENTATION
 #include "clove-unit.h"
 
 CLOVE_RUNNER()
@@ -67,6 +70,7 @@ Apis to be used for defining suite and tests.
 
 | Api | Description |
 | ------------- | ------------- |
+| CLOVE_IMPLEMENTATION | to be declared just once before `clove-unit.h` will include whole library implementation |
 | CLOVE_RUNNER()  | generate program entry point  |
 | CLOVE_SUITE_NAME  | Macro to be defined for each suite, before including clove header |
 | CLOVE_SUITE_SETUP_ONCE()  | Implement a procedure to be executed only once before all the test cases (Optional) |

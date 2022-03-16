@@ -1,5 +1,6 @@
 #define CLOVE_SUITE_NAME ReportJsonTest
 #include "clove-unit.h"
+#include <stdlib.h>
 
 char* read_file(const char* path) {
     FILE* file = fopen(path, "rb");

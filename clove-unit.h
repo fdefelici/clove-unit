@@ -13,11 +13,30 @@
 #define __CLOVE_VERSION_PATCH 1
 #define __CLOVE_VERSION "2.2.1"
 
+#pragma region PRIVATE
+
+#pragma region PRIVATE - OS Init
 #ifdef __linux
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif //_GNU_SOURCE
 #endif //__linux
+#pragma endregion // OS Init
+
+#pragma region PRIVATE - DECLARATION
+
+#pragma region PRIVATE - Utils Decl
+void __clove_utils_empty_funct();
+const char* __clove_rel_src(const char* path);
+
+extern char* __clove_exec_path;
+extern char* __clove_exec_base_path;
+const char* __clove_get_exec_base_path();
+const char* __clove_get_exec_path();
+#pragma endregion // Utils Decl
+
+#pragma region PRIVATE - Path Decl
+#include <stdbool.h>
 
 #ifdef _WIN32
 #define __CLOVE_PATH_SEPARATOR '\\'
@@ -25,11 +44,15 @@
 #define __CLOVE_PATH_SEPARATOR '/'
 #endif //_WIN32
 
-#pragma region PRIVATE - Utils Decl
-void __clove_utils_empty_funct();
-#pragma endregion // Utils Decl
+char* __clove_path_concat(const char separator, const char* path1, const char* path2);
+char* __clove_path_rel_to_abs_exec_path(const char* rel_path);
+bool __clove_path_is_relative(const char* path);
+char* __clove_path_basepath(char* path);
+#pragma endregion // Path Decl
 
 #pragma region PRIVATE - String Decl
+//TODO: Wrap all string functions under __clove_string_?
+//      Example:  strlen into __clove_string_length
 #include <stdbool.h>
 #include <string.h> //TODO: Riprovare a spostarlo alla fine del refactoring
 bool __clove_string_equal(const char* str1, const char* str2);
@@ -116,6 +139,29 @@ void __clove_vector_quicksort_iterative(__clove_vector_t* vector, int (*comparat
 void __clove_vector_sort(__clove_vector_t* vector, int (*comparator)(void*, void*));
 #pragma endregion // Vector Decl
 
+#pragma region PRIVATE - CommandLine Decl
+#include <stdbool.h>
+typedef struct __clove_cmdline_t {
+    int arg_index;
+    int argc;
+    char* *argv;
+} __clove_cmdline_t;
+
+typedef enum __clove_cmdline_errno_t {
+    __CLOVE_CMD_ERRNO_OK = 0,
+    __CLOVE_CMD_ERRNO_GENERIC = 1,
+    __CLOVE_CMD_ERRNO_INVALID_PARAM = 2,
+} __clove_cmdline_errno_t;
+
+__clove_cmdline_t __clove_cmdline_create(char** argv, int argc);
+bool __clove_cmdline_next_opt(__clove_cmdline_t* cmdline, char** opt_out);
+bool __clove_cmdline_next_arg(__clove_cmdline_t* cmdline, char** arg_out);
+
+//Command Handlers
+__clove_cmdline_errno_t __clove_cmdline_handle_report(__clove_cmdline_t* cmd);
+__clove_cmdline_errno_t __clove_cmdline_handle_version(__clove_cmdline_t* cmd);
+#pragma endregion // CommandLine Decl
+
 #pragma region PRIVATE - Test Decl
 typedef union __clove_generic_u {
     bool               _bool;
@@ -198,11 +244,16 @@ void __clove_vector_suite_ctor(void* suite_ptr);
 void __clove_vector_suite_dtor(void* suite_ptr);
 #pragma endregion
 
-#pragma region PRIVATE - Assertion Decl
+#pragma region PRIVATE - Assert Decl
 //TODO: In future configurable (or passed within the assertion)
 #define __CLOVE_FLOATING_PRECISION 0.000001f
 
-#define __CLOVE_ASSERTION_CHECK(mode, exp, act, type, field, test) \
+#define __CLOVE_ASSERT_GUARD \
+    if (_this->result == __CLOVE_TEST_FAILED) { return; }\
+    if (_this->file_name[0] == '\0') strcpy_s(_this->file_name, __CLOVE_STRING_LENGTH, __clove_rel_src(__FILE__));\
+    _this->issue.line=__LINE__;
+
+#define __CLOVE_ASSERT_CHECK(mode, exp, act, type, field, test) \
     bool pass_scenario = false;\
     if (check_mode == __CLOVE_ASSERT_EQ) { pass_scenario = exp == act; }\
     else if (check_mode == __CLOVE_ASSERT_NE) { pass_scenario = exp != act; }\
@@ -230,7 +281,7 @@ void __clove_assert_ptr(__clove_assert_check_e check_mode, void* expected, void*
 void __clove_assert_float(__clove_assert_check_e check_mode, float expected, float result, __clove_test_t* _this);
 void __clove_assert_double(__clove_assert_check_e check_mode, double expected, double result, __clove_test_t* _this);
 void __clove_assert_string(__clove_assert_check_e check_mode, const char* expected, const char* result, __clove_test_t* _this);
-#pragma endregion // Assertion Decl
+#pragma endregion // Assert Decl
 
 #pragma region PRIVATE - Report Decl
 typedef struct __clove_report_t {
@@ -284,13 +335,139 @@ void __clove_report_json_free(__clove_report_t* report);
 void __clove_report_json_start(__clove_report_t* _this, int suite_count, int test_count);
 void __clove_report_json_end(__clove_report_t* _this, int test_count, int passed, int skipped, int failed);
 void __clove_report_json_test_executed(__clove_report_t* _this, __clove_suite_t* suite, __clove_test_t* test, size_t test_number);
-
+void __clove_report_json_print_data(__clove_report_json_t* _this, __clove_test_t* test, __clove_generic_u* data);
 #pragma endregion
 
+#pragma region PRIVATE - Autodiscovery Decl
+typedef struct __clove_symbols_context_t {
+    __clove_suite_t* last_suite;
+    __clove_vector_t suites;
+    int suites_count;
+    int tests_count;
+    size_t prefix_length;
+} __clove_symbols_context_t;
+
+typedef struct __clove_symbols_function_t {
+    char* name;
+    void* pointer;
+} __clove_symbols_function_t;
+
+void __clove_symbols_function_collect(__clove_symbols_function_t exported_funct, __clove_symbols_context_t* context);
+//For each OS / symbols table format
+typedef void (*__clove_symbols_function_action)(__clove_symbols_function_t, __clove_symbols_context_t* context);
+int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symbols_function_action action, __clove_symbols_context_t* action_context);
+#pragma endregion //Autodiscovery Decl
+
+#pragma region PRIVATE - Run Decl
+int __clove_runner_auto(int argc, char* argv[]);
+int __clove_run_tests_with_report(__clove_report_t* report);
+void __clove_exec_suites(__clove_suite_t* suites, int suite_count, int test_count, __clove_report_t* report);
+void __clove_exec_suite(__clove_suite_t* suite, size_t test_counter, unsigned int* passed, unsigned int* failed, unsigned int* skipped, __clove_report_t* report);
+#pragma endregion // Run Decl
+
+#pragma region PRIVATE - Api Decl
+#ifdef __cplusplus
+#define __CLOVE_API_EXTERN extern "C"
+#else
+#define __CLOVE_API_EXTERN
+#endif //__cplusplus
+
+#ifdef _WIN32
+#define __CLOVE_API_EXPORT __CLOVE_API_EXTERN __declspec(dllexport)
+#else 
+#define __CLOVE_API_EXPORT __CLOVE_API_EXTERN
+#endif //_WIN32
+
+#define __CLOVE_SUITE_METHOD_AUTO_2(suite, title, param) __CLOVE_API_EXPORT void __clove_sym___##suite##___##title(param)
+#define __CLOVE_SUITE_METHOD_AUTO_1(suite, name, param) __CLOVE_SUITE_METHOD_AUTO_2(suite, name, param)
+
+#define __CLOVE_SUITE_SETUP_ONCE_AUTO() __CLOVE_SUITE_METHOD_AUTO_1( CLOVE_SUITE_NAME, 11_setuponce, void)
+#define __CLOVE_SUITE_TEARDOWN_ONCE_AUTO() __CLOVE_SUITE_METHOD_AUTO_1( CLOVE_SUITE_NAME, 12_teardownonce, void)
+#define __CLOVE_SUITE_SETUP_AUTO() __CLOVE_SUITE_METHOD_AUTO_1( CLOVE_SUITE_NAME, 13_setup, void)
+#define __CLOVE_SUITE_TEARDOWN_AUTO() __CLOVE_SUITE_METHOD_AUTO_1( CLOVE_SUITE_NAME, 14_teardown, void)
+#define __CLOVE_TEST_AUTO(title) __CLOVE_SUITE_METHOD_AUTO_1( CLOVE_SUITE_NAME, 20_ ## title, __clove_test_t *_this)
+#pragma endregion
+
+#pragma endregion // DECLARATION
+
+#pragma region PRIVATE - IMPLEMENTATION
 #ifdef CLOVE_IMPLEMENTATION
-#pragma region PRIVATE - Utils Decl
+#pragma region PRIVATE - Utils Impl
 void __clove_utils_empty_funct() { }
-#pragma endregion // Utils Decl
+
+//TODO: Tob reviewed when working on issue: https://github.com/fdefelici/clove-unit/issues/3
+const char* __clove_rel_src(const char* path) {
+    //https://stackoverflow.com/questions/9834067/difference-between-char-and-const-char
+    const char* subpath = strstr(path, "\\src");
+    if (subpath == NULL) subpath = strstr(path, "\\tests");
+    if (subpath == NULL) return path;
+    return subpath + 1;
+}
+
+const char* __clove_get_exec_base_path() {
+    return __clove_exec_base_path;
+}
+
+const char* __clove_get_exec_path() {
+    return __clove_exec_path;
+}
+#pragma endregion // Utils Impl
+
+#pragma region PRIVATE - Path Impl
+#include <string.h>
+#include <stdbool.h>
+#include <stdlib.h>
+char* __clove_path_concat(const char separator, const char* path1, const char* path2) {
+    size_t count = strlen(path1) + 1 + strlen(path2) + 1;
+    char* path = (char*)calloc(count, sizeof(char));
+
+    strcat_s(path, count, path1);
+    strncat_s(path, count, &separator, 1);
+    strcat_s(path, count, path2);
+
+    __clove_string_replace_char(path, '/', separator);
+    __clove_string_replace_char(path, '\\', separator);
+
+    return path;
+}
+
+char* __clove_path_rel_to_abs_exec_path(const char* rel_path) {
+    const char* base_path = __clove_get_exec_base_path();
+    char* abs_path = __clove_path_concat(__CLOVE_PATH_SEPARATOR, base_path, rel_path);
+    return abs_path;
+}
+
+bool __clove_path_is_relative(const char* path) {    
+    if (__clove_string_startswith(path, "\\")) return false; //windows
+    if (strlen(path) > 2 && path[1] == ':') return false;    //windows
+    if (__clove_string_startswith(path, "/")) return false;  //unix or Windows
+    return true;
+}
+
+char* __clove_path_basepath(char* path) {
+    //make sure path contains only separator specific for the OS
+    __clove_string_replace_char(path, '/', __CLOVE_PATH_SEPARATOR);
+    __clove_string_replace_char(path, '\\', __CLOVE_PATH_SEPARATOR);
+
+    const char* last_addr = strrchr((const char*)path, __CLOVE_PATH_SEPARATOR);
+    int bytes_count;
+
+    char dot_path[3] = { '.', __CLOVE_PATH_SEPARATOR, '\0' };
+    if (!last_addr) {
+        bytes_count = sizeof(dot_path) - 1; //equivalent to strlen
+        path = dot_path;
+    }
+    else {
+        bytes_count = (int)(last_addr - path);
+    }
+    int count = bytes_count + 1; // +1 take into account null terminator
+
+    char* base_path = (char*)calloc(count, sizeof(char));
+    strncpy_s(base_path, count, path, bytes_count);
+    return base_path;
+}
+#pragma endregion // Path Impl
+
 
 #pragma region PRIVATE - String Impl
 #include <string.h>
@@ -682,6 +859,76 @@ void __clove_vector_sort(__clove_vector_t* vector, int (*comparator)(void*, void
 }
 #pragma endregion // Vector Impl
 
+#pragma region PRIVATE - CommandLine Impl
+#include <stdbool.h>
+#include <string.h>
+__clove_cmdline_t __clove_cmdline_create(char** argv, int argc) {
+    __clove_cmdline_t cmd;
+    cmd.argv = argv;
+    cmd.argc = argc;
+    cmd.arg_index = 1;
+    return cmd;
+}
+
+bool __clove_cmdline_next_opt(__clove_cmdline_t* cmdline, char** opt_out) {
+    if (cmdline->arg_index >= cmdline->argc) return false;
+    
+    char* current = cmdline->argv[cmdline->arg_index];
+    if (strlen(current) == 2 && __clove_string_startswith(current, "-")) {
+        *opt_out = current+1;
+    }
+    cmdline->arg_index++;
+    return true;
+}
+
+bool __clove_cmdline_next_arg(__clove_cmdline_t* cmdline, char** arg_out) {
+    if (cmdline->arg_index >= cmdline->argc) return false;
+    *arg_out = cmdline->argv[cmdline->arg_index];
+    cmdline->arg_index++;
+    return true;
+}
+
+__clove_cmdline_errno_t __clove_cmdline_handle_version(__clove_cmdline_t* cmd) {
+    printf("%s", __CLOVE_VERSION); //to avoid new_line character(s)
+    return __CLOVE_CMD_ERRNO_OK;
+}
+
+__clove_cmdline_errno_t __clove_cmdline_handle_report(__clove_cmdline_t* cmdline) {
+    char* arg;
+    bool found = __clove_cmdline_next_arg(cmdline, &arg);
+    if (!found) return __CLOVE_CMD_ERRNO_INVALID_PARAM;
+
+    __clove_report_t* report;
+    if (__clove_string_equal("json", arg)) {
+        char* file_path = "clove_report.json";
+        found = __clove_cmdline_next_opt(cmdline, &arg);
+        if (found && __clove_string_equal("f", arg)) {
+            found = __clove_cmdline_next_arg(cmdline, &arg);
+            if (found) file_path = arg;
+        }
+        char* report_path;
+        if (__clove_path_is_relative(file_path)) {
+            report_path = __clove_path_rel_to_abs_exec_path(file_path);
+        } else {
+            report_path = file_path;
+        }
+        report = (__clove_report_t*)__clove_report_json_new(report_path, __CLOVE_VERSION);
+    } else if (__clove_string_equal("console", arg)) {
+        report = (__clove_report_t* )__clove_report_console_new();
+    } else {
+        return __CLOVE_CMD_ERRNO_INVALID_PARAM;
+    }
+
+    int run_result = __clove_run_tests_with_report(report);
+    report->free(report);
+
+    if (run_result == 0) {
+        return __CLOVE_CMD_ERRNO_OK;
+    } 
+    return __CLOVE_CMD_ERRNO_GENERIC;
+}
+#pragma endregion // CommandLine Impl
+
 #pragma region PRIVATE - Test Impl
 #include <string.h>
 void __clove_vector_test_ctor(void* test) {
@@ -727,7 +974,7 @@ void __clove_vector_suite_dtor(void* suite_ptr) {
 }
 #pragma endregion // Suite Impl
 
-#pragma region PRIVATE - Assertion Impl
+#pragma region PRIVATE - Assert Impl
 #include <math.h>
 void __clove_assert_fail(__clove_test_t* _this) {
     _this->result = __CLOVE_TEST_FAILED;
@@ -739,43 +986,43 @@ void __clove_assert_pass(__clove_test_t* _this) {
 }
 
 void __clove_assert_int(__clove_assert_check_e check_mode, int expected, int result, __clove_test_t* _this) {
-    __CLOVE_ASSERTION_CHECK(check_mode, expected, result, __CLOVE_GENERIC_INT, _int, _this)
+    __CLOVE_ASSERT_CHECK(check_mode, expected, result, __CLOVE_GENERIC_INT, _int, _this)
 }
 
 void __clove_assert_uint(__clove_assert_check_e check_mode, unsigned int expected, unsigned int result, __clove_test_t* _this) {
-    __CLOVE_ASSERTION_CHECK(check_mode, expected, result, __CLOVE_GENERIC_UINT, _uint, _this)
+    __CLOVE_ASSERT_CHECK(check_mode, expected, result, __CLOVE_GENERIC_UINT, _uint, _this)
 }
 
 void __clove_assert_long(__clove_assert_check_e check_mode, long expected, long result, __clove_test_t* _this) {
-    __CLOVE_ASSERTION_CHECK(check_mode, expected, result, __CLOVE_GENERIC_LONG, _long, _this)
+    __CLOVE_ASSERT_CHECK(check_mode, expected, result, __CLOVE_GENERIC_LONG, _long, _this)
 }
 
 void __clove_assert_ulong(__clove_assert_check_e check_mode, unsigned long expected, unsigned long result, __clove_test_t* _this) {
-    __CLOVE_ASSERTION_CHECK(check_mode, expected, result, __CLOVE_GENERIC_ULONG, _ulong, _this)
+    __CLOVE_ASSERT_CHECK(check_mode, expected, result, __CLOVE_GENERIC_ULONG, _ulong, _this)
 }
 
 void __clove_assert_llong(__clove_assert_check_e check_mode, long long expected, long long result, __clove_test_t* _this) {
-    __CLOVE_ASSERTION_CHECK(check_mode, expected, result, __CLOVE_GENERIC_LLONG, _llong, _this)
+    __CLOVE_ASSERT_CHECK(check_mode, expected, result, __CLOVE_GENERIC_LLONG, _llong, _this)
 }
 
 void __clove_assert_ullong(__clove_assert_check_e check_mode, unsigned long long expected, unsigned long long result, __clove_test_t* _this) {
-    __CLOVE_ASSERTION_CHECK(check_mode, expected, result, __CLOVE_GENERIC_ULLONG, _ullong, _this)
+    __CLOVE_ASSERT_CHECK(check_mode, expected, result, __CLOVE_GENERIC_ULLONG, _ullong, _this)
 }
 
 void __clove_assert_char(__clove_assert_check_e check_mode, char expected, char result, __clove_test_t* _this) {
-    __CLOVE_ASSERTION_CHECK(check_mode, expected, result, __CLOVE_GENERIC_CHAR, _char, _this)
+    __CLOVE_ASSERT_CHECK(check_mode, expected, result, __CLOVE_GENERIC_CHAR, _char, _this)
 }
 
 void __clove_assert_bool(__clove_assert_check_e check_mode, bool expected, bool result, __clove_test_t* _this) {
-    __CLOVE_ASSERTION_CHECK(check_mode, expected, result, __CLOVE_GENERIC_BOOL, _bool, _this)
+    __CLOVE_ASSERT_CHECK(check_mode, expected, result, __CLOVE_GENERIC_BOOL, _bool, _this)
 }
 
 void __clove_assert_null(__clove_assert_check_e check_mode, void* expected, void* result, __clove_test_t* _this) {
-    __CLOVE_ASSERTION_CHECK(check_mode, expected, result, __CLOVE_GENERIC_PTR, _ptr, _this)
+    __CLOVE_ASSERT_CHECK(check_mode, expected, result, __CLOVE_GENERIC_PTR, _ptr, _this)
 }
 
 void __clove_assert_ptr(__clove_assert_check_e check_mode, void* expected, void* result, __clove_test_t* _this) {
-    __CLOVE_ASSERTION_CHECK(check_mode, expected, result, __CLOVE_GENERIC_PTR, _ptr, _this)
+    __CLOVE_ASSERT_CHECK(check_mode, expected, result, __CLOVE_GENERIC_PTR, _ptr, _this)
 }
 
 void __clove_assert_float(__clove_assert_check_e check_mode, float expected, float result, __clove_test_t* _this) {
@@ -829,7 +1076,7 @@ void __clove_assert_string(__clove_assert_check_e check_mode, const char* expect
         //TODO: free expected/actual in case of __CLOVE_GENERIC_STRING
     }
 }
-#pragma endregion // Assertion Impl
+#pragma endregion // Assert Impl
 
 #pragma region PRIVATE - Report Console Impl
 #include <stdio.h>
@@ -1132,7 +1379,70 @@ void __clove_report_json_end(__clove_report_t* _this, int test_count, int passed
 
     fclose(instance->file);
 }
-//TODO: Capire se puo diventare un metodo
+
+void __clove_report_json_print_data(__clove_report_json_t* instance, __clove_test_t* test, __clove_generic_u* data) {
+    if (test->issue.assert == __CLOVE_ASSERT_FAIL) {
+        fprintf(instance->file, "%s", "");\
+    } else {
+        switch(test->issue.data_type)
+        {
+        case __CLOVE_GENERIC_BOOL:\
+            fprintf(instance->file, "%s", data->_bool ? "true" : "false");
+            break;
+        case __CLOVE_GENERIC_CHAR: {
+            fprintf(instance->file, "%c", data->_char);
+            break;
+        }
+        case __CLOVE_GENERIC_INT: {
+            fprintf(instance->file, "%d", data->_int);
+            break;
+        }
+        case __CLOVE_GENERIC_UINT: {
+            fprintf(instance->file, "%u", data->_uint);
+            break;
+        }
+        case __CLOVE_GENERIC_LONG: {
+            fprintf(instance->file, "%ld", data->_long);
+            break;
+        }
+        case __CLOVE_GENERIC_ULONG: {
+            fprintf(instance->file, "%lu", data->_ulong);
+            break;
+        }
+        case __CLOVE_GENERIC_LLONG: {
+            fprintf(instance->file, "%lld", data->_llong);
+            break;
+        }
+        case __CLOVE_GENERIC_ULLONG: {
+            fprintf(instance->file, "%llu", data->_ullong);
+            break;
+        }
+        case __CLOVE_GENERIC_FLOAT: {
+            fprintf(instance->file, "%f", data->_float);
+            break;
+        }
+        case __CLOVE_GENERIC_DOUBLE: {
+            fprintf(instance->file, "%f", data->_double);
+            break;
+        }
+        case __CLOVE_GENERIC_STRING: {
+            char* escaped = __clove_string_escape(data->_string);
+            fprintf(instance->file, "%s", escaped);
+            free(escaped);
+            break;
+        }
+        case __CLOVE_GENERIC_PTR: {
+            fprintf(instance->file, "%p", data->_ptr);
+            break;
+        }
+        default:
+            break;
+        }
+    }
+}
+
+
+/*
 #define __CLOVE_REPORT_JSON_PRINT_DATA(data) \
     if (test->issue.assert == __CLOVE_ASSERT_FAIL) {\
         fprintf(instance->file, "%s", "");\
@@ -1193,7 +1503,7 @@ void __clove_report_json_end(__clove_report_t* _this, int test_count, int passed
             break;\
         }\
     }
-
+*/
 void __clove_report_json_test_executed(__clove_report_t* _this, __clove_suite_t* suite, __clove_test_t* test, size_t test_number) {
     __clove_report_json_t* instance = (__clove_report_json_t*)_this;
     //case for suites > 1
@@ -1225,10 +1535,10 @@ void __clove_report_json_test_executed(__clove_report_t* _this, __clove_suite_t*
         fprintf(instance->file, "\t\t\t\t\t\"assert\" : %d,\n", test->issue.assert);
         fprintf(instance->file, "\t\t\t\t\t\"type\" : %d,\n", test->issue.data_type);
         fprintf(instance->file, "\t\t\t\t\t\"expected\" : \"");
-        __CLOVE_REPORT_JSON_PRINT_DATA(test->issue.expected);
+        __clove_report_json_print_data(instance, test, &(test->issue.expected));
         fprintf(instance->file, "\",\n");
         fprintf(instance->file, "\t\t\t\t\t\"actual\" : \"");
-        __CLOVE_REPORT_JSON_PRINT_DATA(test->issue.actual);
+        __clove_report_json_print_data(instance, test, &(test->issue.actual));
         fprintf(instance->file, "\"\n");
     }
     else {
@@ -1247,161 +1557,8 @@ void __clove_report_json_test_executed(__clove_report_t* _this, __clove_suite_t*
 }
 #pragma endregion // Report Json Impl
 
-#endif //CLOVE_IMPLEMENTATION
-
-
-#pragma region PRIVATE
-
-
-#include <stdint.h>
-
-#include <stdlib.h>
-
-static const char* __clove_get_exec_base_path();
-
-static char* __clove_path_concat(const char separator, const char* path1, const char* path2) {
-    size_t count = strlen(path1) + 1 + strlen(path2) + 1;
-    char* path = (char*)calloc(count, sizeof(char));
-
-    strcat_s(path, count, path1);
-    strncat_s(path, count, &separator, 1);
-    strcat_s(path, count, path2);
-
-    __clove_string_replace_char(path, '/', separator);
-    __clove_string_replace_char(path, '\\', separator);
-
-    return path;
-}
-
-static char* __clove_path_rel_to_abs_exec_path(const char* rel_path) {
-    const char* base_path = __clove_get_exec_base_path();
-    char* abs_path = __clove_path_concat(__CLOVE_PATH_SEPARATOR, base_path, rel_path);
-    return abs_path;
-}
-
-static bool __clove_path_is_relative(const char* path) {    
-    if (__clove_string_startswith(path, "\\")) return false; //windows
-    if (strlen(path) > 2 && path[1] == ':') return false;    //windows
-    if (__clove_string_startswith(path, "/")) return false;  //unix
-    return true;
-}
-
-static const char* __clove_rel_src(const char* path) {
-    //https://stackoverflow.com/questions/9834067/difference-between-char-and-const-char
-    const char* subpath = strstr(path, "\\src");
-    if (subpath == NULL) subpath = strstr(path, "\\tests");
-    if (subpath == NULL) return path;
-    return subpath + 1;
-}
-
-static void __clove_exec_suite(__clove_suite_t* suite, size_t test_counter, unsigned int* passed, unsigned int* failed, unsigned int* skipped, __clove_report_t* report) {
-    __clove_time_t suite_start = __clove_time_now();
-    suite->fixtures.setup_once();
-
-    for (size_t i = 0; i < suite->test_count; i++) {
-        __clove_test_t* each_test = (__clove_test_t*)__clove_vector_get(&suite->tests, i);
-        each_test->result = __CLOVE_TEST_SKIPPED;
-
-        __clove_time_t test_start = __clove_time_now();
-        suite->fixtures.setup();
-        each_test->funct(each_test);
-        suite->fixtures.teardown();
-        __clove_time_t test_end = __clove_time_now();
-        each_test->duration = __clove_time_sub(&test_end, &test_start);
-
-        switch (each_test->result) {
-        case __CLOVE_TEST_PASSED: {
-            (*passed)++;
-            break;
-        }
-        case __CLOVE_TEST_FAILED: {
-            (*failed)++;
-            break;
-        }
-        case __CLOVE_TEST_SKIPPED: {
-            (*skipped)++;
-            break;
-        }
-        default:
-            break;
-        }
-        report->test_executed(report, suite, each_test, test_counter + i);
-    }
-    suite->fixtures.teardown_once();
-    __clove_time_t suite_end = __clove_time_now();
-    suite->issue.duration = __clove_time_sub(&suite_end, &suite_start);
-}
-
-static void __clove_exec_suites(__clove_suite_t* suites, int suite_count, int test_count, __clove_report_t* report) {
-    report->start(report, suite_count, test_count);
-
-    unsigned int passed = 0;
-    unsigned int failed = 0;
-    unsigned int skipped = 0;
-
-    size_t test_start_counter = 1;
-    for (int i = 0; i < suite_count; ++i) {
-        __clove_suite_t* each_suite = &suites[i];
-        __clove_exec_suite(each_suite, test_start_counter, &passed, &failed, &skipped, report);
-        test_start_counter += each_suite->test_count;
-    }
-    report->end(report, test_count, passed, skipped, failed);
-}
-
-#define __CLOVE_TEST_GUARD \
-    if (_this->result == __CLOVE_TEST_FAILED) { return; }\
-    if (_this->file_name[0] == '\0') strcpy_s(_this->file_name, __CLOVE_STRING_LENGTH, __clove_rel_src(__FILE__));\
-    _this->issue.line=__LINE__;
-
-extern char* __clove_exec_path;
-extern char* __clove_exec_base_path;
-
-static char* __clove_path_basepath(char* path) {
-    //make sure path contains only separator specific for the OS
-#ifdef _WIN32
-    __clove_string_replace_char(path, '/', __CLOVE_PATH_SEPARATOR);
-#else
-    __clove_string_replace_char(path, '\\', __CLOVE_PATH_SEPARATOR);
-#endif //_WIN32
-
-    const char* last_addr = strrchr((const char*)path, __CLOVE_PATH_SEPARATOR);
-    int bytes_count;
-
-    char dot_path[3] = { '.', __CLOVE_PATH_SEPARATOR, '\0' };
-    if (!last_addr) {
-        bytes_count = sizeof(dot_path) - 1; //equivalent to strlen
-        path = dot_path;
-    }
-    else {
-        bytes_count = (int)(last_addr - path);
-    }
-    int count = bytes_count + 1; // +1 take into account null terminator
-
-    char* base_path = (char*)calloc(count, sizeof(char));
-    strncpy_s(base_path, count, path, bytes_count);
-    return base_path;
-}
-
-#pragma region Private APIs - Autodiscovery
-typedef struct __clove_symbols_context_t {
-    __clove_suite_t* last_suite;
-    __clove_vector_t suites;
-    int suites_count;
-    int tests_count;
-    size_t prefix_length;
-} __clove_symbols_context_t;
-
-typedef struct __clove_symbols_function_t {
-    char* name;
-    void* pointer;
-} __clove_symbols_function_t;
-
-typedef void (*__clove_symbols_function_action)(__clove_symbols_function_t, __clove_symbols_context_t* context);
-
-//For each OS / symbols table format
-static int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symbols_function_action action, __clove_symbols_context_t* action_context);
-
-static void __clove_symbols_function_collect(__clove_symbols_function_t exported_funct, __clove_symbols_context_t* context) {
+#pragma region PRIVATE - Autodiscovery Impl
+void __clove_symbols_function_collect(__clove_symbols_function_t exported_funct, __clove_symbols_context_t* context) {
     static const char* end_suite_separator = "___";
     static int end_suite_separator_length = 3;
     static const char* test_separator = "20_";
@@ -1450,9 +1607,8 @@ static void __clove_symbols_function_collect(__clove_symbols_function_t exported
 
 #ifdef _WIN32
 #include <windows.h>
-
-static PIMAGE_EXPORT_DIRECTORY __clove_symbols_get_export_table_from(HMODULE module)
-{
+//TODO: Renaming with windows like macos one
+PIMAGE_EXPORT_DIRECTORY __clove_symbols_get_export_table_from(HMODULE module) {
     // Start at the base of the module. The MS-DOS stub begins there.
     PBYTE base = (PBYTE)module;
     PIMAGE_DOS_HEADER mds = (PIMAGE_DOS_HEADER)module;
@@ -1479,7 +1635,7 @@ static PIMAGE_EXPORT_DIRECTORY __clove_symbols_get_export_table_from(HMODULE mod
     return edt;
 }
 
-static int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symbols_function_action action, __clove_symbols_context_t* action_context) {
+int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symbols_function_action action, __clove_symbols_context_t* action_context) {
     HMODULE module = GetModuleHandle(0);
     PIMAGE_EXPORT_DIRECTORY export_dir = __clove_symbols_get_export_table_from(module);
     if (!export_dir) {
@@ -1540,7 +1696,7 @@ typedef struct __clove_symbols_macos_module_t {
     intptr_t address; //module base address 
 } __clove_symbols_macos_module_t;
 
-static intptr_t __clove_symbols_macos_image_slide(const char* path)
+intptr_t __clove_symbols_macos_image_slide(const char* path)
 {
     for (uint32_t i = 0; i < _dyld_image_count(); i++)
     {
@@ -1550,7 +1706,7 @@ static intptr_t __clove_symbols_macos_image_slide(const char* path)
     return 0;
 }
 
-static int __clove_symbols_macos_open_module_handle(const char* module_path, __clove_symbols_macos_module_t* out_module) {
+int __clove_symbols_macos_open_module_handle(const char* module_path, __clove_symbols_macos_module_t* out_module) {
     int fd;
     if ((fd = open(module_path, O_RDONLY)) < 0) {
         return 1;
@@ -1575,13 +1731,12 @@ static int __clove_symbols_macos_open_module_handle(const char* module_path, __c
     return 0;
 }
 
-static void __clove_symbols_macos_close_module_handle(__clove_symbols_macos_module_t* module) {
+void __clove_symbols_macos_close_module_handle(__clove_symbols_macos_module_t* module) {
     munmap(module->handle, module->size);
     module->handle = NULL;
     module->size = 0;
 }
-
-static struct load_command* __clove_symbols_macos_find_command(struct mach_header_64* header, uint32_t cmd) {
+struct load_command* __clove_symbols_macos_find_command(struct mach_header_64* header, uint32_t cmd) {
     struct load_command* lc = (struct load_command*)((uint64_t)header + sizeof(struct mach_header_64));
     for (uint32_t i = 0; i < header->ncmds; i++) {
         if (lc->cmd == cmd) {
@@ -1592,7 +1747,7 @@ static struct load_command* __clove_symbols_macos_find_command(struct mach_heade
     return NULL;
 }
 
-static int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symbols_function_action action, __clove_symbols_context_t* action_context) {
+int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symbols_function_action action, __clove_symbols_context_t* action_context) {
     const char* module_path = __clove_exec_path;
 
     __clove_symbols_macos_module_t module;
@@ -1661,7 +1816,7 @@ typedef struct __clove_symbols_lixux_module_t {
     uintptr_t address; //module base address 
 } __clove_symbols_lixux_module_t;
 
-static int __clove_symbols_lixux_dl_callback(struct dl_phdr_info* info, size_t size, void* data)
+int __clove_symbols_lixux_dl_callback(struct dl_phdr_info* info, size_t size, void* data)
 {
     const char* cb = (const char*)&__clove_symbols_lixux_dl_callback;
     const char* base = (const char*)info->dlpi_addr;
@@ -1687,14 +1842,14 @@ static int __clove_symbols_lixux_dl_callback(struct dl_phdr_info* info, size_t s
     return 0;
 }
 
-static uintptr_t __clove_symbols_lixux_base_addr(const char* path)
+uintptr_t __clove_symbols_lixux_base_addr(const char* path)
 {
     uintptr_t base_addr;
     dl_iterate_phdr(__clove_symbols_lixux_dl_callback, &base_addr);
     return base_addr;
 }
 
-static int __clove_symbols_lixux_open_module_handle(const char* module_path, __clove_symbols_lixux_module_t* out_module) {
+int __clove_symbols_lixux_open_module_handle(const char* module_path, __clove_symbols_lixux_module_t* out_module) {
     int fd;
     if ((fd = open(module_path, O_RDONLY)) < 0) {
         return 1;
@@ -1719,12 +1874,11 @@ static int __clove_symbols_lixux_open_module_handle(const char* module_path, __c
     return 0;
 }
 
-static void __clove_symbols_lixux_close_module_handle(__clove_symbols_lixux_module_t* module) {
+void __clove_symbols_lixux_close_module_handle(__clove_symbols_lixux_module_t* module) {
     munmap(module->handle, module->size);
     module->handle = NULL;
     module->size = 0;
 }
-
 
 /*
  * Compare two functions by their name
@@ -1732,13 +1886,13 @@ static void __clove_symbols_lixux_close_module_handle(__clove_symbols_lixux_modu
  * Return positive if name1 is greather than name1
  * Return zero if name1 and name2 are equals
  */
-static int __clove_symbols_funct_name_comparator(void* f1, void* f2) {
+int __clove_symbols_funct_name_comparator(void* f1, void* f2) {
     __clove_symbols_function_t* funct1 = (__clove_symbols_function_t*)f1;
     __clove_symbols_function_t* funct2 = (__clove_symbols_function_t*)f2;
     return strcmp(funct1->name, funct2->name);
 }
 
-static int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symbols_function_action action, __clove_symbols_context_t* action_context) {
+int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symbols_function_action action, __clove_symbols_context_t* action_context) {
     const char* module_path = __clove_exec_path;
 
     __clove_symbols_lixux_module_t module;
@@ -1811,123 +1965,24 @@ static int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clo
 }
 #else 
 //Not Possible. Shoud be one of the OS cases before
-static int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symbols_function_action action, __clove_symbols_context_t* action_context) {
+int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symbols_function_action action, __clove_symbols_context_t* action_context) {
     puts("Autodiscovery not yet implemented for this OS!!!");
     return 1;
 }
 #endif //_WIN32 symbol table
+#pragma endregion // Autodiscovery Impl
 
-
-#pragma region PRIVATE - CommandLine
-typedef struct __clove_cmdline_t {
-    int arg_index;
-    int argc;
-    char* *argv;
-} __clove_cmdline_t;
-
-static __clove_cmdline_t __clove_cmdline_create(char** argv, int argc) {
-    __clove_cmdline_t cmd;
-    cmd.argv = argv;
-    cmd.argc = argc;
-    cmd.arg_index = 1;
-    return cmd;
+#pragma region PRIVATE - Run Impl
+#define __CLOVE_RUNNER_AUTO() \
+char* __clove_exec_path;\
+char* __clove_exec_base_path;\
+int main(int argc, char* argv[]) {\
+    return __clove_runner_auto(argc, argv);\
 }
 
-static bool __clove_cmdline_next_opt(__clove_cmdline_t* cmdline, char** opt_out) {
-    if (cmdline->arg_index >= cmdline->argc) return false;
-    
-    char* current = cmdline->argv[cmdline->arg_index];
-    if (strlen(current) == 2 && __clove_string_startswith(current, "-")) {
-        *opt_out = current+1;
-    }
-    cmdline->arg_index++;
-    return true;
-}
-
-static bool __clove_cmdline_next_arg(__clove_cmdline_t* cmdline, char** arg_out) {
-    if (cmdline->arg_index >= cmdline->argc) return false;
-    *arg_out = cmdline->argv[cmdline->arg_index];
-    cmdline->arg_index++;
-    return true;
-}
-
-#pragma endregion
-
-static int __clove_run_tests_with_report(__clove_report_t* report) {
-    int run_result = 0;
-
-    __clove_symbols_context_t context;
-    
-    __clove_vector_params_t vector_params = __clove_vector_params_defaulted(sizeof(__clove_suite_t));
-    vector_params.item_ctor = __clove_vector_suite_ctor;
-    vector_params.item_dtor = __clove_vector_suite_dtor;
-    __clove_vector_init(&context.suites, &vector_params);
-    context.suites_count = 0;
-    context.last_suite = NULL;
-    context.prefix_length = strlen("__clove_sym___");
-    context.tests_count = 0;
-    
-    int result = __clove_symbols_for_each_function_by_prefix("__clove_sym___", __clove_symbols_function_collect, &context);
-    if (result == 0) {
-        __clove_exec_suites((__clove_suite_t*)(context.suites.items), context.suites_count, context.tests_count, report);
-    } else {
-        run_result = -1;
-    }
-    __clove_vector_free(&context.suites);
-    return run_result;
-}
-
-
-typedef enum __clove_cmdline_errno_t {
-    __CLOVE_CMD_ERRNO_OK = 0,
-    __CLOVE_CMD_ERRNO_GENERIC = 1,
-    __CLOVE_CMD_ERRNO_INVALID_PARAM = 2,
-} __clove_cmdline_errno_t;
-
-static __clove_cmdline_errno_t __clove_cmdline_handle_version(__clove_cmdline_t* ctx) {
-    printf("%s", __CLOVE_VERSION); //to avoid new_line character(s)
-    return __CLOVE_CMD_ERRNO_OK;
-}
-
-static __clove_cmdline_errno_t __clove_cmdline_handle_report(__clove_cmdline_t* cmdline) {
-    char* arg;
-    bool found = __clove_cmdline_next_arg(cmdline, &arg);
-    if (!found) return __CLOVE_CMD_ERRNO_INVALID_PARAM;
-
-    __clove_report_t* report;
-    if (__clove_string_equal("json", arg)) {
-        char* file_path = "clove_report.json";
-        found = __clove_cmdline_next_opt(cmdline, &arg);
-        if (found && __clove_string_equal("f", arg)) {
-            found = __clove_cmdline_next_arg(cmdline, &arg);
-            if (found) file_path = arg;
-        }
-        char* report_path;
-        if (__clove_path_is_relative(file_path)) {
-            report_path = __clove_path_rel_to_abs_exec_path(file_path);
-        } else {
-            report_path = file_path;
-        }
-        report = (__clove_report_t*)__clove_report_json_new(report_path, __CLOVE_VERSION);
-    } else if (__clove_string_equal("console", arg)) {
-        report = (__clove_report_t* )__clove_report_console_new();
-    } else {
-        return __CLOVE_CMD_ERRNO_INVALID_PARAM;
-    }
-
-    int run_result = __clove_run_tests_with_report(report);
-    report->free(report);
-
-    if (run_result == 0) {
-        return __CLOVE_CMD_ERRNO_OK;
-    } 
-    return __CLOVE_CMD_ERRNO_GENERIC;
-}
-
-static int __clove_runner_auto(int argc, char* argv[]) {
+int __clove_runner_auto(int argc, char* argv[]) {
     __clove_exec_path = argv[0];
     __clove_exec_base_path = __clove_path_basepath(argv[0]);
-
 
     /* Supported Commands 
        > <exe>                      Run with console report
@@ -1955,46 +2010,92 @@ static int __clove_runner_auto(int argc, char* argv[]) {
     return cmd_result;
 }
 
+int __clove_run_tests_with_report(__clove_report_t* report) {
+    int run_result = 0;
 
-#define __CLOVE_RUNNER_AUTO() \
-char* __clove_exec_path;\
-char* __clove_exec_base_path;\
-int main(int argc, char* argv[]) {\
-    return __clove_runner_auto(argc, argv);\
+    __clove_symbols_context_t context;
+    
+    __clove_vector_params_t vector_params = __clove_vector_params_defaulted(sizeof(__clove_suite_t));
+    vector_params.item_ctor = __clove_vector_suite_ctor;
+    vector_params.item_dtor = __clove_vector_suite_dtor;
+    __clove_vector_init(&context.suites, &vector_params);
+    context.suites_count = 0;
+    context.last_suite = NULL;
+    context.prefix_length = strlen("__clove_sym___");
+    context.tests_count = 0;
+    
+    int result = __clove_symbols_for_each_function_by_prefix("__clove_sym___", __clove_symbols_function_collect, &context);
+    if (result == 0) {
+        __clove_exec_suites((__clove_suite_t*)(context.suites.items), context.suites_count, context.tests_count, report);
+    } else {
+        run_result = -1;
+    }
+    __clove_vector_free(&context.suites);
+    return run_result;
 }
 
-static const char* __clove_get_exec_path() {
-    return __clove_exec_path;
+void __clove_exec_suites(__clove_suite_t* suites, int suite_count, int test_count, __clove_report_t* report) {
+    report->start(report, suite_count, test_count);
+
+    unsigned int passed = 0;
+    unsigned int failed = 0;
+    unsigned int skipped = 0;
+
+    size_t test_start_counter = 1;
+    for (int i = 0; i < suite_count; ++i) {
+        __clove_suite_t* each_suite = &suites[i];
+        __clove_exec_suite(each_suite, test_start_counter, &passed, &failed, &skipped, report);
+        test_start_counter += each_suite->test_count;
+    }
+    report->end(report, test_count, passed, skipped, failed);
 }
-static const char* __clove_get_exec_base_path() {
-    return __clove_exec_base_path;
+
+void __clove_exec_suite(__clove_suite_t* suite, size_t test_counter, unsigned int* passed, unsigned int* failed, unsigned int* skipped, __clove_report_t* report) {
+    __clove_time_t suite_start = __clove_time_now();
+    suite->fixtures.setup_once();
+
+    for (size_t i = 0; i < suite->test_count; i++) {
+        __clove_test_t* each_test = (__clove_test_t*)__clove_vector_get(&suite->tests, i);
+        each_test->result = __CLOVE_TEST_SKIPPED;
+
+        __clove_time_t test_start = __clove_time_now();
+        suite->fixtures.setup();
+        each_test->funct(each_test);
+        suite->fixtures.teardown();
+        __clove_time_t test_end = __clove_time_now();
+        each_test->duration = __clove_time_sub(&test_end, &test_start);
+
+        switch (each_test->result) {
+        case __CLOVE_TEST_PASSED: {
+            (*passed)++;
+            break;
+        }
+        case __CLOVE_TEST_FAILED: {
+            (*failed)++;
+            break;
+        }
+        case __CLOVE_TEST_SKIPPED: {
+            (*skipped)++;
+            break;
+        }
+        default:
+            break;
+        }
+        report->test_executed(report, suite, each_test, test_counter + i);
+    }
+    suite->fixtures.teardown_once();
+    __clove_time_t suite_end = __clove_time_now();
+    suite->issue.duration = __clove_time_sub(&suite_end, &suite_start);
 }
+#pragma endregion // Run Impl
 
-#ifdef __cplusplus
-#define __CLOVE_API_EXTERN extern "C"
-#else
-#define __CLOVE_API_EXTERN
-#endif //__cplusplus
+#endif //CLOVE_IMPLEMENTATION
+#pragma endregion // IMPLEMENTATION
 
-#ifdef _WIN32
-#define __CLOVE_API_EXPORT __CLOVE_API_EXTERN __declspec(dllexport)
-#else 
-#define __CLOVE_API_EXPORT __CLOVE_API_EXTERN
-#endif //_WIN32
+#pragma endregion // PRIVATE
 
-#define __CLOVE_SUITE_METHOD_AUTO_2(suite, title, param) __CLOVE_API_EXPORT void __clove_sym___##suite##___##title(param)
-#define __CLOVE_SUITE_METHOD_AUTO_1(suite, name, param) __CLOVE_SUITE_METHOD_AUTO_2(suite, name, param)
-
-#define __CLOVE_SUITE_SETUP_ONCE_AUTO() __CLOVE_SUITE_METHOD_AUTO_1( CLOVE_SUITE_NAME, 11_setuponce, void)
-#define __CLOVE_SUITE_TEARDOWN_ONCE_AUTO() __CLOVE_SUITE_METHOD_AUTO_1( CLOVE_SUITE_NAME, 12_teardownonce, void)
-#define __CLOVE_SUITE_SETUP_AUTO() __CLOVE_SUITE_METHOD_AUTO_1( CLOVE_SUITE_NAME, 13_setup, void)
-#define __CLOVE_SUITE_TEARDOWN_AUTO() __CLOVE_SUITE_METHOD_AUTO_1( CLOVE_SUITE_NAME, 14_teardown, void)
-#define __CLOVE_TEST_AUTO(title) __CLOVE_SUITE_METHOD_AUTO_1( CLOVE_SUITE_NAME, 20_ ## title, __clove_test_t *_this)
-#pragma endregion //Autodiscovery
-#pragma endregion // Private APIs
-
-#pragma region PUBLIC APIs
-#pragma region Public APIs - UTILS
+#pragma region PUBLIC
+#pragma region PUBLIC - UTILS
 /*
  * Provide the executable path
  */
@@ -2005,45 +2106,50 @@ static const char* __clove_get_exec_base_path() {
 #define CLOVE_EXEC_BASE_PATH() __clove_get_exec_base_path()
 #pragma endregion //UTILS
 
-#pragma region Public APIs - ASSERTIONS
-#define CLOVE_PASS() __CLOVE_TEST_GUARD __clove_assert_pass(_this);
-#define CLOVE_FAIL() __CLOVE_TEST_GUARD __clove_assert_fail(_this);
-#define CLOVE_IS_TRUE(res) __CLOVE_TEST_GUARD __clove_assert_bool(__CLOVE_ASSERT_EQ, true, res, _this);
-#define CLOVE_IS_FALSE(res) __CLOVE_TEST_GUARD __clove_assert_bool(__CLOVE_ASSERT_EQ, false, res, _this);
-#define CLOVE_CHAR_EQ(exp, res) __CLOVE_TEST_GUARD __clove_assert_char(__CLOVE_ASSERT_EQ, exp, res, _this);
-#define CLOVE_CHAR_NE(exp, res) __CLOVE_TEST_GUARD __clove_assert_char(__CLOVE_ASSERT_NE, exp, res, _this);
-#define CLOVE_INT_EQ(exp, res) __CLOVE_TEST_GUARD __clove_assert_int(__CLOVE_ASSERT_EQ, exp, res, _this);
-#define CLOVE_INT_NE(exp, res) __CLOVE_TEST_GUARD __clove_assert_int(__CLOVE_ASSERT_NE, exp, res, _this);
-#define CLOVE_UINT_EQ(exp, res) __CLOVE_TEST_GUARD __clove_assert_uint(__CLOVE_ASSERT_EQ, exp, res, _this);
-#define CLOVE_UINT_NE(exp, res) __CLOVE_TEST_GUARD __clove_assert_uint(__CLOVE_ASSERT_NE, exp, res, _this);
-#define CLOVE_LONG_EQ(exp, res) __CLOVE_TEST_GUARD __clove_assert_long(__CLOVE_ASSERT_EQ, exp, res, _this);
-#define CLOVE_LONG_NE(exp, res) __CLOVE_TEST_GUARD __clove_assert_long(__CLOVE_ASSERT_NE, exp, res, _this);
-#define CLOVE_LLONG_EQ(exp, res) __CLOVE_TEST_GUARD __clove_assert_llong(__CLOVE_ASSERT_EQ, exp, res, _this);
-#define CLOVE_LLONG_NE(exp, res) __CLOVE_TEST_GUARD __clove_assert_llong(__CLOVE_ASSERT_NE, exp, res, _this);
-#define CLOVE_ULONG_EQ(exp, res) __CLOVE_TEST_GUARD __clove_assert_ulong(__CLOVE_ASSERT_EQ, exp, res, _this);
-#define CLOVE_ULONG_NE(exp, res) __CLOVE_TEST_GUARD __clove_assert_ulong(__CLOVE_ASSERT_NE, exp, res, _this);
-#define CLOVE_ULLONG_EQ(exp, res) __CLOVE_TEST_GUARD __clove_assert_ullong(__CLOVE_ASSERT_EQ, exp, res, _this);
-#define CLOVE_ULLONG_NE(exp, res) __CLOVE_TEST_GUARD __clove_assert_ullong(__CLOVE_ASSERT_NE, exp, res, _this);
-#define CLOVE_FLOAT_EQ(exp, res) __CLOVE_TEST_GUARD __clove_assert_float(__CLOVE_ASSERT_EQ, exp, res, _this);
-#define CLOVE_FLOAT_NE(exp, res) __CLOVE_TEST_GUARD __clove_assert_float(__CLOVE_ASSERT_NE, exp, res, _this);
-#define CLOVE_DOUBLE_EQ(exp, res) __CLOVE_TEST_GUARD __clove_assert_double(__CLOVE_ASSERT_EQ, exp, res, _this);
-#define CLOVE_DOUBLE_NE(exp, res) __CLOVE_TEST_GUARD __clove_assert_double(__CLOVE_ASSERT_NE, exp, res, _this);
-#define CLOVE_NULL(res) __CLOVE_TEST_GUARD __clove_assert_null(__CLOVE_ASSERT_EQ, NULL, (void*)res, _this);
-#define CLOVE_NOT_NULL(res) __CLOVE_TEST_GUARD __clove_assert_null(__CLOVE_ASSERT_NE, NULL, (void*)res, _this);
-#define CLOVE_PTR_EQ(p1, p2) __CLOVE_TEST_GUARD __clove_assert_ptr(__CLOVE_ASSERT_EQ, (void*)p1, (void*)p2, _this);
-#define CLOVE_PTR_NE(p1, p2) __CLOVE_TEST_GUARD __clove_assert_ptr(__CLOVE_ASSERT_NE, (void*)p1, (void*)p2, _this);
-#define CLOVE_STRING_EQ(exp, res) __CLOVE_TEST_GUARD __clove_assert_string(__CLOVE_ASSERT_EQ, exp, res, _this);
-#define CLOVE_STRING_NE(exp, res) __CLOVE_TEST_GUARD __clove_assert_string(__CLOVE_ASSERT_NE, exp, res, _this);
-#pragma endregion //ASSERTIONS
+#pragma region PUBLIC - ASSERTS
+#define CLOVE_PASS() __CLOVE_ASSERT_GUARD __clove_assert_pass(_this);
+#define CLOVE_FAIL() __CLOVE_ASSERT_GUARD __clove_assert_fail(_this);
+#define CLOVE_IS_TRUE(res) __CLOVE_ASSERT_GUARD __clove_assert_bool(__CLOVE_ASSERT_EQ, true, res, _this);
+#define CLOVE_IS_FALSE(res) __CLOVE_ASSERT_GUARD __clove_assert_bool(__CLOVE_ASSERT_EQ, false, res, _this);
+#define CLOVE_CHAR_EQ(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_char(__CLOVE_ASSERT_EQ, exp, res, _this);
+#define CLOVE_CHAR_NE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_char(__CLOVE_ASSERT_NE, exp, res, _this);
+#define CLOVE_INT_EQ(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_int(__CLOVE_ASSERT_EQ, exp, res, _this);
+#define CLOVE_INT_NE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_int(__CLOVE_ASSERT_NE, exp, res, _this);
+#define CLOVE_UINT_EQ(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_uint(__CLOVE_ASSERT_EQ, exp, res, _this);
+#define CLOVE_UINT_NE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_uint(__CLOVE_ASSERT_NE, exp, res, _this);
+#define CLOVE_LONG_EQ(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_long(__CLOVE_ASSERT_EQ, exp, res, _this);
+#define CLOVE_LONG_NE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_long(__CLOVE_ASSERT_NE, exp, res, _this);
+#define CLOVE_LLONG_EQ(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_llong(__CLOVE_ASSERT_EQ, exp, res, _this);
+#define CLOVE_LLONG_NE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_llong(__CLOVE_ASSERT_NE, exp, res, _this);
+#define CLOVE_ULONG_EQ(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_ulong(__CLOVE_ASSERT_EQ, exp, res, _this);
+#define CLOVE_ULONG_NE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_ulong(__CLOVE_ASSERT_NE, exp, res, _this);
+#define CLOVE_ULLONG_EQ(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_ullong(__CLOVE_ASSERT_EQ, exp, res, _this);
+#define CLOVE_ULLONG_NE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_ullong(__CLOVE_ASSERT_NE, exp, res, _this);
+#define CLOVE_FLOAT_EQ(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_EQ, exp, res, _this);
+#define CLOVE_FLOAT_NE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_NE, exp, res, _this);
+#define CLOVE_DOUBLE_EQ(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_double(__CLOVE_ASSERT_EQ, exp, res, _this);
+#define CLOVE_DOUBLE_NE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_double(__CLOVE_ASSERT_NE, exp, res, _this);
+#define CLOVE_NULL(res) __CLOVE_ASSERT_GUARD __clove_assert_null(__CLOVE_ASSERT_EQ, NULL, (void*)res, _this);
+#define CLOVE_NOT_NULL(res) __CLOVE_ASSERT_GUARD __clove_assert_null(__CLOVE_ASSERT_NE, NULL, (void*)res, _this);
+#define CLOVE_PTR_EQ(p1, p2) __CLOVE_ASSERT_GUARD __clove_assert_ptr(__CLOVE_ASSERT_EQ, (void*)p1, (void*)p2, _this);
+#define CLOVE_PTR_NE(p1, p2) __CLOVE_ASSERT_GUARD __clove_assert_ptr(__CLOVE_ASSERT_NE, (void*)p1, (void*)p2, _this);
+#define CLOVE_STRING_EQ(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_string(__CLOVE_ASSERT_EQ, exp, res, _this);
+#define CLOVE_STRING_NE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_string(__CLOVE_ASSERT_NE, exp, res, _this);
+#pragma endregion //ASSERTS
 
-#define CLOVE_RUNNER() __CLOVE_RUNNER_AUTO()
-  //Need CLOVE_SUITE_NAME
+#pragma region PUBLIC - SUITE
+//CLOVE_SUITE_NAME must be defined by the user
 #define CLOVE_SUITE_SETUP_ONCE() __CLOVE_SUITE_SETUP_ONCE_AUTO()
 #define CLOVE_SUITE_TEARDOWN_ONCE() __CLOVE_SUITE_TEARDOWN_ONCE_AUTO()
 #define CLOVE_SUITE_SETUP() __CLOVE_SUITE_SETUP_AUTO()
 #define CLOVE_SUITE_TEARDOWN() __CLOVE_SUITE_TEARDOWN_AUTO()
 #define CLOVE_TEST(title) __CLOVE_TEST_AUTO(title)
+#pragma endregion // SUITE
 
-#pragma endregion //Public APIs
+#pragma region PUBLIC - RUNNER
+#define CLOVE_RUNNER() __CLOVE_RUNNER_AUTO()
+#pragma endregion // RUNNER
+
+#pragma endregion //PUBLIC
 
 #endif //__CLOVE_H
