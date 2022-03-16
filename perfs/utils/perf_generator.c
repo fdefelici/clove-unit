@@ -21,7 +21,7 @@ void write_suite_test(const char* name, FILE* file) {
     fputs("}\n", file);
 }
 
-const char* base_path(const char* path) {
+char* base_path(const char* path) {
     const char* last_addr = strrchr((const char*)path, '\\');
     int bytes_count;
 

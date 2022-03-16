@@ -1,17 +1,17 @@
 #define CLOVE_SUITE_NAME TimeTest
 #include "clove-unit.h"
 
-
+#ifdef _WIN32
+    #include <windows.h>
+    #define sleep_secs(sec) Sleep(sec * 1000)
+#else
+    #include <unistd.h>
+    #define sleep_secs(sec) sleep(sec)
+#endif
 CLOVE_TEST(TimeElapsedAfterSleep1Second) {
     __clove_time_t start = __clove_time_now();
 
-    int sleepSeconds = 1;
-
-    #ifdef _WIN32
-        Sleep(sleepSeconds * 1000); //Millisecond on Windows
-    #else
-        sleep(sleepSeconds); //Seconds on Unix
-    #endif
+    sleep_secs(1);
     
     __clove_time_t end = __clove_time_now();
 
