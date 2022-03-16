@@ -532,14 +532,11 @@ char* __clove_string_strdup(const char* str) {
 void __clove_string_sprintf(char* dest, size_t dest_size, const char* format, ...) {
     va_list args;
     va_start(args, format);
-#ifdef _WIN32
-    vsnprintf_s(dest, dest_size, dest_size, format, args);
-    //sprintf_s(dest, dest_size, format, args);
-#else
-    //sprintf(dest, format, args);
-    //TODO: Da verificare che funzioni
-    vsnprintf(dest, dest_size, format, args);
-#endif
+    #ifdef _WIN32
+        vsnprintf_s(dest, dest_size, dest_size, format, args);
+    #else
+        vsnprintf(dest, dest_size, format, args);
+    #endif
     va_end(args);
 }
 
