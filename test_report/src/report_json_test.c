@@ -3,7 +3,7 @@
 #include <stdlib.h>
 
 char* read_file(const char* path) {
-    FILE* file = fopen(path, "rb");
+    FILE* file = __clove_file_open(path, "rb");
     fseek(file, 0, SEEK_END);
     size_t file_size = ftell(file);
     rewind(file);
@@ -60,8 +60,8 @@ CLOVE_TEST(ReportOneSuiteWithOnePassedTest) {
 
     __clove_test_t test11;
     test11.name = "Test11";
-    strcpy_s(test11.file_name, __CLOVE_STRING_LENGTH, "test-file.c");
-    test11.result = __CLOVE_TEST_PASSED;
+    __clove_string_strcpy(test11.file_name, __CLOVE_STRING_LENGTH, "test-file.c");
+    test11.result = __CLOVE_TEST_RESULT_PASSED;
     test11.duration.seconds = 0;
     test11.duration.nanos_after_seconds = 100;
    
@@ -108,15 +108,15 @@ CLOVE_TEST(ReportOneSuiteWithTwoTests) {
 
     __clove_test_t test11;
     test11.name = "Test11";
-    strcpy_s(test11.file_name, __CLOVE_STRING_LENGTH, "test-file.c");
-    test11.result = __CLOVE_TEST_PASSED;
+    __clove_string_strcpy(test11.file_name, __CLOVE_STRING_LENGTH, "test-file.c");
+    test11.result = __CLOVE_TEST_RESULT_PASSED;
     test11.duration.seconds = 0;
     test11.duration.nanos_after_seconds = 100;
 
     __clove_test_t test12;
     test12.name = "Test12";
-    strcpy_s(test12.file_name, __CLOVE_STRING_LENGTH, "test-file.c");
-    test12.result = __CLOVE_TEST_FAILED;
+    __clove_string_strcpy(test12.file_name, __CLOVE_STRING_LENGTH, "test-file.c");
+    test12.result = __CLOVE_TEST_RESULT_FAILED;
     test12.duration.seconds = 0;
     test12.duration.nanos_after_seconds = 100;
     test12.issue.line = 8;

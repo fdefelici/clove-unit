@@ -501,7 +501,7 @@ bool __clove_string_strncpy(char* dest, size_t dest_size, const char* source, si
 #ifdef _WIN32
     return strncpy_s(dest, dest_size, source, count) == 0;
 #else
-    return strncpy(dest, source, count) == NULL
+    return strncpy(dest, source, count) == NULL;
 #endif
 }
 
@@ -509,7 +509,7 @@ bool __clove_string_strcat(char* dest, size_t dest_size, const char* source) {
 #ifdef _WIN32
     return strcat_s(dest, dest_size, source) == 0;
 #else
-    return strcat(dest, source) == NULL
+    return strcat(dest, source) == NULL;
 #endif
 }
 
@@ -517,7 +517,7 @@ bool __clove_string_strncat(char* dest, size_t dest_size, const char* source, si
 #ifdef _WIN32
     return strncat_s(dest, dest_size, source, count) == 0;
 #else
-    return strncat(dest, source, count) == NULL
+    return strncat(dest, source, count) == NULL;
 #endif
 }
 
@@ -1423,7 +1423,7 @@ void __clove_report_json_free(__clove_report_t* report) {
 void __clove_report_json_start(__clove_report_t* _this, int suite_count, int test_count) {
     __clove_report_json_t* instance = (__clove_report_json_t*)_this;
 
-    fopen_s(&(instance->file), instance->file_path, "wb"); //binary mode so \n will stay \n (and not converted to \r\n on windows)
+    instance->file = __clove_file_open(instance->file_path, "wb"); //binary mode so \n will stay \n (and not converted to \r\n on windows)
     if (instance->file == NULL) { printf("ERROR OPENING FILE: %s\n", instance->file_path); }
 
     fprintf(instance->file, "{\n");
