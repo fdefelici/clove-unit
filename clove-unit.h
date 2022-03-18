@@ -362,7 +362,7 @@ __CLOVE_EXTERN_C int __clove_symbols_for_each_function_by_prefix(const char* pre
 #pragma region PRIVATE - Run Decl
 __CLOVE_EXTERN_C int __clove_runner_auto(int argc, char* argv[]);
 __CLOVE_EXTERN_C int __clove_run_tests_with_report(__clove_report_t* report);
-__CLOVE_EXTERN_C void __clove_exec_suites(__clove_suite_t* suites, int suite_count, int test_count, __clove_report_t* report);
+__CLOVE_EXTERN_C int __clove_exec_suites(__clove_suite_t* suites, int suite_count, int test_count, __clove_report_t* report);
 __CLOVE_EXTERN_C void __clove_exec_suite(__clove_suite_t* suite, size_t test_counter, unsigned int* passed, unsigned int* failed, unsigned int* skipped, __clove_report_t* report);
 #pragma endregion // Run Decl
 
@@ -1711,13 +1711,13 @@ int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symb
     HMODULE module = GetModuleHandle(0);
     PIMAGE_EXPORT_DIRECTORY export_dir = __clove_symbols_win_get_export_table_from(module);
     if (!export_dir) {
-        return -1;
+        return 1;
     }
 
     //Note: Don't know why if there is no exported function results NumberOfNames = 64. NumberOfFunctions = 0 instead.
     //      So checking both counters to be sure if there is any exported function
     if (export_dir->NumberOfNames == 0 || export_dir->NumberOfFunctions == 0) {
-        return -1;
+        return 1;
     }
 
     PBYTE base_addr = (PBYTE)module;
@@ -2100,16 +2100,16 @@ int __clove_run_tests_with_report(__clove_report_t* report) {
 
     int result = __clove_symbols_for_each_function_by_prefix("__clove_sym___", __clove_symbols_function_collect, &context);
     if (result == 0) {
-        __clove_exec_suites((__clove_suite_t*)(context.suites.items), context.suites_count, context.tests_count, report);
+        run_result = __clove_exec_suites((__clove_suite_t*)(context.suites.items), context.suites_count, context.tests_count, report);
     }
     else {
-        run_result = -1;
+        run_result = 1;
     }
     __clove_vector_free(&context.suites);
     return run_result;
 }
 
-void __clove_exec_suites(__clove_suite_t* suites, int suite_count, int test_count, __clove_report_t* report) {
+int __clove_exec_suites(__clove_suite_t* suites, int suite_count, int test_count, __clove_report_t* report) {
     report->start(report, suite_count, test_count);
 
     unsigned int passed = 0;
@@ -2123,6 +2123,7 @@ void __clove_exec_suites(__clove_suite_t* suites, int suite_count, int test_coun
         test_start_counter += each_suite->test_count;
     }
     report->end(report, test_count, passed, skipped, failed);
+    return failed == 0 ? 0 : 1;
 }
 
 void __clove_exec_suite(__clove_suite_t* suite, size_t test_counter, unsigned int* passed, unsigned int* failed, unsigned int* skipped, __clove_report_t* report) {
