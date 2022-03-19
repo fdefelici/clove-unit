@@ -1,7 +1,7 @@
 /*
  * clove-unit
- * v2.2.1
- * Unit Testing library for C/C++
+ * v2.2.2
+ * Single-Header Unit Testing library for C/C++
  * https://github.com/fdefelici/clove-unit
  *
  */
@@ -10,8 +10,8 @@
 
 #define __CLOVE_VERSION_MAJOR 2
 #define __CLOVE_VERSION_MINOR 2
-#define __CLOVE_VERSION_PATCH 1
-#define __CLOVE_VERSION "2.2.1"
+#define __CLOVE_VERSION_PATCH 2
+#define __CLOVE_VERSION "2.2.2"
 
 #pragma region PRIVATE
 
@@ -1538,69 +1538,6 @@ void __clove_report_json_print_data(__clove_report_json_t* instance, __clove_tes
     }
 }
 
-
-/*
-#define __CLOVE_REPORT_JSON_PRINT_DATA(data) \
-    if (test->issue.assert == __CLOVE_ASSERT_FAIL) {\
-        fprintf(instance->file, "%s", "");\
-    }\
-    else {\
-        switch(test->issue.data_type)\
-        {\
-        case __CLOVE_GENERIC_BOOL:\
-            fprintf(instance->file, "%s", data._bool ? "true" : "false");\
-            break;\
-        case __CLOVE_GENERIC_CHAR: {\
-            fprintf(instance->file, "%c", data._char);\
-            break;\
-        }\
-        case __CLOVE_GENERIC_INT: {\
-            fprintf(instance->file, "%d", data._int);\
-            break;\
-        }\
-        case __CLOVE_GENERIC_UINT: {\
-            fprintf(instance->file, "%u", data._uint);\
-            break;\
-        }\
-        case __CLOVE_GENERIC_LONG: {\
-            fprintf(instance->file, "%ld", data._long);\
-            break;\
-        }\
-        case __CLOVE_GENERIC_ULONG: {\
-            fprintf(instance->file, "%lu", data._ulong);\
-            break;\
-        }\
-        case __CLOVE_GENERIC_LLONG: {\
-            fprintf(instance->file, "%lld", data._llong);\
-            break;\
-        }\
-        case __CLOVE_GENERIC_ULLONG: {\
-            fprintf(instance->file, "%llu", data._ullong);\
-            break;\
-        }\
-        case __CLOVE_GENERIC_FLOAT: {\
-            fprintf(instance->file, "%f", data._float);\
-            break;\
-        }\
-        case __CLOVE_GENERIC_DOUBLE: {\
-            fprintf(instance->file, "%f", data._double);\
-            break;\
-        }\
-        case __CLOVE_GENERIC_STRING: {\
-            char* escaped = __clove_string_escape(data._string);\
-            fprintf(instance->file, "%s", escaped);\
-            free(escaped);\
-            break;\
-        }\
-        case __CLOVE_GENERIC_PTR: {\
-            fprintf(instance->file, "%p", data._ptr);\
-            break;\
-        }\
-        default:\
-            break;\
-        }\
-    }
-*/
 void __clove_report_json_test_executed(__clove_report_t* _this, __clove_suite_t* suite, __clove_test_t* test, size_t test_number) {
     __clove_report_json_t* instance = (__clove_report_json_t*)_this;
     //case for suites > 1
