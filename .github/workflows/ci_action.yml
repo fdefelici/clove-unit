@@ -48,7 +48,8 @@ jobs:
             cmake -B${{env.BUILD_DIR}}
             echo "== CMAKE BUILD =="
             cmake --build ${{env.BUILD_DIR}} --config Release
-            ${{matrix.LS_CMD}} ${{env.BUILD_DIR}}
+        - name: List Build
+          run:  ${{matrix.LS_CMD}} ${{env.BUILD_DIR}}
         - name: Test
           run: |
             cd ${{env.BUILD_DIR}}
@@ -69,11 +70,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.ref_name }}
-          release_name: Release ${{ github.ref_name }}
+          release_name: ${{ github.ref_name }}
           draft: false
           prerelease: false
-      - name: Check Filesystem
-        run: ls -la
       - name: Upload Release Asset
         id: upload-release-asset 
         uses: actions/upload-release-asset@v1
