@@ -295,9 +295,18 @@ typedef struct __clove_report_t {
 #pragma endregion
 
 #pragma region PRIVATE - Report Console Decl
+#include <stdbool.h>
 typedef struct __clove_report_console_t {
     __clove_report_t base;
     __clove_time_t start_time;
+    struct {
+        const char* info;
+        const char* warn;
+        const char* erro;
+        const char* pass;
+        const char* skip;
+        const char* fail;
+    } labels;
 } __clove_report_console_t;
 __clove_report_console_t* __clove_report_console_new();
 __CLOVE_EXTERN_C void __clove_report_console_free(__clove_report_t* report);
@@ -306,14 +315,8 @@ __CLOVE_EXTERN_C void __clove_report_console_test_executed(__clove_report_t* _th
 __CLOVE_EXTERN_C void __clove_report_console_end(__clove_report_t* _this, int test_count, int passed, int skipped, int failed);
 __CLOVE_EXTERN_C void __clove_report_console_string_ellipse(const char* exp, size_t exp_size, const char* act, size_t act_size, char* exp_short, char* act_short, size_t short_len);
 __CLOVE_EXTERN_C void __clove_report_console_pad_right(char* result, char* strToPad);
-__CLOVE_EXTERN_C void __clove_report_console_setup_ansi();
+__CLOVE_EXTERN_C bool __clove_report_console_setup_ansi();
 
-#define __CLOVE_INFO "[\x1b[1;34mINFO\x1b[0m]"
-#define __CLOVE_WARN "[\x1b[33mWARN\x1b[0m]"
-#define __CLOVE_ERRO "[\x1b[1;31mERRO\x1b[0m]"
-#define __CLOVE_PASSED "[\x1b[1;32mPASS\x1b[0m]"
-#define __CLOVE_SKIPPED "[\x1b[33mSKIP\x1b[0m]"
-#define __CLOVE_FAILED "[\x1b[1;31mFAIL\x1b[0m]"
 
 #define __CLOVE_STRING_LENGTH 256
 #define __CLOVE_TEST_ENTRY_LENGTH 60
@@ -362,7 +365,7 @@ __CLOVE_EXTERN_C int __clove_symbols_for_each_function_by_prefix(const char* pre
 #pragma region PRIVATE - Run Decl
 __CLOVE_EXTERN_C int __clove_runner_auto(int argc, char* argv[]);
 __CLOVE_EXTERN_C int __clove_run_tests_with_report(__clove_report_t* report);
-__CLOVE_EXTERN_C void __clove_exec_suites(__clove_suite_t* suites, int suite_count, int test_count, __clove_report_t* report);
+__CLOVE_EXTERN_C int __clove_exec_suites(__clove_suite_t* suites, int suite_count, int test_count, __clove_report_t* report);
 __CLOVE_EXTERN_C void __clove_exec_suite(__clove_suite_t* suite, size_t test_counter, unsigned int* passed, unsigned int* failed, unsigned int* skipped, __clove_report_t* report);
 #pragma endregion // Run Decl
 
@@ -1169,9 +1172,25 @@ void __clove_report_console_start(__clove_report_t* _this, int suite_count, int 
     __clove_report_console_t* report = (__clove_report_console_t*)_this;
     report->start_time = __clove_time_now();
 
-    __clove_report_console_setup_ansi();
-    printf("%s Executing Test Runner in 'Fail Safe Verbose' mode\n", __CLOVE_INFO);
-    printf("%s Suite / Tests found: %d / %d \n", __CLOVE_INFO, suite_count, test_count);
+    bool activated = __clove_report_console_setup_ansi();
+    if (activated) {
+        report->labels.info = "[\x1b[1;34mINFO\x1b[0m]";
+        report->labels.warn = "[\x1b[33mWARN\x1b[0m]";
+        report->labels.erro = "[\x1b[1;31mERRO\x1b[0m]";
+        report->labels.pass = "[\x1b[1;32mPASS\x1b[0m]";
+        report->labels.skip = "[\x1b[33mSKIP\x1b[0m]";
+        report->labels.fail = "[\x1b[1;31mFAIL\x1b[0m]";
+    } else {
+        report->labels.info = "[INFO]";
+        report->labels.warn = "[WARN]";
+        report->labels.erro = "[ERRO]";
+        report->labels.pass = "[PASS]";
+        report->labels.skip = "[SKIP]";
+        report->labels.fail = "[FAIL]";
+    }
+
+    printf("%s Executing Test Runner in 'Fail Safe Verbose' mode\n", report->labels.info);
+    printf("%s Suite / Tests found: %d / %d \n", report->labels.info, suite_count, test_count);
 }
 
 void __clove_report_console_end(__clove_report_t* _this, int test_count, int passed, int skipped, int failed) {
@@ -1180,14 +1199,15 @@ void __clove_report_console_end(__clove_report_t* _this, int test_count, int pas
     __clove_time_t diff = __clove_time_sub(&end_time, &(report->start_time));
     unsigned long long millis = __clove_time_to_millis(&diff);
 
-    printf("%s Total: %d, Passed: %d, Failed: %d, Skipped: %d\n", __CLOVE_INFO, test_count, passed, failed, skipped);
-    printf("%s Run duration: %llu ms\n", __CLOVE_INFO, millis);
-    if (passed == test_count) { printf("%s Run result: SUCCESS :-)\n", __CLOVE_INFO); }
-    else if (failed > 0) { printf("%s Run result: FAILURE :_(\n", __CLOVE_ERRO); }
-    else if (skipped > 0) { printf("%s Run result: OK, but some test has been skipped!\n", __CLOVE_WARN); }
+    printf("%s Total: %d, Passed: %d, Failed: %d, Skipped: %d\n", report->labels.info, test_count, passed, failed, skipped);
+    printf("%s Run duration: %llu ms\n", report->labels.info, millis);
+    if (passed == test_count) { printf("%s Run result: SUCCESS :-)\n", report->labels.info); }
+    else if (failed > 0) { printf("%s Run result: FAILURE :_(\n", report->labels.erro); }
+    else if (skipped > 0) { printf("%s Run result: OK, but some test has been skipped!\n", report->labels.warn); }
 }
 
 void __clove_report_console_test_executed(__clove_report_t* _this, __clove_suite_t* suite, __clove_test_t* test, size_t test_number) {
+     __clove_report_console_t* report = (__clove_report_console_t*)_this;
     char result[__CLOVE_STRING_LENGTH], strToPad[__CLOVE_TEST_ENTRY_LENGTH];
     snprintf(strToPad, __CLOVE_TEST_ENTRY_LENGTH, "%zu) %s.%s", test_number, suite->name, test->name);
     __clove_report_console_pad_right(result, strToPad);
@@ -1195,7 +1215,7 @@ void __clove_report_console_test_executed(__clove_report_t* _this, __clove_suite
     if (test->result == __CLOVE_TEST_RESULT_PASSED) {
         float millis = (float)(__clove_time_to_nanos(&(test->duration))) / (float)__CLOVE_TIME_TRASL_NANOS_PER_MILLIS;
         int decimal = millis > 1.f ? 0 : 3;
-        printf("%s %s%s (%.*f ms)\n", __CLOVE_INFO, result, __CLOVE_PASSED, decimal, millis);
+        printf("%s %s%s (%.*f ms)\n", report->labels.info, result, report->labels.pass, decimal, millis);
     }
     else if (test->result == __CLOVE_TEST_RESULT_FAILED) {
         char msg[__CLOVE_STRING_LENGTH] = "FAILURE but NO MESSAGE!!!";
@@ -1315,10 +1335,10 @@ void __clove_report_console_test_executed(__clove_report_t* _this, __clove_suite
                 break;
             }
         }
-        printf("%s %s%s => %s@%d: %s\n", __CLOVE_ERRO, result, __CLOVE_FAILED, test->file_name, test->issue.line, msg);
+        printf("%s %s%s => %s@%d: %s\n", report->labels.erro, result, report->labels.fail, test->file_name, test->issue.line, msg);
     }
     else if (test->result == __CLOVE_TEST_RESULT_SKIPPED) {
-        printf("%s %s%s\n", __CLOVE_WARN, result, __CLOVE_SKIPPED);
+        printf("%s %s%s\n", report->labels.warn, result, report->labels.skip);
     }
 }
 
@@ -1358,22 +1378,23 @@ void __clove_report_console_pad_right(char* result, char* strToPad) {
 
 #ifdef _WIN32
 #include <windows.h>
+#include <stdbool.h>
 #ifndef ENABLE_VIRTUAL_TERMINAL_PROCESSING
 #define ENABLE_VIRTUAL_TERMINAL_PROCESSING  0x0004
 #endif
-void __clove_report_console_setup_ansi() {
+bool __clove_report_console_setup_ansi() {
     DWORD outMode = 0, inMode = 0;
     HANDLE stdoutHandle = GetStdHandle(STD_OUTPUT_HANDLE);
     HANDLE stdinHandle = GetStdHandle(STD_INPUT_HANDLE);
 
     if (stdoutHandle == INVALID_HANDLE_VALUE || stdinHandle == INVALID_HANDLE_VALUE) {
         //exit(GetLastError());
-        return; //if fails let clove to work anyway
+        return false;
     }
 
     if (!GetConsoleMode(stdoutHandle, &outMode) || !GetConsoleMode(stdinHandle, &inMode)) {
         //exit(GetLastError());
-        return; //if fails let clove to work anyway
+        return false;
     }
 
     DWORD outModeInit = outMode;
@@ -1387,12 +1408,15 @@ void __clove_report_console_setup_ansi() {
 
     if (!SetConsoleMode(stdoutHandle, outMode) || !SetConsoleMode(stdinHandle, inMode)) {
         //exit(GetLastError());
-        return; //if fails let clove to work anyway
+        return false;
     }
+    return true;
 }
 #else
-void __clove_report_console_setup_ansi() {
+#include <stdbool.h>
+bool __clove_report_console_setup_ansi() {
     /* Nothing to do at the moment for other OS */
+    return true;
 }
 #endif //_WIN32
 #pragma endregion // Report Console Impl
@@ -1711,13 +1735,13 @@ int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symb
     HMODULE module = GetModuleHandle(0);
     PIMAGE_EXPORT_DIRECTORY export_dir = __clove_symbols_win_get_export_table_from(module);
     if (!export_dir) {
-        return -1;
+        return 1;
     }
 
     //Note: Don't know why if there is no exported function results NumberOfNames = 64. NumberOfFunctions = 0 instead.
     //      So checking both counters to be sure if there is any exported function
     if (export_dir->NumberOfNames == 0 || export_dir->NumberOfFunctions == 0) {
-        return -1;
+        return 1;
     }
 
     PBYTE base_addr = (PBYTE)module;
@@ -2100,16 +2124,16 @@ int __clove_run_tests_with_report(__clove_report_t* report) {
 
     int result = __clove_symbols_for_each_function_by_prefix("__clove_sym___", __clove_symbols_function_collect, &context);
     if (result == 0) {
-        __clove_exec_suites((__clove_suite_t*)(context.suites.items), context.suites_count, context.tests_count, report);
+        run_result = __clove_exec_suites((__clove_suite_t*)(context.suites.items), context.suites_count, context.tests_count, report);
     }
     else {
-        run_result = -1;
+        run_result = 1;
     }
     __clove_vector_free(&context.suites);
     return run_result;
 }
 
-void __clove_exec_suites(__clove_suite_t* suites, int suite_count, int test_count, __clove_report_t* report) {
+int __clove_exec_suites(__clove_suite_t* suites, int suite_count, int test_count, __clove_report_t* report) {
     report->start(report, suite_count, test_count);
 
     unsigned int passed = 0;
@@ -2123,6 +2147,7 @@ void __clove_exec_suites(__clove_suite_t* suites, int suite_count, int test_coun
         test_start_counter += each_suite->test_count;
     }
     report->end(report, test_count, passed, skipped, failed);
+    return failed == 0 ? 0 : 1;
 }
 
 void __clove_exec_suite(__clove_suite_t* suite, size_t test_counter, unsigned int* passed, unsigned int* failed, unsigned int* skipped, __clove_report_t* report) {
