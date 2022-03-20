@@ -4,7 +4,7 @@ include(CTest)
 
 add_subdirectory(tests)
 add_subdirectory(examples/clove101)
-if (NOT DEFINED GITHUB_ACTION)
+if (NOT DEFINED CI_TRIGGERED)
     add_subdirectory(perfs)
 endif()
 
