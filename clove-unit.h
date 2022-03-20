@@ -2015,6 +2015,8 @@ int main(int argc, char* argv[]) {\
 }
 
 int __clove_runner_auto(int argc, char* argv[]) {
+    char* hello = "HELLO";
+    puts(hello);
     __clove_exec_path = argv[0];
     __clove_exec_base_path = __clove_path_basepath(argv[0]);
 

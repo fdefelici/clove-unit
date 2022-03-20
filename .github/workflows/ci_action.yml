@@ -17,7 +17,6 @@ jobs:
       strategy:
         matrix:
           os: [macos-latest, ubuntu-latest, windows-latest]
-          LANG: [C, CXX]
           include:
             - os: macos-latest
               SHELL: bash
@@ -46,7 +45,7 @@ jobs:
             echo "== CMAKE VERSION =="
             cmake --version
             echo "== CMAKE CONFIGURE =="
-            cmake -B${{env.BUILD_DIR}} -DCI_TRIGGERED=1 -DCI_LANGUAGE=${{matrix.LANG}}
+            cmake -B${{env.BUILD_DIR}} -DCI_TRIGGERED=1
             echo "== CMAKE BUILD =="
             cmake --build ${{env.BUILD_DIR}} --config Release
         - name: List Build
