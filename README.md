@@ -46,7 +46,7 @@ CLOVE_TEST(SecondTest) {
 }
 ```
 
-Than setup a translation unit to be the main program with autodiscovery feature.
+Then setup a translation unit to be the main program with autodiscovery feature.
 
 Using `CLOVE_IMPLEMENTATION` definition **once** before `clove-unit.h` will include whole library implementation.
 
