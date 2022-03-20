@@ -1,6 +1,6 @@
 /*
  * clove-unit
- * v2.2.2
+ * v2.2.3
  * Single-Header Unit Testing library for C/C++
  * https://github.com/fdefelici/clove-unit
  *
@@ -10,8 +10,8 @@
 
 #define __CLOVE_VERSION_MAJOR 2
 #define __CLOVE_VERSION_MINOR 2
-#define __CLOVE_VERSION_PATCH 2
-#define __CLOVE_VERSION "2.2.2"
+#define __CLOVE_VERSION_PATCH 3
+#define __CLOVE_VERSION "2.2.3"
 
 #pragma region PRIVATE
 
@@ -68,7 +68,7 @@ __CLOVE_EXTERN_C bool __clove_string_strncat(char* dest, size_t dest_size, const
 __CLOVE_EXTERN_C char* __clove_string_strdup(const char* str);
 __CLOVE_EXTERN_C void __clove_string_sprintf(char* dest, size_t dest_size, const char* format, ...);
 __CLOVE_EXTERN_C size_t __clove_string_length(const char* str);
-__CLOVE_EXTERN_C char* __clove_string_strstr(const char* str1, const char* str2);
+__CLOVE_EXTERN_C const char* __clove_string_strstr(const char* str1, const char* str2);
 __CLOVE_EXTERN_C char* __clove_string_escape(const char* string);
 __CLOVE_EXTERN_C void __clove_string_ellipse(const char* string, size_t str_len, size_t pos, char* out, size_t out_len);
 __CLOVE_EXTERN_C void __clove_string_replace_char(char* path, char find, char replace);
@@ -535,11 +535,11 @@ char* __clove_string_strdup(const char* str) {
 void __clove_string_sprintf(char* dest, size_t dest_size, const char* format, ...) {
     va_list args;
     va_start(args, format);
-    #ifdef _WIN32
-        vsnprintf_s(dest, dest_size, dest_size, format, args);
-    #else
-        vsnprintf(dest, dest_size, format, args);
-    #endif
+#ifdef _WIN32
+    vsnprintf_s(dest, dest_size, dest_size, format, args);
+#else
+    vsnprintf(dest, dest_size, format, args);
+#endif
     va_end(args);
 }
 
@@ -547,7 +547,7 @@ size_t __clove_string_length(const char* str) {
     return strlen(str);
 }
 
-char* __clove_string_strstr(const char* str1, const char* str2) {
+const char* __clove_string_strstr(const char* str1, const char* str2) {
     return strstr(str1, str2);
 }
 
@@ -973,13 +973,13 @@ __clove_cmdline_errno_t __clove_cmdline_handle_report(__clove_cmdline_t* cmdline
 
     __clove_report_t* report;
     if (__clove_string_equal("json", arg)) {
-        char* file_path = "clove_report.json";
+        const char* file_path = "clove_report.json";
         found = __clove_cmdline_next_opt(cmdline, &arg);
         if (found && __clove_string_equal("f", arg)) {
             found = __clove_cmdline_next_arg(cmdline, &arg);
             if (found) file_path = arg;
         }
-        char* report_path;
+        const char* report_path;
         if (__clove_path_is_relative(file_path)) {
             report_path = __clove_path_rel_to_abs_exec_path(file_path);
         }
@@ -1057,7 +1057,7 @@ void __clove_assert_fail(__clove_test_t* _this) {
     _this->issue.assert = __CLOVE_ASSERT_FAIL;
 }
 
-void __clove_assert_pass(__clove_test_t * _this) {
+void __clove_assert_pass(__clove_test_t* _this) {
     _this->result = __CLOVE_TEST_RESULT_PASSED;
 }
 
@@ -1180,7 +1180,8 @@ void __clove_report_console_start(__clove_report_t* _this, int suite_count, int 
         report->labels.pass = "[\x1b[1;32mPASS\x1b[0m]";
         report->labels.skip = "[\x1b[33mSKIP\x1b[0m]";
         report->labels.fail = "[\x1b[1;31mFAIL\x1b[0m]";
-    } else {
+    }
+    else {
         report->labels.info = "[INFO]";
         report->labels.warn = "[WARN]";
         report->labels.erro = "[ERRO]";
@@ -1207,7 +1208,7 @@ void __clove_report_console_end(__clove_report_t* _this, int test_count, int pas
 }
 
 void __clove_report_console_test_executed(__clove_report_t* _this, __clove_suite_t* suite, __clove_test_t* test, size_t test_number) {
-     __clove_report_console_t* report = (__clove_report_console_t*)_this;
+    __clove_report_console_t* report = (__clove_report_console_t*)_this;
     char result[__CLOVE_STRING_LENGTH], strToPad[__CLOVE_TEST_ENTRY_LENGTH];
     snprintf(strToPad, __CLOVE_TEST_ENTRY_LENGTH, "%zu) %s.%s", test_number, suite->name, test->name);
     __clove_report_console_pad_right(result, strToPad);
@@ -1600,8 +1601,8 @@ void __clove_symbols_function_collect(__clove_symbols_function_t exported_funct,
 
     char* test_full_name = exported_funct.name;
 
-    char* begin_suite_name = test_full_name + context->prefix_length;
-    char* end_suite_name = __clove_string_strstr(begin_suite_name, end_suite_separator);
+    const char* begin_suite_name = test_full_name + context->prefix_length;
+    const char* end_suite_name = __clove_string_strstr(begin_suite_name, end_suite_separator);
     size_t size = end_suite_name - begin_suite_name;
 
     char* suite_name = (char*)malloc(size + 1); //size+1 for null terminator
@@ -1615,7 +1616,7 @@ void __clove_symbols_function_collect(__clove_symbols_function_t exported_funct,
         context->suites_count++;
     }
 
-    char* test_name = end_suite_name + end_suite_separator_length;
+    const char* test_name = end_suite_name + end_suite_separator_length;
     if (test_name[0] == '1' && test_name[1] == '1') {
         context->last_suite->fixtures.setup_once = (void (*)())exported_funct.pointer;
     }
@@ -2018,10 +2019,10 @@ int __clove_runner_auto(int argc, char* argv[]) {
     __clove_exec_base_path = __clove_path_basepath(argv[0]);
 
     /* Supported Commands
-       > <exe>                      Run with console report
-       > <exe> -r console           Run with console report (to implement: -m verbose or brief)
-       > <exe> -r json              Run with json mode (to implement: -f <report-path.json>)
-       > <exe> -v                   Print CLove-Unit version
+       > <exe>                                  Run with console report
+       > <exe> -r console                       Run with console report (to implement: -m verbose or brief)
+       > <exe> -r json [-f <report-path.json>]  Run with json mode
+       > <exe> -v                               Print CLove-Unit version
     */
     __clove_cmdline_t cmdline = __clove_cmdline_create(argv, argc);
     __clove_cmdline_errno_t cmd_result = __CLOVE_CMD_ERRNO_OK;
