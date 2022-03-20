@@ -83,3 +83,9 @@ jobs:
           asset_path: ./clove-unit.h
           asset_name: clove-unit.h
           asset_content_type: text/plain
+      - name: Compute Archive SHA256
+        run: |
+          URL=${{ github.server_url }}/${{ github.repository }}/archive/${{ github.ref }}.tar.gz
+          echo "URL: ${URL}"
+          curl -L ${URL} -o archive.tar.gz
+          sha256sum archive.tar.gz
