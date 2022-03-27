@@ -70,3 +70,18 @@ CLOVE_TEST(SortTwoItemsNotAlreadySorted) {
     CLOVE_INT_EQ(20, v2);
 }
 
+
+CLOVE_TEST(VectorOfStrings) {
+    __clove_vector_t vector;
+    __clove_vector_params_t params = __clove_vector_params_defaulted(sizeof(char*));
+    __clove_vector_init(&vector, &params);
+
+    char* str = "Hello";
+
+    char** slot = (char**) __clove_vector_add_empty(&vector);
+    *slot = str;
+
+    const char** v1 = (char**)__clove_vector_get(&vector, 0);
+    CLOVE_STRING_EQ("Hello", *v1);
+}
+
