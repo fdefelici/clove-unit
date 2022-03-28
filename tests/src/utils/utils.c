@@ -4,6 +4,10 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <sys/stat.h>
+#include <clove-unit.h>
+#include <stdio.h>
+#include <string.h>
+#include <errno.h>
 
 FILE* pipe_open(const char* cmd, const char* mode);
 int   pipe_close(FILE* pipe);
@@ -32,33 +36,42 @@ CLOVE_INT_EQ(0, result);
 */
 
 int exec_cmd(const char* cmd, char** output) {
-    FILE* pipe = pipe_open(cmd, "rt");
-    if (pipe == NULL) return -100;
+    FILE* pipe = pipe_open(cmd, "r");
+    if (pipe == NULL) {
+        printf("Error: %s\n", strerror(errno));
+        return -100;
+    }
 
-    size_t size = 512;
-    char* buffer_head = (char*)calloc(size, sizeof(char));
-    char* buffer_chunk = buffer_head;
+    if (output != NULL) {
+        size_t size = 512;
+        char* buffer_head = (char*)calloc(size, sizeof(char));
+        char* buffer_chunk = buffer_head;
 
-    size_t fetch_size = size;
-    size_t fetch_size_current = fetch_size;
-    size_t bytes_read = 0;
-    size_t bytes_count = 0;
-    while(fgets(buffer_chunk, fetch_size_current, pipe)) {
-        bytes_read = strlen(buffer_chunk);
-        buffer_chunk += bytes_read;
-        bytes_count += bytes_read;
+        size_t fetch_size = size;
+        size_t fetch_size_current = fetch_size;
+        size_t bytes_read = 0;
+        size_t bytes_count = 0;
+        while(fgets(buffer_chunk, fetch_size_current, pipe)) {
+            bytes_read = strlen(buffer_chunk);
+            buffer_chunk += bytes_read;
+            bytes_count += bytes_read;
 
-        fetch_size_current = fetch_size_current - bytes_read;
-        if (fetch_size_current == 1) {
-            size *= 2;
-            buffer_head = (char*)realloc(buffer_head, size);
-            buffer_chunk = buffer_head + bytes_count;
-            fetch_size_current = fetch_size;
-        }
-    }   
+            fetch_size_current = fetch_size_current - bytes_read;
+            if (fetch_size_current == 1) {
+                size *= 2;
+                buffer_head = (char*)realloc(buffer_head, size);
+                buffer_chunk = buffer_head + bytes_count;
+                fetch_size_current = fetch_size;
+            }
+        }   
+        *output = buffer_head;
+    }
     int result_code = pipe_close(pipe);
-    
-    *output = buffer_head;
+    #ifndef _WIN32
+    //NOTE: if program exit with 1 pipe_close give 256!!
+    if (result_code == 256) result_code = 1;
+    #endif 
+
     return result_code;
 }
 

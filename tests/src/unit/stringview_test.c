@@ -1,5 +1,6 @@
 #define CLOVE_SUITE_NAME StringViewTest
 #include <clove-unit.h>
+#include <stdlib.h>
 
 CLOVE_TEST(CreationFromOffset) {
     const char* str = "Hello World"; 

@@ -81,7 +81,7 @@ CLOVE_TEST(VectorOfStrings) {
     char** slot = (char**) __clove_vector_add_slot(&vector);
     *slot = str;
 
-    const char** v1 = (char**)__clove_vector_get(&vector, 0);
+    char** v1 = (char**)__clove_vector_get(&vector, 0);
     CLOVE_STRING_EQ("Hello", *v1);
 }
 
