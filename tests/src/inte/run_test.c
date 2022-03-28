@@ -25,7 +25,6 @@ CLOVE_TEST(JsonReport) {
     //file_delete(report_path);
 
     const char* cmd = str_fmt("\"%s\" -r json -f %s", RES_PRJ01_EXEC_PATH, report_path);
-    puts(cmd);
     int cmd_code = exec_cmd(cmd, &cmd_out);
     CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_GENERIC, cmd_code); //1 test with failure
 
