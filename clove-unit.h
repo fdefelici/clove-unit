@@ -155,10 +155,11 @@ typedef struct __clove_vector_t {
 } __clove_vector_t;
 
 __CLOVE_EXTERN_C __clove_vector_params_t __clove_vector_params_defaulted(size_t item_size);
+__CLOVE_EXTERN_C __clove_vector_t __clove_vector_null();
 __CLOVE_EXTERN_C void __clove_vector_init(__clove_vector_t* vector, __clove_vector_params_t* params);
 __CLOVE_EXTERN_C size_t __clove_vector_count(const __clove_vector_t* vector);
 __CLOVE_EXTERN_C bool __clove_vector_is_empty(const __clove_vector_t* vector);
-__CLOVE_EXTERN_C void* __clove_vector_add_empty(__clove_vector_t* vector); //TODO: Rename in add_slot
+__CLOVE_EXTERN_C void* __clove_vector_add_slot(__clove_vector_t* vector);
 __CLOVE_EXTERN_C void* __clove_vector_get(const __clove_vector_t* vector, size_t index);
 __CLOVE_EXTERN_C void __clove_vector_set(__clove_vector_t* vector, size_t index, void* item);
 __CLOVE_EXTERN_C void __clove_vector_free(__clove_vector_t* vector);
@@ -209,10 +210,10 @@ typedef enum __clove_cmdline_errno_t {
     __CLOVE_CMD_ERRNO_INVALID_PARAM = 2,
 } __clove_cmdline_errno_t;
 
-__CLOVE_EXTERN_C __clove_cmdline_t __clove_cmdline_create(char** argv, int argc);
+__CLOVE_EXTERN_C void __clove_cmdline_init(__clove_cmdline_t* cmdline, char** argv, int argc);
+__CLOVE_EXTERN_C void __clove_cmdline_free(__clove_cmdline_t* cmdline);
 __CLOVE_EXTERN_C bool __clove_cmdline_next_opt(__clove_cmdline_t* cmdline, char** opt_out);
 __CLOVE_EXTERN_C bool __clove_cmdline_next_arg(__clove_cmdline_t* cmdline, char** arg_out);
-__CLOVE_EXTERN_C __clove_cmdline_t __clove_cmdline_parse(char** argv, int argc);
 __CLOVE_EXTERN_C bool __clove_cmdline_has_opt(__clove_cmdline_t* cmdline, const char* opt);
 __CLOVE_EXTERN_C char* __clove_cmdline_get_opt_value(__clove_cmdline_t* cmdline, const char* opt);
 __CLOVE_EXTERN_C __clove_vector_t* __clove_cmdline_get_opt_values(__clove_cmdline_t* cmdline, const char* opt);
@@ -222,6 +223,7 @@ __CLOVE_EXTERN_C void __clove_cmdline_add_opt(__clove_cmdline_t* cmd, const char
 __CLOVE_EXTERN_C __clove_cmdline_errno_t __clove_cmdline_handle_report(__clove_cmdline_t* cmd);
 __CLOVE_EXTERN_C __clove_cmdline_errno_t __clove_cmdline_handle_version(__clove_cmdline_t* cmd);
 __CLOVE_EXTERN_C __clove_cmdline_errno_t __clove_cmdline_handle_default(__clove_cmdline_t* cmd);
+__CLOVE_EXTERN_C void __clove_cmdline_create_test_expr(__clove_cmdline_t* cmd, const char* opt, __clove_vector_t* out_expressions);
 #pragma endregion // CommandLine Decl
 
 #pragma region PRIVATE - Test Decl
@@ -353,6 +355,15 @@ typedef struct __clove_report_t {
     void (*test_executed)(struct __clove_report_t* _this, __clove_suite_t* suite, __clove_test_t* test, size_t test_number);
     void (*free)(struct __clove_report_t* _this);
 } __clove_report_t;
+
+typedef struct __clove_test_expr_t {
+    __clove_string_view_t suite_view;
+    __clove_string_view_t test_view;
+} __clove_test_expr_t;
+
+__CLOVE_EXTERN_C void __clove_test_expr_init(__clove_test_expr_t* expr,  const char* expr_str);
+__CLOVE_EXTERN_C bool __clove_test_expr_validate_vw(const __clove_string_view_t* match, const __clove_string_view_t* view);
+__CLOVE_EXTERN_C bool __clove_test_expr_validate(__clove_test_expr_t* expr, const __clove_string_view_t* suite, const __clove_string_view_t* test);
 #pragma endregion
 
 #pragma region PRIVATE - Report Console Decl
@@ -427,15 +438,6 @@ __CLOVE_EXTERN_C int __clove_symbols_for_each_function_by_prefix(const char* pre
 #pragma endregion //Autodiscovery Decl
 
 #pragma region PRIVATE - Run Decl
-typedef struct __clove_include_expr_t {
-    __clove_string_view_t suite_view;
-    __clove_string_view_t test_view;
-} __clove_include_expr_t;
-
-__CLOVE_EXTERN_C void __clove_include_expr_init(__clove_include_expr_t* expr,  const char* expr_str);
-__CLOVE_EXTERN_C bool __clove_include_expr_validate_vw(const __clove_string_view_t* match, const __clove_string_view_t* view);
-__CLOVE_EXTERN_C bool __clove_include_expr_validate(__clove_include_expr_t* expr, const __clove_string_view_t* suite, const __clove_string_view_t* test);
-
 __CLOVE_EXTERN_C int __clove_runner_auto(int argc, char* argv[]);
 __CLOVE_EXTERN_C int __clove_run_tests_with_report(__clove_report_t* report, __clove_vector_t* includes, __clove_vector_t* excludes);
 __CLOVE_EXTERN_C int __clove_exec_suites(__clove_suite_t* suites, int suite_count, int test_count, __clove_report_t* report);
@@ -966,6 +968,17 @@ __clove_vector_params_t __clove_vector_params_defaulted(size_t item_size) {
     return params;
 }
 
+__clove_vector_t __clove_vector_null() {
+    __clove_vector_t v;
+    v.capacity = 0;
+    v.item_size = 0;
+    v.count = 0;
+    v.items = NULL;
+    v.item_ctor = NULL;
+    v.item_dtor = NULL;
+    return v;
+}
+
 void __clove_vector_init(__clove_vector_t* vector, __clove_vector_params_t* params) {
     vector->capacity = params->initial_capacity;
     vector->count = 0;
@@ -984,7 +997,7 @@ bool __clove_vector_is_empty(const __clove_vector_t* vector) {
     return vector->count == 0;
 }
 
-void* __clove_vector_add_empty(__clove_vector_t* vector) {
+void* __clove_vector_add_slot(__clove_vector_t* vector) {
     if (vector->count == vector->capacity) {
         vector->capacity *= 2;
         vector->items = (unsigned char*)realloc(vector->items, vector->item_size * vector->capacity);
@@ -1217,14 +1230,6 @@ void* __clove_map_get(__clove_map_t* map, const char* key) {
 #pragma region PRIVATE - CommandLine Impl
 #include <stdbool.h>
 #include <string.h>
-__clove_cmdline_t __clove_cmdline_create(char** argv, int argc) {
-    __clove_cmdline_t cmd;
-    cmd.argv = argv;
-    cmd.argc = argc;
-    cmd.arg_index = 1;
-    return cmd;
-}
-
 bool __clove_cmdline_next_opt(__clove_cmdline_t* cmdline, char** opt_out) {
     if (cmdline->arg_index >= cmdline->argc) return false;
 
@@ -1245,22 +1250,25 @@ bool __clove_cmdline_next_arg(__clove_cmdline_t* cmdline, char** arg_out) {
     return true;
 }
 
-//TODO: Evitare copia __clove_cmdline_t
-__clove_cmdline_t __clove_cmdline_parse(char** argv, int argc) {
-    __clove_cmdline_t cmd;
-    cmd.argv = argv;
-    cmd.argc = argc;
-    cmd.arg_index = 1;
-    __clove_map_init(&(cmd.map));
+void __clove_cmdline_init(__clove_cmdline_t* cmd, char** argv, int argc) {
+    cmd->argv = argv;
+    cmd->argc = argc;
+    cmd->arg_index = 1;
+    __clove_map_init(&(cmd->map));
 
     char* opt;
-    while(__clove_cmdline_next_opt(&cmd, &opt)) {
+    while(__clove_cmdline_next_opt(cmd, &opt)) {
         char* arg = NULL;
-        __clove_cmdline_next_arg(&cmd, &arg);
-        __clove_cmdline_add_opt(&cmd, opt, arg);
+        __clove_cmdline_next_arg(cmd, &arg);
+        __clove_cmdline_add_opt(cmd, opt, arg);
     }
-    //TODO: FARE FREE del map e vector
-    return cmd;
+}
+
+void __clove_cmdline_free(__clove_cmdline_t* cmd) {
+    __clove_map_free(&(cmd->map));
+    cmd->argv = NULL;
+    cmd->argc = 0;
+    cmd->arg_index = 0;
 }
 
 void __clove_cmdline_add_opt(__clove_cmdline_t* cmd, const char* opt, const char* value) {
@@ -1273,7 +1281,7 @@ void __clove_cmdline_add_opt(__clove_cmdline_t* cmd, const char* opt, const char
         __clove_vector_init(values, &params);
         __clove_map_put(&(cmd->map), opt, values);
     }
-    const char* *slot = (const char* *)__clove_vector_add_empty(values);
+    const char* *slot = (const char* *)__clove_vector_add_slot(values);
     *slot = value;
 }
 
@@ -1294,54 +1302,6 @@ __clove_cmdline_errno_t __clove_cmdline_handle_version(__clove_cmdline_t* cmd) {
     printf("%s", __CLOVE_VERSION); //to avoid new_line character(s)
     return __CLOVE_CMD_ERRNO_OK;
 }
-
-//TODO: Portare su Report Decl?
-void __clove_include_expr_init(__clove_include_expr_t* expr,  const char* expr_str) {
-    const char* dot_begin = __clove_string_strstr(expr_str, ".");
-    if (dot_begin) {
-        const size_t expr_len = __clove_string_length(expr_str);
-        const size_t suite_len = dot_begin - expr_str;
-        const size_t test_len = expr_str + expr_len-1 - dot_begin;
-        if (suite_len == 0) expr->suite_view = __clove_string_view_from_str("");
-        else expr->suite_view = __clove_string_view_from_be(expr_str, dot_begin - 1);
-
-        if (test_len == 0) expr->test_view = __clove_string_view_from_str("");
-        else expr->test_view = __clove_string_view_from_str(dot_begin + 1);
-    } else {
-        expr->suite_view = __clove_string_view_from_str(expr_str);
-        expr->test_view = __clove_string_view_from_str("*");
-    }
-}
-
-bool __clove_include_expr_validate_vw(const __clove_string_view_t* match, const __clove_string_view_t* view) {
-    if (__clove_string_view_strequals(match, "*")) return true;
-    const size_t match_len = __clove_string_view_length(match);
-    if (match_len == 0) return false;
-    const char* match_start = __clove_string_view_begin(match);
-    const char* match_end = __clove_string_view_end(match);
-
-    bool start_asterisk = match_start[0] == '*';
-    bool end_asterisk = match_end[0] == '*';
-    if (start_asterisk && end_asterisk) {
-        if (match_len <= 2) return false;
-        __clove_string_view_t fixture = __clove_string_view_from_be(match_start+1, match_end-1);
-        return __clove_string_view_contains(view, &fixture);
-    }
-    if (start_asterisk) {
-        return __clove_string_view_nendswith(view, match, 1);
-    }
-    if (end_asterisk) {
-        return __clove_string_view_ncmp(match, view, __clove_string_view_length(match)-1);
-    }
-    return __clove_string_view_equals(match, view);
-}
-
-bool __clove_include_expr_validate(__clove_include_expr_t* expr, const __clove_string_view_t* suite, const __clove_string_view_t* test) {
-    if (!__clove_include_expr_validate_vw(&(expr->suite_view), suite)) return false;
-    if (!__clove_include_expr_validate_vw(&(expr->test_view), test)) return false;
-    return true;
-}
-
 
 __clove_cmdline_errno_t __clove_cmdline_handle_report(__clove_cmdline_t* cmd) {
     if (!__clove_cmdline_has_opt(cmd, "r")) return __CLOVE_CMD_ERRNO_UNMANAGED;
@@ -1370,44 +1330,38 @@ __clove_cmdline_errno_t __clove_cmdline_handle_report(__clove_cmdline_t* cmd) {
     }
 
     __clove_vector_t includes;
-    if (__clove_cmdline_has_opt(cmd, "i")) {
-        __clove_vector_t* includes_str = __clove_cmdline_get_opt_values(cmd, "i");
-
-        __clove_vector_params_t params = __clove_vector_params_defaulted(sizeof(__clove_include_expr_t));
-        params.initial_capacity = __clove_vector_count(includes_str);
-        __clove_vector_init(&includes, &params);
-
-        for(size_t i = 0; i < __clove_vector_count(includes_str); ++i) {
-            __clove_include_expr_t* inc = (__clove_include_expr_t*)__clove_vector_add_empty(&includes);
-            char* inc_str = *(char**)__clove_vector_get(includes_str, i);
-            __clove_include_expr_init(inc, inc_str); //TODO: Factory puo tornare errore per formato errato
-        }
-    } else {
-        includes.count = 0;
-    }
+    __clove_cmdline_create_test_expr(cmd, "i", &includes);
 
     __clove_vector_t excludes;
-    if (__clove_cmdline_has_opt(cmd, "e")) {
-        __clove_vector_t* excludes_str = __clove_cmdline_get_opt_values(cmd, "e");
-
-        __clove_vector_params_t params = __clove_vector_params_defaulted(sizeof(__clove_include_expr_t));
-        params.initial_capacity = __clove_vector_count(excludes_str);
-        __clove_vector_init(&excludes, &params);
-
-        for(size_t i = 0; i < __clove_vector_count(excludes_str); ++i) {
-            __clove_include_expr_t* expr = (__clove_include_expr_t*)__clove_vector_add_empty(&excludes);
-            char* str = *(char**)__clove_vector_get(excludes_str, i);
-            __clove_include_expr_init(expr, str); //TODO: Factory puo tornare errore per formato errato
-        }
-    } else {
-        excludes.count = 0;
-    }
-
+    __clove_cmdline_create_test_expr(cmd, "e", &excludes);
+    
     int run_result = __clove_run_tests_with_report(report, &includes, &excludes);
     report->free(report);
 
     if (run_result != 0) return __CLOVE_CMD_ERRNO_GENERIC;
     return __CLOVE_CMD_ERRNO_OK;
+}
+
+__clove_cmdline_errno_t __clove_cmdline_handle_default(__clove_cmdline_t* cmd) {
+    __clove_cmdline_add_opt(cmd, "r", "console");
+    return __clove_cmdline_handle_report(cmd);
+}
+
+void __clove_cmdline_create_test_expr(__clove_cmdline_t* cmd, const char* opt,  __clove_vector_t* expressions) {
+    *expressions = __clove_vector_null();
+    if (__clove_cmdline_has_opt(cmd, opt)) {
+        __clove_vector_t* values = __clove_cmdline_get_opt_values(cmd, opt);
+
+        __clove_vector_params_t params = __clove_vector_params_defaulted(sizeof(__clove_test_expr_t));
+        params.initial_capacity = __clove_vector_count(values);
+        __clove_vector_init(expressions, &params);
+
+        for(size_t i = 0; i < __clove_vector_count(values); ++i) {
+            __clove_test_expr_t* expr = (__clove_test_expr_t*)__clove_vector_add_slot(expressions);
+            char* expr_str = *(char**)__clove_vector_get(values, i);
+            __clove_test_expr_init(expr, expr_str);
+        }
+    } 
 }
 #pragma endregion // CommandLine Impl
 
@@ -1558,6 +1512,54 @@ void __clove_assert_string(__clove_assert_check_e check_mode, const char* expect
     }
 }
 #pragma endregion // Assert Impl
+
+#pragma region PRIVATE - Report Impl
+void __clove_test_expr_init(__clove_test_expr_t* expr,  const char* expr_str) {
+    const char* dot_begin = __clove_string_strstr(expr_str, ".");
+    if (dot_begin) {
+        const size_t expr_len = __clove_string_length(expr_str);
+        const size_t suite_len = dot_begin - expr_str;
+        const size_t test_len = expr_str + expr_len-1 - dot_begin;
+        if (suite_len == 0) expr->suite_view = __clove_string_view_from_str("");
+        else expr->suite_view = __clove_string_view_from_be(expr_str, dot_begin - 1);
+
+        if (test_len == 0) expr->test_view = __clove_string_view_from_str("");
+        else expr->test_view = __clove_string_view_from_str(dot_begin + 1);
+    } else {
+        expr->suite_view = __clove_string_view_from_str(expr_str);
+        expr->test_view = __clove_string_view_from_str("*");
+    }
+}
+
+bool __clove_test_expr_validate_vw(const __clove_string_view_t* match, const __clove_string_view_t* view) {
+    if (__clove_string_view_strequals(match, "*")) return true;
+    const size_t match_len = __clove_string_view_length(match);
+    if (match_len == 0) return false;
+    const char* match_start = __clove_string_view_begin(match);
+    const char* match_end = __clove_string_view_end(match);
+
+    bool start_asterisk = match_start[0] == '*';
+    bool end_asterisk = match_end[0] == '*';
+    if (start_asterisk && end_asterisk) {
+        if (match_len <= 2) return false;
+        __clove_string_view_t fixture = __clove_string_view_from_be(match_start+1, match_end-1);
+        return __clove_string_view_contains(view, &fixture);
+    }
+    if (start_asterisk) {
+        return __clove_string_view_nendswith(view, match, 1);
+    }
+    if (end_asterisk) {
+        return __clove_string_view_ncmp(match, view, __clove_string_view_length(match)-1);
+    }
+    return __clove_string_view_equals(match, view);
+}
+
+bool __clove_test_expr_validate(__clove_test_expr_t* expr, const __clove_string_view_t* suite, const __clove_string_view_t* test) {
+    if (!__clove_test_expr_validate_vw(&(expr->suite_view), suite)) return false;
+    if (!__clove_test_expr_validate_vw(&(expr->test_view), test)) return false;
+    return true;
+}
+#pragma endregion // Report Impl
 
 #pragma region PRIVATE - Report Console Impl
 #include <stdio.h>
@@ -2006,16 +2008,16 @@ bool __clove_symbols_function_validate(__clove_string_view_t* suite, __clove_str
     //Includes win over Excludes
     if (!__clove_vector_is_empty(context->includes)) {
         for(size_t i=0; i < __clove_vector_count(context->includes); ++i) {
-            __clove_include_expr_t* expr = (__clove_include_expr_t*)__clove_vector_get(context->includes, i);
-            if (__clove_include_expr_validate(expr, suite, name)) return true;
+            __clove_test_expr_t* expr = (__clove_test_expr_t*)__clove_vector_get(context->includes, i);
+            if (__clove_test_expr_validate(expr, suite, name)) return true;
         }
         return false;
     }
 
     if (!__clove_vector_is_empty(context->excludes)) {
         for(size_t i=0; i < __clove_vector_count(context->excludes); ++i) {
-            __clove_include_expr_t* expr = (__clove_include_expr_t*)__clove_vector_get(context->excludes, i);
-            if (__clove_include_expr_validate(expr, suite, name)) return false;
+            __clove_test_expr_t* expr = (__clove_test_expr_t*)__clove_vector_get(context->excludes, i);
+            if (__clove_test_expr_validate(expr, suite, name)) return false;
         }
         return true;
     }
@@ -2077,7 +2079,7 @@ void __clove_symbols_function_collect(__clove_symbols_function_t exported_funct,
         if (last_suite_temp.test_count == 0) {
             last_suite_temp.test_count = 1; //just to record that at least one test case has been found
 
-            last_suite_ptr = (__clove_suite_t*)__clove_vector_add_empty(&context->suites);
+            last_suite_ptr = (__clove_suite_t*)__clove_vector_add_slot(&context->suites);
             last_suite_ptr->name = __clove_string_view_as_string(&suite_name_view);
             if (last_suite_temp.fixtures.setup_once)     last_suite_ptr->fixtures.setup_once    = last_suite_temp.fixtures.setup_once;
             if (last_suite_temp.fixtures.teardown_once)  last_suite_ptr->fixtures.teardown_once = last_suite_temp.fixtures.teardown_once;
@@ -2086,7 +2088,7 @@ void __clove_symbols_function_collect(__clove_symbols_function_t exported_funct,
             context->suites_count++;
         }
 
-        __clove_test_t* test = (__clove_test_t*)__clove_vector_add_empty(&last_suite_ptr->tests);
+        __clove_test_t* test = (__clove_test_t*)__clove_vector_add_slot(&last_suite_ptr->tests);
         //Switched to string allocation to make test structs indipendent from the source memory
         //test->name = test_name + test_separator_length;
         test->name = __clove_string_view_as_string(&name_vw);
@@ -2432,7 +2434,7 @@ int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symb
             size_t name_index = sym->st_name;
             char* sym_name = symbol_name_table + name_index;
             if (!strncmp(sym_name, prefix, prefix_length)) {
-                __clove_symbols_function_t* each_funct = (__clove_symbols_function_t*)__clove_vector_add_empty(&clove_functions);
+                __clove_symbols_function_t* each_funct = (__clove_symbols_function_t*)__clove_vector_add_slot(&clove_functions);
                 each_funct->name = sym_name;
                 each_funct->pointer = (void*)(module.address + sym->st_value);
             }
@@ -2468,24 +2470,6 @@ int main(int argc, char* argv[]) {\
     return __clove_runner_auto(argc, argv);\
 }
 
-
-__clove_cmdline_errno_t __clove_cmdline_handle_default(__clove_cmdline_t* cmd) {
-    /*
-    //TODO: Empty vector
-    __clove_vector_t includes;
-    includes.count = 0;
-
-    __clove_report_t* report = (__clove_report_t*)__clove_report_console_new();
-    int run_result = __clove_run_tests_with_report(report, &includes);
-    report->free(report);
-    if (run_result != 0) return __CLOVE_CMD_ERRNO_GENERIC;
-    return __CLOVE_CMD_ERRNO_OK;
-    */
-    __clove_cmdline_add_opt(cmd, "r", "console");
-    return __clove_cmdline_handle_report(cmd);
-}
-        
-
 int __clove_runner_auto(int argc, char* argv[]) {
     __clove_exec_path = argv[0];
     __clove_exec_base_path = __clove_path_basepath(argv[0]);
@@ -2505,18 +2489,19 @@ int __clove_runner_auto(int argc, char* argv[]) {
     __clove_vector_init(&cmd_handlers, &params);
     __clove_cmdline_handler_f* slot;
     
-    slot = (__clove_cmdline_handler_f*)__clove_vector_add_empty(&cmd_handlers);
+    slot = (__clove_cmdline_handler_f*)__clove_vector_add_slot(&cmd_handlers);
     *slot = __clove_cmdline_handle_version;
 
-    slot = (__clove_cmdline_handler_f*)__clove_vector_add_empty(&cmd_handlers);
+    slot = (__clove_cmdline_handler_f*)__clove_vector_add_slot(&cmd_handlers);
     *slot = __clove_cmdline_handle_report;
 
-    slot = (__clove_cmdline_handler_f*)__clove_vector_add_empty(&cmd_handlers);
+    slot = (__clove_cmdline_handler_f*)__clove_vector_add_slot(&cmd_handlers);
     *slot = __clove_cmdline_handle_default;
 
 
     __clove_cmdline_errno_t cmd_result = __CLOVE_CMD_ERRNO_INVALID_PARAM;
-    __clove_cmdline_t cmdline = __clove_cmdline_parse(argv, argc);
+    __clove_cmdline_t cmdline;
+    __clove_cmdline_init(&cmdline, argv, argc);
     for(size_t i=0; i < __clove_vector_count(&cmd_handlers); ++i) {
         __clove_cmdline_handler_f* handler = (__clove_cmdline_handler_f*)__clove_vector_get(&cmd_handlers, i);
         __clove_cmdline_errno_t result = (*handler)(&cmdline);
@@ -2525,9 +2510,8 @@ int __clove_runner_auto(int argc, char* argv[]) {
             break;
         }
     }
-    //TODO: cmdline free
-
     __clove_vector_free(&cmd_handlers);
+    __clove_cmdline_free(&cmdline);
     free(__clove_exec_base_path);
     return cmd_result;
 }

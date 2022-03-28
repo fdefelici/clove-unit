@@ -21,7 +21,7 @@ CLOVE_TEST(SortOneItem) {
     __clove_vector_params_t params = __clove_vector_params_defaulted(sizeof(int));
     __clove_vector_init(&vector, &params);
 
-    int* slot = (int*) __clove_vector_add_empty(&vector);
+    int* slot = (int*) __clove_vector_add_slot(&vector);
     *slot = 10;
 
     __clove_vector_sort(&vector, ints_comparator);
@@ -36,10 +36,10 @@ CLOVE_TEST(SortTwoItemsAlreadySorted) {
     __clove_vector_init(&vector, &params);
 
     int* slot;
-    slot = (int*) __clove_vector_add_empty(&vector);
+    slot = (int*) __clove_vector_add_slot(&vector);
     *slot = 10;
 
-    slot = (int*) __clove_vector_add_empty(&vector);
+    slot = (int*) __clove_vector_add_slot(&vector);
     *slot = 20;
 
     __clove_vector_sort(&vector, ints_comparator);
@@ -56,10 +56,10 @@ CLOVE_TEST(SortTwoItemsNotAlreadySorted) {
     __clove_vector_init(&vector, &params);
 
     int* slot;
-    slot = (int*) __clove_vector_add_empty(&vector);
+    slot = (int*) __clove_vector_add_slot(&vector);
     *slot = 20;
 
-    slot = (int*) __clove_vector_add_empty(&vector);
+    slot = (int*) __clove_vector_add_slot(&vector);
     *slot = 10;
 
     __clove_vector_sort(&vector, ints_comparator);
@@ -78,7 +78,7 @@ CLOVE_TEST(VectorOfStrings) {
 
     char* str = "Hello";
 
-    char** slot = (char**) __clove_vector_add_empty(&vector);
+    char** slot = (char**) __clove_vector_add_slot(&vector);
     *slot = str;
 
     const char** v1 = (char**)__clove_vector_get(&vector, 0);
