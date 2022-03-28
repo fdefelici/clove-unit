@@ -54,7 +54,7 @@ __CLOVE_EXTERN_C FILE* __clove_file_open(const char* path, const char* mode);
 __CLOVE_EXTERN_C char* __clove_path_concat(const char separator, const char* path1, const char* path2);
 __CLOVE_EXTERN_C char* __clove_path_rel_to_abs_exec_path(const char* rel_path);
 __CLOVE_EXTERN_C bool __clove_path_is_relative(const char* path);
-__CLOVE_EXTERN_C char* __clove_path_basepath(char* path);
+__CLOVE_EXTERN_C char* __clove_path_basepath(const char* path);
 #pragma endregion // Path Decl
 
 #pragma region PRIVATE - String Decl
@@ -529,7 +529,10 @@ bool __clove_path_is_relative(const char* path) {
     return true;
 }
 
-char* __clove_path_basepath(char* path) {
+char* __clove_path_basepath(const char* a_path) {
+    //TODO: Make use only of one allocation
+    char* path = __clove_string_strdup(a_path);
+
     //make sure path contains only separator specific for the OS
     __clove_string_replace_char(path, '/', __CLOVE_PATH_SEPARATOR);
     __clove_string_replace_char(path, '\\', __CLOVE_PATH_SEPARATOR);
@@ -537,18 +540,21 @@ char* __clove_path_basepath(char* path) {
     const char* last_addr = strrchr((const char*)path, __CLOVE_PATH_SEPARATOR);
     int bytes_count;
 
-    char dot_path[3] = { '.', __CLOVE_PATH_SEPARATOR, '\0' };
+    char* path_choosen;
     if (!last_addr) {
+        char dot_path[3] = { '.', __CLOVE_PATH_SEPARATOR, '\0' };
         bytes_count = sizeof(dot_path) - 1; //equivalent to strlen
-        path = dot_path;
+        path_choosen = dot_path;
     }
     else {
         bytes_count = (int)(last_addr - path);
+        path_choosen = path;
     }
     int count = bytes_count + 1; // +1 take into account null terminator
 
     char* base_path = (char*)calloc(count, sizeof(char));
-    __clove_string_strncpy(base_path, count, path, bytes_count);
+    __clove_string_strncpy(base_path, count, path_choosen, bytes_count);
+    free(path);
     return base_path;
 }
 #pragma endregion // Path Impl
@@ -1127,7 +1133,7 @@ void __clove_vector_sort(__clove_vector_t* vector, int (*comparator)(void*, void
 #include <stdlib.h>
 // Bernstein classic hash
 size_t __clove_map_hash_djb33x(void *key, size_t keylen) {
-    register size_t hash = 5381;
+    size_t hash = 5381;
     unsigned char *key_as_num = (unsigned char *)key;
     for (size_t i = 0; i < keylen; i++) {
         hash = ((hash << 5) + hash) ^ key_as_num[i];
