@@ -97,3 +97,32 @@ CLOVE_TEST(AsString) {
     CLOVE_STRING_EQ("Hello", result);
     free(result);
 }
+
+CLOVE_TEST(EndWithUsingOffsetOnSuffix) {
+    const char* str = "Hello World"; 
+    __clove_string_view_t vw1 = __clove_string_view_from_str(str);
+    __clove_string_view_t suffix;
+    bool result ;
+    suffix =  __clove_string_view_from_str("1World");
+    result = __clove_string_view_nendswith(&vw1, &suffix, 1);
+    CLOVE_IS_TRUE(result);
+
+    suffix =  __clove_string_view_from_str("World");
+    result = __clove_string_view_nendswith(&vw1, &suffix, 3);
+    CLOVE_IS_TRUE(result);
+
+    suffix =  __clove_string_view_from_str("1World");
+    result = __clove_string_view_nendswith(&vw1, &suffix, 0);
+    CLOVE_IS_FALSE(result);
+}
+
+CLOVE_TEST(Contains) {
+    const char* str = "Hello World"; 
+    __clove_string_view_t vw1 = __clove_string_view_from_str(str);
+    __clove_string_view_t suffix;
+    bool result ;
+    suffix =  __clove_string_view_from_offs("1World", 2, 1);
+    result = __clove_string_view_contains(&vw1, &suffix);
+    CLOVE_IS_TRUE(result);
+}
+

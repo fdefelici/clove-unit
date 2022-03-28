@@ -42,4 +42,14 @@ CLOVE_TEST(Parse) {
     CLOVE_STRING_EQ("two", *(char**)__clove_vector_get(values, 1));
 } 
 
+CLOVE_TEST(ParseAndAdd) {
+    char* argv[3] = {"exec", "-i", "one"};
+    int argc = 3;
+    __clove_cmdline_t ctx = __clove_cmdline_parse(argv, argc);
+
+    __clove_cmdline_add_opt(&ctx, "r", "json");
+    CLOVE_STRING_EQ("json", __clove_cmdline_get_opt_value(&ctx, "r"));
+    CLOVE_STRING_EQ("one", __clove_cmdline_get_opt_value(&ctx, "i"));
+} 
+
 
