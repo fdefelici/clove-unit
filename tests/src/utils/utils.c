@@ -1,18 +1,16 @@
 #include "utils.h"
-
-#include <stdio.h>
-#include <stdarg.h>
-#include <stdlib.h>
-#include <sys/stat.h>
 #include <clove-unit.h>
-#include <stdio.h>
-#include <string.h>
+
 #include <errno.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
 
 FILE* pipe_open(const char* cmd, const char* mode);
 int   pipe_close(FILE* pipe);
 #ifdef _WIN32
-//#include <Windows.h>
 FILE* pipe_open(const char* cmd, const char* mode) {
     return _popen(cmd, mode);
 }
