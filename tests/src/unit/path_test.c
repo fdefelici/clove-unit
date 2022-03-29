@@ -17,10 +17,11 @@ CLOVE_TEST(AbsolutePathFromExecBasePath) {
     char* result = __clove_path_rel_to_abs_exec_path("path/to/append");
     CLOVE_NOT_NULL(result);
 }   
+#include <string.h>
+#include <stdlib.h>
 
 CLOVE_TEST(BasePathForJustExecutable) {
     char expected[3] = { '.', __CLOVE_PATH_SEPARATOR, '\0' };
-
     char* result = __clove_path_basepath("file.exe");
     CLOVE_STRING_EQ(expected, result);
 }  

@@ -9,7 +9,7 @@ CLOVE_TEST(StringStaticallyAllocated) {
 CLOVE_TEST(StringAllocatedOnStack) {
     char string1[] = "MyStackString";
     char string2[] = "MyStackString";
-    CLOVE_STRING_EQ(string1, string2); //TODO: good test is to verify during reporting phase
+    CLOVE_STRING_EQ(string1, string2);
 }
 
 CLOVE_TEST(LongString) {

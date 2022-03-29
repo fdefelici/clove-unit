@@ -10,7 +10,7 @@ char* read_file(const char* path) {
 
     char* result = (char*)malloc(file_size + 1);
     result[file_size] = '\0';
-    fread(result, file_size, 1, file);
+    size_t bytes_read = fread(result, file_size, 1, file);
     fclose(file);
     return result;
 }

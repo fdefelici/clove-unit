@@ -8,6 +8,3 @@ add_subdirectory(examples/clovepp)
 if (NOT DEFINED CI_TRIGGERED)
     add_subdirectory(perfs)
 endif()
-
-enable_testing()
-add_test(NAME CLoveUnitTest COMMAND CLoveUnitTest)
