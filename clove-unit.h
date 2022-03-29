@@ -1,6 +1,6 @@
 /*
  * clove-unit
- * v2.2.3
+ * v2.2.4
  * Single-Header Unit Testing library for C/C++
  * https://github.com/fdefelici/clove-unit
  *
@@ -10,8 +10,8 @@
 
 #define __CLOVE_VERSION_MAJOR 2
 #define __CLOVE_VERSION_MINOR 2
-#define __CLOVE_VERSION_PATCH 3
-#define __CLOVE_VERSION "2.2.3"
+#define __CLOVE_VERSION_PATCH 4
+#define __CLOVE_VERSION "2.2.4"
 
 #pragma region PRIVATE
 
@@ -1604,7 +1604,7 @@ void __clove_report_console_start(__clove_report_t* _this, int suite_count, int 
         report->labels.fail = "[FAIL]";
     }
 
-    printf("%s Executing Test Runner in 'Fail Safe Verbose' mode\n", report->labels.info);
+    printf("%s Executing Test Runner in 'Verbose' mode\n", report->labels.info);
     printf("%s Suite / Tests found: %d / %d \n", report->labels.info, suite_count, test_count);
 }
 
