@@ -542,7 +542,7 @@ char* __clove_path_basepath(const char* a_path) {
 
     char* path_choosen;
     if (!last_addr) {
-        char dot_path[3] = { '.', __CLOVE_PATH_SEPARATOR, '\0' };
+        static char dot_path[3] = { '.', __CLOVE_PATH_SEPARATOR, '\0' };
         bytes_count = sizeof(dot_path) - 1; //equivalent to strlen
         path_choosen = dot_path;
     }
