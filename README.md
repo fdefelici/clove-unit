@@ -150,7 +150,7 @@ Commandline options supported by the binary produced by a `CLove Unit` test proj
 | \<exec\> -i `SELECT_PATTERN` | include tests to be run by the execution <br /> (optional argument, can be repeated more than once) |
 | \<exec\> -e `SELECT_PATTERN` | exclude tests to be run by the execution <br /> (optional argument, can be repeated more than once) |
 
-> NOTE: If both -i and -e options are provided, the inclusion pattern always win over the exclusion one.
+> NOTE: If both -i and -e options are provided, the inclusion pattern always wins over the exclusion one.
 
 The `SELECT_PATTERN` works as follow:
 * Basic: `SuiteName.TestName`
