@@ -21,11 +21,13 @@ int pipe_close(FILE* pipe) {
     return _pclose(pipe);
 }
 #else 
+#include <sys/wait.h>
 FILE* pipe_open(const char* cmd, const char* mode) {
     return popen(cmd, mode);
 }
 int pipe_close(FILE* pipe) {
-    return pclose(pipe);
+    int status = pclose(pipe);
+    return WEXITSTATUS(status);
 }
 #endif
 
@@ -67,11 +69,6 @@ int exec_cmd(const char* cmd, char** output) {
         *output = buffer_head;
     }
     int result_code = pipe_close(pipe);
-    #ifndef _WIN32
-    //NOTE: if program exit with 1 pipe_close give 256!!
-    if (result_code == 256) result_code = 1;
-    #endif 
-
     return result_code;
 }
 
