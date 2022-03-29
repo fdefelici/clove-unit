@@ -20,8 +20,11 @@ int pipe_close(FILE* pipe) {
 }
 
 const char* cmd_fmt(const char* format, ...) {
-    char* format_ext = (char*)malloc(strlen(format) + 2 + 1);
-    __clove_string_sprintf(format_ext, strlen(format) + 2, "\"%s\"", format);
+    //Windows shell need to wrap command between "<command to be run>" when inside exists args that need "" to protect againts spaces
+    //So an example of cmd would be:  ""my path/exec" -r json -f "my path/json""
+    const size_t size = strlen(format) + 2 + 1;
+    char* format_ext = (char*)malloc(size);
+    __clove_string_sprintf(format_ext, size, "\"%s\"", format);
 
     static char result[1024];
     va_list args;
