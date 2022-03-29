@@ -18,6 +18,19 @@ FILE* pipe_open(const char* cmd, const char* mode) {
 int pipe_close(FILE* pipe) {
     return _pclose(pipe);
 }
+
+const char* cmd_fmt(const char* format, ...) {
+    char* format_ext = (char*)malloc(strlen(format) + 2 + 1);
+    __clove_string_sprintf(format_ext, strlen(format) + 2, "\"%s\"", format);
+
+    static char result[1024];
+    va_list args;
+    va_start(args, format);
+    __clove_string_vsprintf(result, sizeof(result), format_ext, args);
+    va_end(args);
+    free(format_ext);
+    return result;
+}
 #else 
 #include <sys/wait.h>
 FILE* pipe_open(const char* cmd, const char* mode) {
@@ -26,6 +39,14 @@ FILE* pipe_open(const char* cmd, const char* mode) {
 int pipe_close(FILE* pipe) {
     int status = pclose(pipe);
     return WEXITSTATUS(status);
+}
+const char* cmd_fmt(const char* format, ...) {
+    static char result[1024];
+    va_list args;
+    va_start(args, format);
+    __clove_string_vsprintf(result, sizeof(result), format, args);
+    va_end(args);
+    return result;
 }
 #endif
 
@@ -98,5 +119,4 @@ const char* str_fmt(const char* format, ...) {
     va_end(args);
     return result;
 }
-
 
