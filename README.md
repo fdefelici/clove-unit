@@ -1,14 +1,14 @@
 # CLove-Unit  &middot; [![version](https://img.shields.io/badge/version-v2.2.4-blue)](./clove-unit.h) [![workflow](https://img.shields.io/github/workflow/status/fdefelici/clove-unit/CI%20Action)](https://github.com/fdefelici/clove-unit/actions/workflows/ci_action.yml)
-`CLove Unit` is a unit testing single-header library for C (mainly, but could also work with C++), with test autodiscovery feature.
+`CLove-Unit` is a unit testing single-header library for C (mainly, but could also work with C++), with test autodiscovery feature.
 
 The aim of this library is to reduce at the minimum the boilder-plate for C developers and just focus on unit test development (such as avoiding to register manually the tests to an execution list).
 
-`CLove Unit` is able to discover and run your tests, gathering information about positives and failures (file, line, reason), with a colored syntax (if ANSI is supported by your shell).
+`CLove-Unit` is able to discover and run your tests, gathering information about positives and failures (file, line, reason), with a colored syntax (if ANSI is supported by your shell).
 
 ![Clove test run result](./examples/result.png)
 
 # Features
-Here a list of features provided by `CLove Unit`:
+Here a list of features provided by `CLove-Unit`:
 * Single Header
 * Tests Autodiscovery (reducing at minimum developer boiler-plate on writing tests)
 * Console Report in ANSI format (if supported by the shell)
@@ -17,18 +17,18 @@ Here a list of features provided by `CLove Unit`:
 * Selective test execution (opportunity to include/exclude tests from the execution)
 
 # IDE Exstension
-For the one, who prefer UI oriented test executor, `CLove Unit` is supported on the following IDEs:
+For the one, who prefer UI oriented test executor, `CLove-Unit` is supported on the following IDEs:
 * `Visual Studio Code`:  Extension is available from the [VSCode Market Place](https://marketplace.visualstudio.com/items?itemName=fdefelici.vscode-clove-unit). 
 
 Have a look and enjoy ;-)
 
 # How it works
-`CLove Unit` is implemented around the following concepts:
+`CLove-Unit` is implemented around the following concepts:
 - **Test**: a test is basically a fuction where you can stimulate your code and validate it using assertion
 - **Suite**: a suite is a set of Tests to be run. A Suite allow to execute setup/teardown behaviour for each Test execution (or once for all the Tests).
 - **Runner**: a runner allow execution of a set of Suites and provide results
 
-> `CLove Unit` tests discovery works parsing the symbol table in the test executable. 
+> `CLove-Unit` tests discovery works parsing the symbol table in the test executable. 
 >
 > At the moment this feature is available for the following OS / Architecture / Executable Format:
 > - Windows / 32-64 bit little-endian / PE (Portable Executable)
@@ -142,7 +142,7 @@ Helper apis to support test implementation
 | CLOVE_EXEC_BASE_PATH() | Macro to easily retrive executable base path a char* |
 
 # Console Apis
-Commandline options supported by the binary produced by a `CLove Unit` test project compilation.
+Commandline options supported by the binary produced by a `CLove-Unit` test project compilation.
 
 | Command line | Description |
 | ------------- | ------------- |
