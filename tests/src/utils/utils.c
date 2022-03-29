@@ -1,18 +1,16 @@
 #include "utils.h"
-
-#include <stdio.h>
-#include <stdarg.h>
-#include <stdlib.h>
-#include <sys/stat.h>
 #include <clove-unit.h>
-#include <stdio.h>
-#include <string.h>
+
 #include <errno.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
 
 FILE* pipe_open(const char* cmd, const char* mode);
 int   pipe_close(FILE* pipe);
 #ifdef _WIN32
-//#include <Windows.h>
 FILE* pipe_open(const char* cmd, const char* mode) {
     return _popen(cmd, mode);
 }
@@ -20,12 +18,38 @@ FILE* pipe_open(const char* cmd, const char* mode) {
 int pipe_close(FILE* pipe) {
     return _pclose(pipe);
 }
+
+const char* cmd_fmt(const char* format, ...) {
+    //Windows shell need to wrap command between "<command to be run>" when inside exists args that need "" to protect againts spaces
+    //So an example of cmd would be:  ""my path/exec" -r json -f "my path/json""
+    const size_t size = strlen(format) + 2 + 1;
+    char* format_ext = (char*)malloc(size);
+    __clove_string_sprintf(format_ext, size, "\"%s\"", format);
+
+    static char result[1024];
+    va_list args;
+    va_start(args, format);
+    __clove_string_vsprintf(result, sizeof(result), format_ext, args);
+    va_end(args);
+    free(format_ext);
+    return result;
+}
 #else 
+#include <sys/wait.h>
 FILE* pipe_open(const char* cmd, const char* mode) {
     return popen(cmd, mode);
 }
 int pipe_close(FILE* pipe) {
-    return pclose(pipe);
+    int status = pclose(pipe);
+    return WEXITSTATUS(status);
+}
+const char* cmd_fmt(const char* format, ...) {
+    static char result[1024];
+    va_list args;
+    va_start(args, format);
+    __clove_string_vsprintf(result, sizeof(result), format, args);
+    va_end(args);
+    return result;
 }
 #endif
 
@@ -67,11 +91,6 @@ int exec_cmd(const char* cmd, char** output) {
         *output = buffer_head;
     }
     int result_code = pipe_close(pipe);
-    #ifndef _WIN32
-    //NOTE: if program exit with 1 pipe_close give 256!!
-    if (result_code == 256) result_code = 1;
-    #endif 
-
     return result_code;
 }
 
@@ -103,5 +122,4 @@ const char* str_fmt(const char* format, ...) {
     va_end(args);
     return result;
 }
-
 
