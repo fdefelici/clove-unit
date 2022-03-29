@@ -76,7 +76,7 @@ CLOVE_RUNNER()
 > - suite setup & tear down ([test_suite2.c](./examples/clove101/test_suite2.c))
 
 # Development Apis
-Here a list of availables "public" apis available during test development.
+Here a list of availables apis to support test development.
 
 ## Library Configuration
 Apis to be used for the very base setup of the library.
@@ -147,8 +147,8 @@ Commandline options supported by the binary produced by a `CLove Unit` test proj
 | Command line | Description |
 | ------------- | ------------- |
 | \<exec\>  | Running executable with no args will produce a verbose console report |
-| \<exec\> -i `SELECT_PATTERN` | include tests to be run by the execution (optional argument, can be repeated more than once) |
-| \<exec\> -e `SELECT_PATTERN` | exclude tests to be run by the execution (optional argument, can be repeated more than once) |
+| \<exec\> -i `SELECT_PATTERN` | include tests to be run by the execution <br /> (optional argument, can be repeated more than once) |
+| \<exec\> -e `SELECT_PATTERN` | exclude tests to be run by the execution <br /> (optional argument, can be repeated more than once) |
 
 > NOTE: If both -i and -e options are provided, the inclusion pattern always win over the exclusion one.
 
