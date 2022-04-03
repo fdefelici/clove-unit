@@ -1,4 +1,4 @@
-# CLove-Unit  &middot; [![version](https://img.shields.io/badge/version-v2.2.4-blue)](./clove-unit.h) [![workflow](https://img.shields.io/github/workflow/status/fdefelici/clove-unit/CI%20Action)](https://github.com/fdefelici/clove-unit/actions/workflows/ci_action.yml)
+# CLove-Unit  &middot; [![version](https://img.shields.io/github/v/release/fdefelici/clove-unit?label=latest&sort=semver)](./clove-unit.h) [![workflow](https://img.shields.io/github/workflow/status/fdefelici/clove-unit/CI%20Action)](https://github.com/fdefelici/clove-unit/actions/workflows/ci_action.yml) [![conan](https://img.shields.io/badge/conan-available-blueviolet)](https://conan.io/center/clove-unit)
 `CLove-Unit` is a unit testing single-header library for C (mainly, but could also work with C++), with test autodiscovery feature.
 
 The aim of this library is to reduce at the minimum the boilder-plate for C developers and just focus on unit test development (such as avoiding to register manually the tests to an execution list).
@@ -16,11 +16,15 @@ Here a list of features provided by `CLove-Unit`:
 * Tests / Run failure pointing to the file/line where the assertions are unsatisfied
 * Selective test execution (opportunity to include/exclude tests from the execution)
 
-# IDE Exstension
+# IDE Extension
 For the one, who prefer UI oriented test executor, `CLove-Unit` is supported on the following IDEs:
 * `Visual Studio Code`:  Extension is available from the [VSCode Market Place](https://marketplace.visualstudio.com/items?itemName=fdefelici.vscode-clove-unit). 
 
 Have a look and enjoy ;-)
+
+# Supported Package Managers
+`CLove-Unit` is also available on the following Package Managers:
+* [Conan](https://conan.io/center/clove-unit)
 
 # How it works
 `CLove-Unit` is implemented around the following concepts:
@@ -70,10 +74,13 @@ Using `CLOVE_IMPLEMENTATION` definition **once** before `clove-unit.h` will incl
 CLOVE_RUNNER()
 ```
 
+Finally, build and run the test executable and `CLove-Unit` will do the magic :-)
+
+
 > Look at the [example](./examples/clove101) project for samples about:
 > - implement clove suites and tests
 > - assertion usage ([test_suite1.c](./examples/clove101/test_suite1.c))
-> - suite setup & tear down ([test_suite2.c](./examples/clove101/test_suite2.c))
+> - suite setup & tear down feature ([test_suite2.c](./examples/clove101/test_suite2.c))
 
 # Development Apis
 Here a list of availables apis to support test development.
@@ -143,6 +150,7 @@ Helper apis to support test implementation
 
 # Console Apis
 Commandline options supported by the binary produced by a `CLove-Unit` test project compilation.
+
 
 | Command line | Description |
 | ------------- | ------------- |
