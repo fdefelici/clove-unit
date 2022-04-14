@@ -170,7 +170,7 @@ So for instance the following are valids select patterns (non-exhaustive list):
 | MySuite01.Test01 | will match exactly the Suite Name and the Test Name |
 | MySuite01 | will match all tests whose Suite Name is "MySuite01" |
 | Suite\* | will match all tests whose Suite Name starts with "Suite" |
-| \*Suite01: | will match all tests whose Suite Name ends with "Suite01" |
+| \*Suite01 | will match all tests whose Suite Name ends with "Suite01" |
 | \*Suite\* | will match all tests whose Suite Name contains "Suite" |
 | \*Suite\* | will match all tests whose Suite Name contains "Suite" |
 | MySuite01.*01 | will match all tests whose Suite Name is MySuite01 and Test Name ends with "01" |
