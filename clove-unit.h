@@ -502,8 +502,8 @@ void __clove_utils_empty_funct() { }
 //TODO: To be reviewed when working on issue: https://github.com/fdefelici/clove-unit/issues/3
 const char* __clove_rel_src(const char* path) {
     //https://stackoverflow.com/questions/9834067/difference-between-char-and-const-char
-    const char* subpath = __clove_string_strstr(path, "\\src");
-    if (subpath == NULL) subpath = __clove_string_strstr(path, "\\tests");
+    const char* subpath = __clove_string_strstr(path, __CLOVE_PATH_SEPARATOR_STR"src");
+    if (subpath == NULL) subpath = __clove_string_strstr(path, __CLOVE_PATH_SEPARATOR_STR"tests");
     if (subpath == NULL) return path;
     return subpath + 1;
 }
