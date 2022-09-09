@@ -1,4 +1,4 @@
-#define CLOVE_SUITE_NAME ReportJsonTest
+#define CLOVE_SUITE_NAME UNIT_ReportJsonTest
 #include "clove-unit.h"
 #include <stdlib.h>
 

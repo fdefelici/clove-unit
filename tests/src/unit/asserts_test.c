@@ -1,4 +1,4 @@
-#define CLOVE_SUITE_NAME AssertsTest
+#define CLOVE_SUITE_NAME UNIT_AssertsTest
 #include "clove-unit.h"
 
 CLOVE_TEST(IsTrue) {

@@ -1,4 +1,4 @@
-#define CLOVE_SUITE_NAME InvalidCmdTest
+#define CLOVE_SUITE_NAME INTE_InvalidCmdTest
 #include <clove-unit.h>
 #include "utils/utils.h"
 
@@ -12,7 +12,8 @@ CLOVE_SUITE_TEARDOWN() {
     if (cmd_out) free(cmd_out);
 }
 
-//Note: Generic error just because PRJ01 has one test with failure
+//Note: Getting Generic error just because PRJ01 has one test with failure
+//      Important for this unit test is to demostrate that with invalid params the process ends gracefully
 CLOVE_TEST(InvalidDash) {
     const char* cmd = RES_PRJ01_EXEC_PATH" -";
     int cmd_code = exec_cmd(cmd, &cmd_out);

@@ -1,4 +1,4 @@
-#define CLOVE_SUITE_NAME VectorTest
+#define CLOVE_SUITE_NAME UNIT_VectorTest
 #include "clove-unit.h"
 
 static int ints_comparator(void* v1ptr, void* v2ptr) {

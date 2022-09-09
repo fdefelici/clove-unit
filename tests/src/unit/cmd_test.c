@@ -1,4 +1,4 @@
-#define CLOVE_SUITE_NAME CommandLineTest
+#define CLOVE_SUITE_NAME UNIT_CommandLineTest
 #include "clove-unit.h"
 
 CLOVE_TEST(InitWithNoArgs) {

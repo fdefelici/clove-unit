@@ -1,4 +1,4 @@
-#define CLOVE_SUITE_NAME RunTest
+#define CLOVE_SUITE_NAME INTE_RunTest
 #include <clove-unit.h>
 #include "utils/utils.h"
 

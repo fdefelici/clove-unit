@@ -1,4 +1,4 @@
-#define CLOVE_SUITE_NAME StackTest
+#define CLOVE_SUITE_NAME UNIT_StackTest
 #include "clove-unit.h"
 
 CLOVE_TEST(StackInitialization) {

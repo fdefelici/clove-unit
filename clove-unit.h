@@ -463,29 +463,28 @@ __CLOVE_EXTERN_C void __clove_exec_suite(__clove_suite_t* suite, size_t test_cou
 #define __CLOVE_API_EXPORT __CLOVE_EXTERN_C
 #endif //_WIN32
 
-#define __CLOVE_SUITE_METHOD_INVOKE_2(suite, title, param) __clove_sym___##suite##___##title(param)
-#define __CLOVE_SUITE_METHOD_INVOKE_1(suite, title, param) __CLOVE_SUITE_METHOD_INVOKE_2(suite, title, param)
+//Note: Not exported for windows (symbol limit 65535). Even "extern c" directive is not needed
+//      Furthermore using prefix __clove_symint__ so that this kind of function is excluded from Symbol Discovery
+#define __CLOVE_SUITE_METHOD_INTERNAL_DECL_2(suite, title, param) void __clove_symint___##suite##___##title(param)
+#define __CLOVE_SUITE_METHOD_INTERNAL_DECL_1(suite, name, param) __CLOVE_SUITE_METHOD_INTERNAL_DECL_2(suite, name, param)
+#define __CLOVE_SUITE_METHOD_INTERNAL_INVOKE_2(suite, title, param) __clove_symint___##suite##___##title(param)
+#define __CLOVE_SUITE_METHOD_INTERNAL_INVOKE_1(suite, title, param) __CLOVE_SUITE_METHOD_INTERNAL_INVOKE_2(suite, title, param)
 
-#define __CLOVE_SUITE_METHOD_AUTO_2(suite, title, param) __CLOVE_API_EXPORT void __clove_sym___##suite##___##title(param)
-#define __CLOVE_SUITE_METHOD_AUTO_1(suite, name, param) __CLOVE_SUITE_METHOD_AUTO_2(suite, name, param)
+#define __CLOVE_SUITE_METHOD_DECL_2(suite, title, param) __CLOVE_API_EXPORT void __clove_sym___##suite##___##title(param)
+#define __CLOVE_SUITE_METHOD_DECL_1(suite, name, param) __CLOVE_SUITE_METHOD_DECL_2(suite, name, param)
 
-//TODO: Check if EXTERN_C is necessary.
-#define __CLOVE_SUITE_METHOD_NOEXP_2(suite, title, param) void __clove_sym___##suite##___##title(param)
-#define __CLOVE_SUITE_METHOD_NOEXP_1(suite, name, param) __CLOVE_SUITE_METHOD_NOEXP_2(suite, name, param)
-
-
-#define __CLOVE_SUITE_SETUP_ONCE_AUTO() __CLOVE_SUITE_METHOD_AUTO_1( CLOVE_SUITE_NAME, 11_setuponce, void)
-#define __CLOVE_SUITE_TEARDOWN_ONCE_AUTO() __CLOVE_SUITE_METHOD_AUTO_1( CLOVE_SUITE_NAME, 12_teardownonce, void)
-#define __CLOVE_SUITE_SETUP_AUTO() __CLOVE_SUITE_METHOD_AUTO_1( CLOVE_SUITE_NAME, 13_setup, void)
-#define __CLOVE_SUITE_TEARDOWN_AUTO() __CLOVE_SUITE_METHOD_AUTO_1( CLOVE_SUITE_NAME, 14_teardown, void)
+#define __CLOVE_SUITE_SETUP_ONCE_AUTO() __CLOVE_SUITE_METHOD_DECL_1( CLOVE_SUITE_NAME, 11_setuponce, void)
+#define __CLOVE_SUITE_TEARDOWN_ONCE_AUTO() __CLOVE_SUITE_METHOD_DECL_1( CLOVE_SUITE_NAME, 12_teardownonce, void)
+#define __CLOVE_SUITE_SETUP_AUTO() __CLOVE_SUITE_METHOD_DECL_1( CLOVE_SUITE_NAME, 13_setup, void)
+#define __CLOVE_SUITE_TEARDOWN_AUTO() __CLOVE_SUITE_METHOD_DECL_1( CLOVE_SUITE_NAME, 14_teardown, void)
 #define __CLOVE_TEST_AUTO(title) \
-    __CLOVE_SUITE_METHOD_NOEXP_1( CLOVE_SUITE_NAME, 21_ ## title, __clove_test_t *_this); \
-    __CLOVE_SUITE_METHOD_AUTO_1( CLOVE_SUITE_NAME, 20_ ## title, __clove_test_t *_this) {\
+    __CLOVE_SUITE_METHOD_INTERNAL_DECL_1( CLOVE_SUITE_NAME, 21_ ## title, __clove_test_t *_this); \
+    __CLOVE_SUITE_METHOD_DECL_1( CLOVE_SUITE_NAME, 20_ ## title, __clove_test_t *_this) {\
         _this->funct_line = __LINE__; \
         if (_this->dry_run) return; \
-        __CLOVE_SUITE_METHOD_INVOKE_1(CLOVE_SUITE_NAME, 21_ ## title, _this); \
+        __CLOVE_SUITE_METHOD_INTERNAL_INVOKE_1(CLOVE_SUITE_NAME, 21_ ## title, _this); \
     } \
-    __CLOVE_SUITE_METHOD_NOEXP_1( CLOVE_SUITE_NAME, 21_ ## title, __clove_test_t *_this)
+    __CLOVE_SUITE_METHOD_INTERNAL_DECL_1( CLOVE_SUITE_NAME, 21_ ## title, __clove_test_t *_this)
 #pragma endregion
 
 #pragma endregion // DECLARATION

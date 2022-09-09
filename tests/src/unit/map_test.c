@@ -1,4 +1,4 @@
-#define CLOVE_SUITE_NAME MapTest
+#define CLOVE_SUITE_NAME UNIT_MapTest
 #include "clove-unit.h"
 #include <string.h>
 

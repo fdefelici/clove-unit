@@ -1,4 +1,4 @@
-#define CLOVE_SUITE_NAME StringAssertsTest
+#define CLOVE_SUITE_NAME UNIT_StringAssertsTest
 #include "clove-unit.h"
 #include <stdlib.h>
 
