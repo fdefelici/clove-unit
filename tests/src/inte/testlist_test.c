@@ -19,16 +19,16 @@ CLOVE_SUITE_TEARDOWN() {
   Return as output list of test with this format:
   <SuiteName> <TestName> <TestFuncLineNumber>
 */
-
+#define _SEP_ __CLOVE_PATH_SEPARATOR_STR
 CLOVE_TEST(ListAllTestsTest) {
     const char* cmd = RES_PRJ01_EXEC_PATH" --list-tests";
     int cmd_code = exec_cmd(cmd, &cmd_out);
     CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_OK, cmd_code);
     
     
-    const char* out_expected = "Prj01Suite01 Test01 4\n"
-                               "Prj01Suite01 Test02 8\n"
-                               "Prj01Suite02 Test21 4\n";
+    const char* out_expected = "Prj01Suite01,Test01,src"_SEP_"prj01_test1.c,4\n"
+                               "Prj01Suite01,Test02,src"_SEP_"prj01_test1.c,8\n"
+                               "Prj01Suite02,Test21,src"_SEP_"prj01_test2.c,4\n";
     CLOVE_STRING_EQ(out_expected, cmd_out);
 }
 
@@ -37,7 +37,7 @@ CLOVE_TEST(ListTestWithInclusionTest) {
     int cmd_code = exec_cmd(cmd, &cmd_out);
     CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_OK, cmd_code);
     
-    const char* out_expected = "Prj01Suite01 Test01 4\n";
+    const char* out_expected = "Prj01Suite01,Test01,src"_SEP_"prj01_test1.c,4\n";
     CLOVE_STRING_EQ(out_expected, cmd_out);
 }
 
@@ -46,7 +46,7 @@ CLOVE_TEST(ListTestWithExclusionTest) {
     int cmd_code = exec_cmd(cmd, &cmd_out);
     CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_OK, cmd_code);
     
-    const char* out_expected = "Prj01Suite01 Test02 8\n"
-                               "Prj01Suite02 Test21 4\n";
+    const char* out_expected = "Prj01Suite01,Test02,src"_SEP_"prj01_test1.c,8\n"
+                               "Prj01Suite02,Test21,src"_SEP_"prj01_test2.c,4\n";
     CLOVE_STRING_EQ(out_expected, cmd_out);
 }

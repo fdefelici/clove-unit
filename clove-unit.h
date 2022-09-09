@@ -47,8 +47,10 @@ __CLOVE_EXTERN_C FILE* __clove_file_open(const char* path, const char* mode);
 
 #ifdef _WIN32
 #define __CLOVE_PATH_SEPARATOR '\\'
+#define __CLOVE_PATH_SEPARATOR_STR "\\"
 #else 
 #define __CLOVE_PATH_SEPARATOR '/'
+#define __CLOVE_PATH_SEPARATOR_STR "/"
 #endif //_WIN32
 
 __CLOVE_EXTERN_C char* __clove_path_concat(const char separator, const char* path1, const char* path2);
@@ -480,6 +482,7 @@ __CLOVE_EXTERN_C void __clove_exec_suite(__clove_suite_t* suite, size_t test_cou
 #define __CLOVE_TEST_AUTO(title) \
     __CLOVE_SUITE_METHOD_INTERNAL_DECL_1( CLOVE_SUITE_NAME, 21_ ## title, __clove_test_t *_this); \
     __CLOVE_SUITE_METHOD_DECL_1( CLOVE_SUITE_NAME, 20_ ## title, __clove_test_t *_this) {\
+        __clove_string_strcpy(_this->file_name, __CLOVE_STRING_LENGTH, __clove_rel_src(__FILE__));\
         _this->funct_line = __LINE__; \
         if (_this->dry_run) return; \
         __CLOVE_SUITE_METHOD_INTERNAL_INVOKE_1(CLOVE_SUITE_NAME, 21_ ## title, _this); \
@@ -2088,7 +2091,7 @@ int __clove_report_list_test_execute(__clove_suite_t* suites, int suite_count, i
             __clove_test_t* each_test = (__clove_test_t*)__clove_vector_get(&each_suite->tests, j);
             each_test->dry_run = true;
             each_test->funct(each_test);
-            printf("%s %s %d\n", each_suite->name, each_test->name, each_test->funct_line);
+            printf("%s,%s,%s,%d\n", each_suite->name, each_test->name, each_test->file_name, each_test->funct_line);
         }
     }
     return 0;
