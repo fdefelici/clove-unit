@@ -275,6 +275,8 @@ typedef struct __clove_test_t {
     __clove_test_result_e result;
     __clove_time_t duration;
     char file_name[256]; //was __CLOVE_STRING_LENGTH
+    bool dry_run;
+    unsigned int funct_line;
     struct {
         unsigned int line;
         __clove_assert_check_e assert;
@@ -414,6 +416,16 @@ __CLOVE_EXTERN_C void __clove_report_json_test_executed(__clove_report_t* _this,
 __CLOVE_EXTERN_C void __clove_report_json_print_data(__clove_report_json_t* _this, __clove_test_t* test, __clove_generic_u* data);
 #pragma endregion
 
+#pragma region PRIVATE - Report List Test Decl
+/*
+typedef struct __clove_report_list_tests_t {
+    int (*execute)(struct __clove_report_list_tests_t* _this, __clove_symbols_context_t* context);
+} __clove_report_list_tests_t;
+*/
+
+int __clove_report_list_test_execute(__clove_suite_t* suites, int suite_count, int test_count);
+#pragma endregion
+
 #pragma region PRIVATE - Autodiscovery Decl
 #include <stdbool.h>
 typedef struct __clove_symbols_context_t {
@@ -451,14 +463,29 @@ __CLOVE_EXTERN_C void __clove_exec_suite(__clove_suite_t* suite, size_t test_cou
 #define __CLOVE_API_EXPORT __CLOVE_EXTERN_C
 #endif //_WIN32
 
+#define __CLOVE_SUITE_METHOD_INVOKE_2(suite, title, param) __clove_sym___##suite##___##title(param)
+#define __CLOVE_SUITE_METHOD_INVOKE_1(suite, title, param) __CLOVE_SUITE_METHOD_INVOKE_2(suite, title, param)
+
 #define __CLOVE_SUITE_METHOD_AUTO_2(suite, title, param) __CLOVE_API_EXPORT void __clove_sym___##suite##___##title(param)
 #define __CLOVE_SUITE_METHOD_AUTO_1(suite, name, param) __CLOVE_SUITE_METHOD_AUTO_2(suite, name, param)
+
+//TODO: Check if EXTERN_C is necessary.
+#define __CLOVE_SUITE_METHOD_NOEXP_2(suite, title, param) void __clove_sym___##suite##___##title(param)
+#define __CLOVE_SUITE_METHOD_NOEXP_1(suite, name, param) __CLOVE_SUITE_METHOD_NOEXP_2(suite, name, param)
+
 
 #define __CLOVE_SUITE_SETUP_ONCE_AUTO() __CLOVE_SUITE_METHOD_AUTO_1( CLOVE_SUITE_NAME, 11_setuponce, void)
 #define __CLOVE_SUITE_TEARDOWN_ONCE_AUTO() __CLOVE_SUITE_METHOD_AUTO_1( CLOVE_SUITE_NAME, 12_teardownonce, void)
 #define __CLOVE_SUITE_SETUP_AUTO() __CLOVE_SUITE_METHOD_AUTO_1( CLOVE_SUITE_NAME, 13_setup, void)
 #define __CLOVE_SUITE_TEARDOWN_AUTO() __CLOVE_SUITE_METHOD_AUTO_1( CLOVE_SUITE_NAME, 14_teardown, void)
-#define __CLOVE_TEST_AUTO(title) __CLOVE_SUITE_METHOD_AUTO_1( CLOVE_SUITE_NAME, 20_ ## title, __clove_test_t *_this)
+#define __CLOVE_TEST_AUTO(title) \
+    __CLOVE_SUITE_METHOD_NOEXP_1( CLOVE_SUITE_NAME, 21_ ## title, __clove_test_t *_this); \
+    __CLOVE_SUITE_METHOD_AUTO_1( CLOVE_SUITE_NAME, 20_ ## title, __clove_test_t *_this) {\
+        _this->funct_line = __LINE__; \
+        if (_this->dry_run) return; \
+        __CLOVE_SUITE_METHOD_INVOKE_1(CLOVE_SUITE_NAME, 21_ ## title, _this); \
+    } \
+    __CLOVE_SUITE_METHOD_NOEXP_1( CLOVE_SUITE_NAME, 21_ ## title, __clove_test_t *_this)
 #pragma endregion
 
 #pragma endregion // DECLARATION
@@ -570,6 +597,7 @@ bool __clove_string_equal(const char* str1, const char* str2) {
 }
 
 bool __clove_string_startswith(const char* str1, const char* prefix) {
+    if (!str1 || !prefix) return false;
     return strncmp(str1, prefix, __clove_string_length(prefix)) == 0;
 }
 
@@ -1240,9 +1268,12 @@ bool __clove_cmdline_next_opt(__clove_cmdline_t* cmdline, char** opt_out) {
     if (cmdline->arg_index >= cmdline->argc) return false;
 
     char* current = cmdline->argv[cmdline->arg_index];
-    if (__clove_string_length(current) == 2 && __clove_string_startswith(current, "-")) {
+    if (__clove_string_startswith(current, "--")) {
+        *opt_out = current + 2;
+    } else if (__clove_string_startswith(current, "-")) {
         *opt_out = current + 1;
     }
+
     cmdline->arg_index++;
     return true;
 }
@@ -1351,6 +1382,49 @@ __clove_cmdline_errno_t __clove_cmdline_handle_report(__clove_cmdline_t* cmd) {
 __clove_cmdline_errno_t __clove_cmdline_handle_default(__clove_cmdline_t* cmd) {
     __clove_cmdline_add_opt(cmd, "r", "console");
     return __clove_cmdline_handle_report(cmd);
+}
+
+__clove_cmdline_errno_t __clove_cmdline_handle_list_tests(__clove_cmdline_t* cmd) {
+    if (!__clove_cmdline_has_opt(cmd, "list-tests")) return __CLOVE_CMD_ERRNO_UNMANAGED;
+
+    //__clove_report_t* report; //list test report
+    //__clove_report_list_tests_t report;
+   
+    __clove_vector_t includes;
+    __clove_cmdline_create_test_expr(cmd, "i", &includes);
+
+    __clove_vector_t excludes;
+    __clove_cmdline_create_test_expr(cmd, "e", &excludes);
+    
+    //int run_result = __clove_list_tests_with_report(report, &includes, &excludes);
+    int run_result = 0;
+     __clove_symbols_context_t context;
+    context.includes = &includes;
+    context.excludes = &excludes;
+
+    __clove_vector_params_t vector_params = __clove_vector_params_defaulted(sizeof(__clove_suite_t));
+    vector_params.item_ctor = __clove_vector_suite_ctor;
+    vector_params.item_dtor = __clove_vector_suite_dtor;
+    __clove_vector_init(&context.suites, &vector_params);
+    context.prefix_length = __clove_string_length("__clove_sym___"); //TODO: used in __clove_symbols_function_collect. Eventually set it inside __clove_symbols_for_each_function_by_prefix?
+    context.suites_count = 0;
+    context.tests_count = 0;
+
+    int result = __clove_symbols_for_each_function_by_prefix("__clove_sym___", __clove_symbols_function_collect, &context);
+    if (result == 0) {
+        run_result = __clove_report_list_test_execute((__clove_suite_t*)(context.suites.items), context.suites_count, context.tests_count);
+    }
+    else {
+        run_result = 1;
+    }
+    __clove_vector_free(&context.suites);
+    //TODO: DA eccezione
+    //__clove_vector_free((__clove_vector_t*)context.includes);
+    //__clove_vector_free((__clove_vector_t*)context.excludes);
+    //report->free(report);
+
+    if (run_result != 0) return __CLOVE_CMD_ERRNO_GENERIC;
+    return __CLOVE_CMD_ERRNO_OK;
 }
 
 void __clove_cmdline_create_test_expr(__clove_cmdline_t* cmd, const char* opt,  __clove_vector_t* expressions) {
@@ -2006,6 +2080,23 @@ void __clove_report_json_test_executed(__clove_report_t* _this, __clove_suite_t*
 }
 #pragma endregion // Report Json Impl
 
+#pragma region PRIVATE - Report List Test Impl
+//TODO: Add unit tests
+int __clove_report_list_test_execute(__clove_suite_t* suites, int suite_count, int test_count) {
+    for (int i = 0; i < suite_count; ++i) {
+        __clove_suite_t* each_suite = &suites[i];
+        for (size_t j = 0; j < each_suite->test_count; j++) {
+            __clove_test_t* each_test = (__clove_test_t*)__clove_vector_get(&each_suite->tests, j);
+            each_test->dry_run = true;
+            each_test->funct(each_test);
+            printf("%s %s %d\n", each_suite->name, each_test->name, each_test->funct_line);
+        }
+    }
+    return 0;
+}
+#pragma endregion
+
+
 #pragma region PRIVATE - Autodiscovery Impl
 bool __clove_symbols_function_validate(__clove_string_view_t* suite, __clove_string_view_t* type, __clove_string_view_t* name, __clove_symbols_context_t* context) {
     if (__clove_vector_is_empty(context->includes) && __clove_vector_is_empty(context->excludes)) return true;
@@ -2485,6 +2576,11 @@ int __clove_runner_auto(int argc, char* argv[]) {
        > <exe> -r console                       Run with console report (to implement: -m verbose or brief)
        > <exe> -r json [-f <report-path.json>]  Run with json mode
        > <exe> -v                               Print CLove-Unit version
+       
+       > <exe> --list-tests
+       > <exe> -r plain -o stdout
+       > <exe> -r plain -o prova.txt
+       > <exe> -r json  -o prova.json
     */
     //argc = 3;
     //char* argv2[] = {"exec", "-r", "console", "-i", "StringViewTest.Length"};
@@ -2502,8 +2598,10 @@ int __clove_runner_auto(int argc, char* argv[]) {
     *slot = __clove_cmdline_handle_report;
 
     slot = (__clove_cmdline_handler_f*)__clove_vector_add_slot(&cmd_handlers);
-    *slot = __clove_cmdline_handle_default;
+    *slot = __clove_cmdline_handle_list_tests;
 
+    slot = (__clove_cmdline_handler_f*)__clove_vector_add_slot(&cmd_handlers);
+    *slot = __clove_cmdline_handle_default;
 
     __clove_cmdline_errno_t cmd_result = __CLOVE_CMD_ERRNO_INVALID_PARAM;
     __clove_cmdline_t cmdline;

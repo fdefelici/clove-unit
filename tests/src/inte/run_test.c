@@ -81,3 +81,4 @@ CLOVE_TEST(DefaultReportIncludeOverExcludeOneTest) {
     CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "1) Prj01Suite01.Test01"));
     CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "Total: 1, Passed: 1, Failed: 0, Skipped: 0"));
 }
+

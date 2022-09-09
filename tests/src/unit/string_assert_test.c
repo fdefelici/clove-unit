@@ -35,4 +35,12 @@ CLOVE_TEST(StringStartsWith) {
     const char* prefix = "-";
     bool result = __clove_string_startswith(str1, prefix);
     CLOVE_IS_TRUE(result);
+
+    const char* str2 = "";
+    result = __clove_string_startswith(str2, prefix);
+    CLOVE_IS_FALSE(result);
+
+    const char* str3 = NULL;
+    result = __clove_string_startswith(str3, prefix);
+    CLOVE_IS_FALSE(result);
 }
