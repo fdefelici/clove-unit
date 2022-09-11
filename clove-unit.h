@@ -434,6 +434,7 @@ typedef struct __clove_symbols_context_t {
     __clove_vector_t suites;
     int suites_count;
     int tests_count;
+    const char* prefix;
     size_t prefix_length;
     const __clove_vector_t* includes;
     const __clove_vector_t* excludes;
@@ -448,7 +449,7 @@ __CLOVE_EXTERN_C bool __clove_symbols_function_validate(__clove_string_view_t* s
 __CLOVE_EXTERN_C void __clove_symbols_function_collect(__clove_symbols_function_t exported_funct, __clove_symbols_context_t* context);
 //For each OS / symbols table format
 __CLOVE_EXTERN_C typedef void (*__clove_symbols_function_action)(__clove_symbols_function_t, __clove_symbols_context_t* context);
-__CLOVE_EXTERN_C int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symbols_function_action action, __clove_symbols_context_t* action_context);
+__CLOVE_EXTERN_C int __clove_symbols_for_each_function_by_prefix(__clove_symbols_context_t* context, __clove_symbols_function_action action);
 #pragma endregion //Autodiscovery Decl
 
 #pragma region PRIVATE - Run Decl
@@ -1408,11 +1409,12 @@ __clove_cmdline_errno_t __clove_cmdline_handle_list_tests(__clove_cmdline_t* cmd
     vector_params.item_ctor = __clove_vector_suite_ctor;
     vector_params.item_dtor = __clove_vector_suite_dtor;
     __clove_vector_init(&context.suites, &vector_params);
-    context.prefix_length = __clove_string_length("__clove_sym___"); //TODO: used in __clove_symbols_function_collect. Eventually set it inside __clove_symbols_for_each_function_by_prefix?
+    context.prefix = "__clove_sym___";
+    context.prefix_length = __clove_string_length("__clove_sym___");
     context.suites_count = 0;
     context.tests_count = 0;
 
-    int result = __clove_symbols_for_each_function_by_prefix("__clove_sym___", __clove_symbols_function_collect, &context);
+    int result = __clove_symbols_for_each_function_by_prefix(&context, __clove_symbols_function_collect);
     if (result == 0) {
         run_result = __clove_report_list_test_execute((__clove_suite_t*)(context.suites.items), context.suites_count, context.tests_count);
     }
@@ -2227,7 +2229,7 @@ PIMAGE_EXPORT_DIRECTORY __clove_symbols_win_get_export_table_from(HMODULE module
     return edt;
 }
 
-int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symbols_function_action action, __clove_symbols_context_t* action_context) {
+int __clove_symbols_for_each_function_by_prefix(__clove_symbols_context_t* context, __clove_symbols_function_action action) {
     HMODULE module = GetModuleHandle(0);
     PIMAGE_EXPORT_DIRECTORY export_dir = __clove_symbols_win_get_export_table_from(module);
     if (!export_dir) {
@@ -2247,7 +2249,8 @@ int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symb
     PWORD ordinals_ptr = (PWORD)(base_addr + export_dir->AddressOfNameOrdinals); //ordinal offset from base ordinal
     PDWORD functs_address_ptr = (PDWORD)(base_addr + export_dir->AddressOfFunctions);
 
-    size_t prefix_length = __clove_string_length(prefix);
+    const char* prefix = context->prefix;
+    size_t prefix_length = context->prefix_length;
 
     //Takes advantage of symbols are lexically sorted. 
     //And also that prefix starting with "__" will come first. So no need to start a binary search
@@ -2262,7 +2265,7 @@ int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symb
         if (strncmp(prefix, each_name, prefix_length) == 0) {
             if (!match_ongoing) match_ongoing = 1;
             __clove_symbols_function_t funct = { each_name, each_funct_addr };
-            action(funct, action_context);
+            action(funct, context);
         }
         else {
             //At the first failure, if match was ongoing then there are no more symbol with that prefix
@@ -2339,7 +2342,7 @@ struct load_command* __clove_symbols_macos_find_command(struct mach_header_64* h
     return NULL;
 }
 
-int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symbols_function_action action, __clove_symbols_context_t* action_context) {
+int __clove_symbols_for_each_function_by_prefix(__clove_symbols_context_t* context, __clove_symbols_function_action action) {
     const char* module_path = __clove_exec_path;
 
     __clove_symbols_macos_module_t module;
@@ -2366,7 +2369,8 @@ int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symb
     uint32_t external_symbol_start_index = dysymbol_cmd->iextdefsym;
     uint32_t external_symbol_end_index = external_symbol_start_index + dysymbol_cmd->nextdefsym - 1U;
 
-    const size_t prefix_length = __clove_string_length(prefix);
+    const char* prefix = context->prefix;
+    const size_t prefix_length = context->prefix_length;
     uint8_t match_ongoing = 0;
     for (uint32_t i = external_symbol_start_index; i <= external_symbol_end_index; i++) {
         struct nlist_64* sym = &symbol_table_64[i];
@@ -2380,7 +2384,7 @@ int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symb
                 match_ongoing = 1;
             }
             __clove_symbols_function_t funct = { each_name, each_funct_addr };
-            action(funct, action_context);
+            action(funct, context);
         }
         else {
             //At the first failure, if match was ongoing then there are no more symbol with that prefix
@@ -2484,7 +2488,7 @@ int __clove_symbols_funct_name_comparator(void* f1, void* f2) {
     return strcmp(funct1->name, funct2->name);
 }
 
-int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symbols_function_action action, __clove_symbols_context_t* action_context) {
+int __clove_symbols_for_each_function_by_prefix(__clove_symbols_context_t* context, __clove_symbols_function_action action) {
     const char* module_path = __clove_exec_path;
 
     __clove_symbols_lixux_module_t module;
@@ -2526,7 +2530,8 @@ int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symb
     __clove_vector_params_t params = __clove_vector_params_defaulted(sizeof(__clove_symbols_function_t));
     __clove_vector_init(&clove_functions, &params);
 
-    size_t prefix_length = __clove_string_length(prefix);
+    const char* prefix = context->prefix;
+    size_t prefix_length = context->prefix_length;
 
     for (size_t i = 0; i < symbol_count; ++i) {
         Elf64_Sym* sym = &symbol_table[i];
@@ -2547,7 +2552,7 @@ int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symb
     for (size_t i = 0; i < __clove_vector_count(&clove_functions); ++i)
     {
         __clove_symbols_function_t* each_funct = (__clove_symbols_function_t*)__clove_vector_get(&clove_functions, i);
-        action(*each_funct, action_context);
+        action(*each_funct, context);
     }
     __clove_vector_free(&clove_functions);
     __clove_symbols_lixux_close_module_handle(&module);
@@ -2555,7 +2560,7 @@ int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symb
 }
 #else 
 //Not Possible. Shoud be one of the OS cases before
-int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symbols_function_action action, __clove_symbols_context_t* action_context) {
+int __clove_symbols_for_each_function_by_prefix(__clove_symbols_context_t* context, __clove_symbols_function_action action) {
     puts("Autodiscovery not yet implemented for this OS!!!");
     return 1;
 }
@@ -2634,11 +2639,12 @@ int __clove_run_tests_with_report(__clove_report_t* report, __clove_vector_t* in
     vector_params.item_ctor = __clove_vector_suite_ctor;
     vector_params.item_dtor = __clove_vector_suite_dtor;
     __clove_vector_init(&context.suites, &vector_params);
-    context.prefix_length = __clove_string_length("__clove_sym___"); //TODO: used in __clove_symbols_function_collect. Eventually set it inside __clove_symbols_for_each_function_by_prefix?
+    context.prefix = "__clove_sym___";
+    context.prefix_length = __clove_string_length("__clove_sym___");
     context.suites_count = 0;
     context.tests_count = 0;
 
-    int result = __clove_symbols_for_each_function_by_prefix("__clove_sym___", __clove_symbols_function_collect, &context);
+    int result = __clove_symbols_for_each_function_by_prefix(&context, __clove_symbols_function_collect);
     if (result == 0) {
         run_result = __clove_exec_suites((__clove_suite_t*)(context.suites.items), context.suites_count, context.tests_count, report);
     }
