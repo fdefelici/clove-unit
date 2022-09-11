@@ -276,7 +276,7 @@ typedef struct __clove_test_t {
     void (*funct)(struct __clove_test_t*);
     __clove_test_result_e result;
     __clove_time_t duration;
-    char file_name[256]; //was __CLOVE_STRING_LENGTH
+    const char* file_name;
     bool dry_run;
     unsigned int funct_line;
     struct {
@@ -319,7 +319,7 @@ __CLOVE_EXTERN_C void __clove_vector_suite_dtor(void* suite_ptr);
 
 #define __CLOVE_ASSERT_GUARD \
     if (_this->result == __CLOVE_TEST_RESULT_FAILED) { return; }\
-    if (_this->file_name[0] == '\0') __clove_string_strcpy(_this->file_name, __CLOVE_STRING_LENGTH, __clove_rel_src(__FILE__));\
+    if (_this->file_name == NULL) _this->file_name = __clove_rel_src(__FILE__); \
     _this->issue.line=__LINE__;
 
 #define __CLOVE_ASSERT_CHECK(mode, exp, act, type, field, test) \
@@ -419,7 +419,7 @@ __CLOVE_EXTERN_C void __clove_report_json_print_data(__clove_report_json_t* _thi
 #pragma endregion
 
 #pragma region PRIVATE - Report List Test Decl
-/*
+/* TODO: Make a list report struct or not?!
 typedef struct __clove_report_list_tests_t {
     int (*execute)(struct __clove_report_list_tests_t* _this, __clove_symbols_context_t* context);
 } __clove_report_list_tests_t;
@@ -482,7 +482,7 @@ __CLOVE_EXTERN_C void __clove_exec_suite(__clove_suite_t* suite, size_t test_cou
 #define __CLOVE_TEST_AUTO(title) \
     __CLOVE_SUITE_METHOD_INTERNAL_DECL_1( CLOVE_SUITE_NAME, 21_ ## title, __clove_test_t *_this); \
     __CLOVE_SUITE_METHOD_DECL_1( CLOVE_SUITE_NAME, 20_ ## title, __clove_test_t *_this) {\
-        __clove_string_strcpy(_this->file_name, __CLOVE_STRING_LENGTH, __clove_rel_src(__FILE__));\
+        _this->file_name = __clove_rel_src(__FILE__); \
         _this->funct_line = __LINE__; \
         if (_this->dry_run) return; \
         __CLOVE_SUITE_METHOD_INTERNAL_INVOKE_1(CLOVE_SUITE_NAME, 21_ ## title, _this); \
@@ -503,7 +503,7 @@ void __clove_utils_empty_funct() { }
 const char* __clove_rel_src(const char* path) {
     //https://stackoverflow.com/questions/9834067/difference-between-char-and-const-char
     const char* subpath = __clove_string_strstr(path, __CLOVE_PATH_SEPARATOR_STR"src");
-    if (subpath == NULL) subpath = __clove_string_strstr(path, __CLOVE_PATH_SEPARATOR_STR"tests");
+    if (subpath == NULL) subpath = __clove_string_strstr(path, "tests");
     if (subpath == NULL) return path;
     return subpath + 1;
 }
@@ -2038,8 +2038,7 @@ void __clove_report_json_test_executed(__clove_report_t* _this, __clove_suite_t*
     }
 
     if (instance->current_suite == NULL || instance->current_suite != suite) {
-        char escaped_file[__CLOVE_STRING_LENGTH];
-        __clove_string_strcpy(escaped_file, __CLOVE_STRING_LENGTH, test->file_name);
+        char* escaped_file = __clove_string_strdup(test->file_name);
         __clove_string_replace_char(escaped_file, '\\', '/');
 
         fprintf(instance->file, "\t\t\t\"%s\" : {\n", suite->name);
@@ -2048,6 +2047,8 @@ void __clove_report_json_test_executed(__clove_report_t* _this, __clove_suite_t*
         fprintf(instance->file, "\t\t\t\t},\n");
         instance->current_suite = suite;
         instance->test_count = 0;
+
+        free(escaped_file);
     }
 
     instance->test_count++;
