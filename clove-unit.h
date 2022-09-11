@@ -278,7 +278,7 @@ typedef struct __clove_test_t {
     __clove_time_t duration;
     const char* file_name;
     bool dry_run;
-    unsigned int funct_line;
+    size_t funct_line;
     struct {
         unsigned int line;
         __clove_assert_check_e assert;
@@ -354,8 +354,8 @@ __CLOVE_EXTERN_C void __clove_assert_string(__clove_assert_check_e check_mode, c
 
 #pragma region PRIVATE - Report Decl
 typedef struct __clove_report_t {
-    void (*start)(struct __clove_report_t* _this, int suite_count, int test_count);
-    void (*end)(struct __clove_report_t* _this, int test_count, int passed, int skipped, int failed);
+    void (*start)(struct __clove_report_t* _this, size_t suite_count, size_t test_count);
+    void (*end)(struct __clove_report_t* _this, size_t test_count, size_t passed, size_t skipped, size_t failed);
     void (*test_executed)(struct __clove_report_t* _this, __clove_suite_t* suite, __clove_test_t* test, size_t test_number);
     void (*free)(struct __clove_report_t* _this);
 } __clove_report_t;
@@ -386,9 +386,9 @@ typedef struct __clove_report_console_t {
 } __clove_report_console_t;
 __clove_report_console_t* __clove_report_console_new();
 __CLOVE_EXTERN_C void __clove_report_console_free(__clove_report_t* report);
-__CLOVE_EXTERN_C void __clove_report_console_start(__clove_report_t* _this, int suite_count, int test_count);
+__CLOVE_EXTERN_C void __clove_report_console_start(__clove_report_t* _this, size_t suite_count, size_t test_count);
 __CLOVE_EXTERN_C void __clove_report_console_test_executed(__clove_report_t* _this, __clove_suite_t* suite, __clove_test_t* test, size_t test_number);
-__CLOVE_EXTERN_C void __clove_report_console_end(__clove_report_t* _this, int test_count, int passed, int skipped, int failed);
+__CLOVE_EXTERN_C void __clove_report_console_end(__clove_report_t* _this, size_t test_count, size_t passed, size_t skipped, size_t failed);
 __CLOVE_EXTERN_C void __clove_report_console_string_ellipse(const char* exp, size_t exp_size, const char* act, size_t act_size, char* exp_short, char* act_short, size_t short_len);
 __CLOVE_EXTERN_C void __clove_report_console_pad_right(char* result, char* strToPad);
 __CLOVE_EXTERN_C bool __clove_report_console_setup_ansi();
@@ -412,8 +412,8 @@ typedef struct __clove_report_json_t {
 
 __CLOVE_EXTERN_C __clove_report_json_t* __clove_report_json_new(const char* file_path, const char* clove_version);
 __CLOVE_EXTERN_C void __clove_report_json_free(__clove_report_t* report);
-__CLOVE_EXTERN_C void __clove_report_json_start(__clove_report_t* _this, int suite_count, int test_count);
-__CLOVE_EXTERN_C void __clove_report_json_end(__clove_report_t* _this, int test_count, int passed, int skipped, int failed);
+__CLOVE_EXTERN_C void __clove_report_json_start(__clove_report_t* _this, size_t suite_count, size_t test_count);
+__CLOVE_EXTERN_C void __clove_report_json_end(__clove_report_t* _this, size_t test_count, size_t passed, size_t skipped, size_t failed);
 __CLOVE_EXTERN_C void __clove_report_json_test_executed(__clove_report_t* _this, __clove_suite_t* suite, __clove_test_t* test, size_t test_number);
 __CLOVE_EXTERN_C void __clove_report_json_print_data(__clove_report_json_t* _this, __clove_test_t* test, __clove_generic_u* data);
 #pragma endregion
@@ -425,15 +425,15 @@ typedef struct __clove_report_list_tests_t {
 } __clove_report_list_tests_t;
 */
 
-int __clove_report_list_test_execute(__clove_suite_t* suites, int suite_count, int test_count);
+int __clove_report_list_test_execute(__clove_suite_t* suites, size_t suite_count, size_t test_count);
 #pragma endregion
 
 #pragma region PRIVATE - Autodiscovery Decl
 #include <stdbool.h>
 typedef struct __clove_symbols_context_t {
     __clove_vector_t suites;
-    int suites_count;
-    int tests_count;
+    size_t suites_count;
+    size_t tests_count;
     const char* prefix;
     size_t prefix_length;
     const __clove_vector_t* includes;
@@ -455,8 +455,8 @@ __CLOVE_EXTERN_C int __clove_symbols_for_each_function_by_prefix(__clove_symbols
 #pragma region PRIVATE - Run Decl
 __CLOVE_EXTERN_C int __clove_runner_auto(int argc, char* argv[]);
 __CLOVE_EXTERN_C int __clove_run_tests_with_report(__clove_report_t* report, __clove_vector_t* includes, __clove_vector_t* excludes);
-__CLOVE_EXTERN_C int __clove_exec_suites(__clove_suite_t* suites, int suite_count, int test_count, __clove_report_t* report);
-__CLOVE_EXTERN_C void __clove_exec_suite(__clove_suite_t* suite, size_t test_counter, unsigned int* passed, unsigned int* failed, unsigned int* skipped, __clove_report_t* report);
+__CLOVE_EXTERN_C int __clove_exec_suites(__clove_suite_t* suites, size_t suite_count, size_t test_count, __clove_report_t* report);
+__CLOVE_EXTERN_C void __clove_exec_suite(__clove_suite_t* suite, size_t test_counter, size_t* passed, size_t* failed, size_t* skipped, __clove_report_t* report);
 #pragma endregion // Run Decl
 
 #pragma region PRIVATE - Api Decl
@@ -1660,7 +1660,7 @@ void __clove_report_console_free(__clove_report_t* report) {
     free(report);
 }
 
-void __clove_report_console_start(__clove_report_t* _this, int suite_count, int test_count) {
+void __clove_report_console_start(__clove_report_t* _this, size_t suite_count, size_t test_count) {
     __clove_report_console_t* report = (__clove_report_console_t*)_this;
     report->start_time = __clove_time_now();
 
@@ -1683,16 +1683,16 @@ void __clove_report_console_start(__clove_report_t* _this, int suite_count, int 
     }
 
     printf("%s Executing Test Runner in 'Verbose' mode\n", report->labels.info);
-    printf("%s Suite / Tests found: %d / %d \n", report->labels.info, suite_count, test_count);
+    printf("%s Suite / Tests found: %zu / %zu \n", report->labels.info, suite_count, test_count);
 }
 
-void __clove_report_console_end(__clove_report_t* _this, int test_count, int passed, int skipped, int failed) {
+void __clove_report_console_end(__clove_report_t* _this, size_t test_count, size_t passed, size_t skipped, size_t failed) {
     __clove_report_console_t* report = (__clove_report_console_t*)_this;
     __clove_time_t end_time = __clove_time_now();
     __clove_time_t diff = __clove_time_sub(&end_time, &(report->start_time));
     unsigned long long millis = __clove_time_to_millis(&diff);
 
-    printf("%s Total: %d, Passed: %d, Failed: %d, Skipped: %d\n", report->labels.info, test_count, passed, failed, skipped);
+    printf("%s Total: %zu, Passed: %zu, Failed: %zu, Skipped: %zu\n", report->labels.info, test_count, passed, failed, skipped);
     printf("%s Run duration: %llu ms\n", report->labels.info, millis);
     if (passed == test_count) { printf("%s Run result: SUCCESS :-)\n", report->labels.info); }
     else if (failed > 0) { printf("%s Run result: FAILURE :_(\n", report->labels.erro); }
@@ -1935,7 +1935,7 @@ void __clove_report_json_free(__clove_report_t* report) {
     free(report);
 }
 
-void __clove_report_json_start(__clove_report_t* _this, int suite_count, int test_count) {
+void __clove_report_json_start(__clove_report_t* _this, size_t suite_count, size_t test_count) {
     __clove_report_json_t* instance = (__clove_report_json_t*)_this;
 
     instance->file = __clove_file_open(instance->file_path, "wb"); //binary mode so \n will stay \n (and not converted to \r\n on windows)
@@ -1945,12 +1945,12 @@ void __clove_report_json_start(__clove_report_t* _this, int suite_count, int tes
     fprintf(instance->file, "\t\"clove_version\" : \"%s\",\n", instance->clove_version);
     fprintf(instance->file, "\t\"api_version\" : %u,\n", instance->api_version);
     fprintf(instance->file, "\t\"result\" : {\n");
-    fprintf(instance->file, "\t\t\"suite_count\" : %d,\n", suite_count);
-    fprintf(instance->file, "\t\t\"test_count\" : %d,\n", test_count);
+    fprintf(instance->file, "\t\t\"suite_count\" : %zu,\n", suite_count);
+    fprintf(instance->file, "\t\t\"test_count\" : %zu,\n", test_count);
     fprintf(instance->file, "\t\t\"suites\" : {\n");
 }
 
-void __clove_report_json_end(__clove_report_t* _this, int test_count, int passed, int skipped, int failed) {
+void __clove_report_json_end(__clove_report_t* _this, size_t test_count, size_t passed, size_t skipped, size_t failed) {
     __clove_report_json_t* instance = (__clove_report_json_t*)_this;
 
     int status = -1;
@@ -1959,9 +1959,9 @@ void __clove_report_json_end(__clove_report_t* _this, int test_count, int passed
     else if (skipped > 0) status = __CLOVE_TEST_RESULT_SKIPPED;
 
     fprintf(instance->file, "\t\t},\n"); //suites
-    fprintf(instance->file, "\t\t\"test_passed\" : %d,\n", passed);
-    fprintf(instance->file, "\t\t\"test_skipped\" : %d,\n", skipped);
-    fprintf(instance->file, "\t\t\"test_failed\" : %d,\n", failed);
+    fprintf(instance->file, "\t\t\"test_passed\" : %zu,\n", passed);
+    fprintf(instance->file, "\t\t\"test_skipped\" : %zu,\n", skipped);
+    fprintf(instance->file, "\t\t\"test_failed\" : %zu,\n", failed);
     fprintf(instance->file, "\t\t\"status\" : %d\n", status);
     fprintf(instance->file, "\t}\n"); //result
     fprintf(instance->file, "}"); //object
@@ -2087,14 +2087,14 @@ void __clove_report_json_test_executed(__clove_report_t* _this, __clove_suite_t*
 
 #pragma region PRIVATE - Report List Test Impl
 //TODO: Add unit tests
-int __clove_report_list_test_execute(__clove_suite_t* suites, int suite_count, int test_count) {
-    for (int i = 0; i < suite_count; ++i) {
+int __clove_report_list_test_execute(__clove_suite_t* suites, size_t suite_count, size_t test_count) {
+    for (size_t i = 0; i < suite_count; ++i) {
         __clove_suite_t* each_suite = &suites[i];
         for (size_t j = 0; j < each_suite->test_count; j++) {
             __clove_test_t* each_test = (__clove_test_t*)__clove_vector_get(&each_suite->tests, j);
             each_test->dry_run = true;
             each_test->funct(each_test);
-            printf("%s,%s,%s,%d\n", each_suite->name, each_test->name, each_test->file_name, each_test->funct_line);
+            printf("%s,%s,%s,%zu\n", each_suite->name, each_test->name, each_test->file_name, each_test->funct_line);
         }
     }
     return 0;
@@ -2655,15 +2655,15 @@ int __clove_run_tests_with_report(__clove_report_t* report, __clove_vector_t* in
     return run_result;
 }
 
-int __clove_exec_suites(__clove_suite_t* suites, int suite_count, int test_count, __clove_report_t* report) {
+int __clove_exec_suites(__clove_suite_t* suites, size_t suite_count, size_t test_count, __clove_report_t* report) {
     report->start(report, suite_count, test_count);
 
-    unsigned int passed = 0;  //TODO: Confert to size_t?
-    unsigned int failed = 0;  //TODO: Confert to size_t?
-    unsigned int skipped = 0; //TODO: Confert to size_t?
+    size_t passed = 0;
+    size_t failed = 0;
+    size_t skipped = 0;
 
     size_t test_start_counter = 1;
-    for (int i = 0; i < suite_count; ++i) {
+    for (size_t i = 0; i < suite_count; ++i) {
         __clove_suite_t* each_suite = &suites[i];
         __clove_exec_suite(each_suite, test_start_counter, &passed, &failed, &skipped, report);
         test_start_counter += each_suite->test_count;
@@ -2672,7 +2672,7 @@ int __clove_exec_suites(__clove_suite_t* suites, int suite_count, int test_count
     return failed == 0 ? 0 : 1;
 }
 
-void __clove_exec_suite(__clove_suite_t* suite, size_t test_counter, unsigned int* passed, unsigned int* failed, unsigned int* skipped, __clove_report_t* report) {
+void __clove_exec_suite(__clove_suite_t* suite, size_t test_counter, size_t* passed, size_t* failed, size_t* skipped, __clove_report_t* report) {
     __clove_time_t suite_start = __clove_time_now();
     suite->fixtures.setup_once();
 
