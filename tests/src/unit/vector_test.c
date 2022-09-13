@@ -85,3 +85,10 @@ CLOVE_TEST(VectorOfStrings) {
     CLOVE_STRING_EQ("Hello", *v1);
 }
 
+
+CLOVE_TEST(NullVectorFree) {
+    __clove_vector_t vector = __clove_vector_null();
+    __clove_vector_free(&vector);
+
+    CLOVE_PASS();
+}

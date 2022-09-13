@@ -1013,6 +1013,7 @@ __clove_vector_t __clove_vector_null() {
     v.items = NULL;
     v.item_ctor = NULL;
     v.item_dtor = NULL;
+    v.swap_temp = NULL;
     return v;
 }
 
@@ -1066,8 +1067,16 @@ void __clove_vector_free(__clove_vector_t* vector) {
             vector->item_dtor(item);
         }
     }
-    free(vector->items);
-    free(vector->swap_temp);
+
+    if (vector->items) {
+        free(vector->items);
+        vector->items = NULL;
+    }
+
+    if (vector->swap_temp) {
+        free(vector->swap_temp);
+        vector->swap_temp = NULL;
+    }
     vector->capacity = 0;
     vector->count = 0;
 }
@@ -1378,6 +1387,9 @@ __clove_cmdline_errno_t __clove_cmdline_handle_report(__clove_cmdline_t* cmd) {
     int run_result = __clove_run_tests_with_report(report, &includes, &excludes);
     report->free(report);
 
+    __clove_vector_free(&includes);
+    __clove_vector_free(&excludes);
+
     if (run_result != 0) return __CLOVE_CMD_ERRNO_GENERIC;
     return __CLOVE_CMD_ERRNO_OK;
 }
@@ -1389,9 +1401,6 @@ __clove_cmdline_errno_t __clove_cmdline_handle_default(__clove_cmdline_t* cmd) {
 
 __clove_cmdline_errno_t __clove_cmdline_handle_list_tests(__clove_cmdline_t* cmd) {
     if (!__clove_cmdline_has_opt(cmd, "list-tests")) return __CLOVE_CMD_ERRNO_UNMANAGED;
-
-    //__clove_report_t* report; //list test report
-    //__clove_report_list_tests_t report;
    
     __clove_vector_t includes;
     __clove_cmdline_create_test_expr(cmd, "i", &includes);
@@ -1399,7 +1408,6 @@ __clove_cmdline_errno_t __clove_cmdline_handle_list_tests(__clove_cmdline_t* cmd
     __clove_vector_t excludes;
     __clove_cmdline_create_test_expr(cmd, "e", &excludes);
     
-    //int run_result = __clove_list_tests_with_report(report, &includes, &excludes);
     int run_result = 0;
      __clove_symbols_context_t context;
     context.includes = &includes;
@@ -1422,10 +1430,8 @@ __clove_cmdline_errno_t __clove_cmdline_handle_list_tests(__clove_cmdline_t* cmd
         run_result = 1;
     }
     __clove_vector_free(&context.suites);
-    //TODO: DA eccezione
-    //__clove_vector_free((__clove_vector_t*)context.includes);
-    //__clove_vector_free((__clove_vector_t*)context.excludes);
-    //report->free(report);
+    __clove_vector_free((__clove_vector_t*)context.includes);
+    __clove_vector_free((__clove_vector_t*)context.excludes);
 
     if (run_result != 0) return __CLOVE_CMD_ERRNO_GENERIC;
     return __CLOVE_CMD_ERRNO_OK;
