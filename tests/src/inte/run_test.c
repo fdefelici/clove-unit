@@ -12,13 +12,6 @@ CLOVE_SUITE_TEARDOWN() {
     if (cmd_out) free(cmd_out);
 }
  
-CLOVE_TEST(Version) {
-    const char* cmd = RES_PRJ01_EXEC_PATH" -v";
-    int cmd_code = exec_cmd(cmd, &cmd_out);
-    CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_OK, cmd_code);
-    CLOVE_STRING_EQ(__CLOVE_VERSION, cmd_out);
-}
-
 CLOVE_TEST(JsonReport) {
     char* base_path = __clove_path_basepath(RES_PRJ01_EXEC_PATH);
     char* report_path = __clove_path_concat(__CLOVE_PATH_SEPARATOR, base_path, "cmd_json_report.json");

@@ -59,6 +59,10 @@ __CLOVE_EXTERN_C bool __clove_path_is_relative(const char* path);
 __CLOVE_EXTERN_C char* __clove_path_basepath(const char* path);
 #pragma endregion // Path Decl
 
+#pragma region PRIVATE - Memory Decl
+__CLOVE_EXTERN_C bool __clove_memory_memcpy(void* dest, size_t dest_size, const void* src, size_t src_size);
+#pragma endregion //Memory Decl
+
 #pragma region PRIVATE - String Decl
 #include <stdbool.h>
 __CLOVE_EXTERN_C bool __clove_string_equal(const char* str1, const char* str2);
@@ -162,6 +166,7 @@ __CLOVE_EXTERN_C void __clove_vector_init(__clove_vector_t* vector, __clove_vect
 __CLOVE_EXTERN_C size_t __clove_vector_count(const __clove_vector_t* vector);
 __CLOVE_EXTERN_C bool __clove_vector_is_empty(const __clove_vector_t* vector);
 __CLOVE_EXTERN_C void* __clove_vector_add_slot(__clove_vector_t* vector);
+__CLOVE_EXTERN_C void __clove_vector_add_all(__clove_vector_t* vector, __clove_vector_t* other);
 __CLOVE_EXTERN_C void* __clove_vector_get(const __clove_vector_t* vector, size_t index);
 __CLOVE_EXTERN_C void __clove_vector_set(__clove_vector_t* vector, size_t index, void* item);
 __CLOVE_EXTERN_C void __clove_vector_free(__clove_vector_t* vector);
@@ -176,6 +181,15 @@ __CLOVE_EXTERN_C void __clove_vector_sort(__clove_vector_t* vector, int (*compar
 
 #define __CLOVE_VECTOR_INIT(VECTOR_PTR, TYPE) \
     __clove_vector_params_t __CLOVE_MACRO_COMBINE(params,__LINE__) = __clove_vector_params_defaulted(sizeof(TYPE)); \
+    __clove_vector_init(VECTOR_PTR, &__CLOVE_MACRO_COMBINE(params,__LINE__));
+
+#define __CLOVE_VECTOR_INIT_CAPACITY(VECTOR_PTR, TYPE, CAPACITY) \
+    __clove_vector_params_t __CLOVE_MACRO_COMBINE(params,__LINE__) = __clove_vector_params_defaulted(sizeof(TYPE)); \
+    __CLOVE_MACRO_COMBINE(params,__LINE__).initial_capacity = CAPACITY; \
+    __clove_vector_init(VECTOR_PTR, &__CLOVE_MACRO_COMBINE(params,__LINE__));
+
+#define __CLOVE_VECTOR_INIT_PARAMS(VECTOR_PTR, PARAMS) \
+    __clove_vector_params_t __CLOVE_MACRO_COMBINE(params,__LINE__) = PARAMS; \
     __clove_vector_init(VECTOR_PTR, &__CLOVE_MACRO_COMBINE(params,__LINE__));
 
 #define __CLOVE_VECTOR_ADD(VECTOR_PTR, TYPE, ITEM) \
@@ -244,7 +258,7 @@ __CLOVE_EXTERN_C __clove_cmdline_errno_t __clove_cmdline_handle_help(__clove_cmd
 __CLOVE_EXTERN_C __clove_cmdline_errno_t __clove_cmdline_handle_version(__clove_cmdline_t* cmd);
 __CLOVE_EXTERN_C __clove_cmdline_errno_t __clove_cmdline_handle_report(__clove_cmdline_t* cmd);
 __CLOVE_EXTERN_C __clove_cmdline_errno_t __clove_cmdline_handle_default(__clove_cmdline_t* cmd);
-__CLOVE_EXTERN_C void __clove_cmdline_create_test_expr(__clove_cmdline_t* cmd, const char* opt, __clove_vector_t* out_expressions);
+__CLOVE_EXTERN_C void __clove_cmdline_create_test_expr(__clove_cmdline_t* cmd, const char* opt1, const char* opt2, __clove_vector_t* out_expressions);
 #pragma endregion // CommandLine Decl
 
 #pragma region PRIVATE - Test Decl
@@ -608,6 +622,16 @@ char* __clove_path_basepath(const char* a_path) {
 }
 #pragma endregion // Path Impl
 
+#pragma region PRIVATE - Memory Impl
+#include <string.h>
+bool __clove_memory_memcpy(void* dest, size_t dest_size, const void* src, size_t src_size) {
+#ifdef _WIN32
+    return memcpy_s(dest, dest_size, src, src_size) == 0;
+#else
+    return memcpy(dest, src, src_size) == NULL;
+#endif
+}
+#pragma endregion //Memory Impl
 
 #pragma region PRIVATE - String Impl
 #include <string.h>
@@ -1066,6 +1090,27 @@ void* __clove_vector_add_slot(__clove_vector_t* vector) {
     return item;
 }
 
+void __clove_vector_add_all(__clove_vector_t* vector, __clove_vector_t* other) {
+    if (vector->item_size != other->item_size) return;
+    
+    size_t vector_free_slots = vector->capacity - vector->count;
+    if (vector_free_slots < other->count)
+    {
+        vector->capacity = vector->count + other->count;
+        vector->items = (unsigned char*)realloc(vector->items, vector->item_size * vector->capacity);
+    }
+    
+    size_t byte_index = vector->count * vector->item_size;
+    
+    void* dest = (void*)&(vector->items[byte_index]);
+    size_t dest_size = (vector->capacity - vector->count) * vector->item_size;
+    void* src = other->items;
+    size_t src_size =  other->count * other->item_size;
+    __clove_memory_memcpy(dest, dest_size, src, src_size);
+    
+    vector->count += other->count;
+}
+
 void* __clove_vector_get(const __clove_vector_t* vector, size_t index) {
     if (index < 0) return NULL;
     if (index >= vector->count) return NULL;
@@ -1076,7 +1121,7 @@ void* __clove_vector_get(const __clove_vector_t* vector, size_t index) {
 void __clove_vector_set(__clove_vector_t* vector, size_t index, void* item) {
     void* found = __clove_vector_get(vector, index);
     if (!found) return;
-    memcpy(found, item, vector->item_size);
+    __clove_memory_memcpy(found, vector->item_size, item, vector->item_size);
 }
 
 void __clove_vector_free(__clove_vector_t* vector) {
@@ -1104,7 +1149,7 @@ void __clove_vector_swap(__clove_vector_t* vector, size_t index1, size_t index2)
     void* curr = __clove_vector_get(vector, index1);
     void* next = __clove_vector_get(vector, index2);
     if (!curr || !next) return;
-    memcpy(vector->swap_temp, curr, vector->item_size);
+    __clove_memory_memcpy(vector->swap_temp, vector->item_size, curr, vector->item_size);
     __clove_vector_set(vector, index1, next);
     __clove_vector_set(vector, index2, vector->swap_temp);
 }
@@ -1383,7 +1428,7 @@ __clove_cmdline_errno_t __clove_cmdline_handle_help(__clove_cmdline_t* cmd) {
 }
 
 __clove_cmdline_errno_t __clove_cmdline_handle_version(__clove_cmdline_t* cmd) {
-    if (!__clove_cmdline_has_opt(cmd, "v")) return __CLOVE_CMD_ERRNO_UNMANAGED;
+    if (!__clove_cmdline_has_opt(cmd, "v") && !__clove_cmdline_has_opt(cmd, "version")) return __CLOVE_CMD_ERRNO_UNMANAGED;
     printf("%s", __CLOVE_VERSION); //to avoid new_line character(s)
     return __CLOVE_CMD_ERRNO_OK;
 }
@@ -1415,10 +1460,10 @@ __clove_cmdline_errno_t __clove_cmdline_handle_report(__clove_cmdline_t* cmd) {
     }
 
     __clove_vector_t includes;
-    __clove_cmdline_create_test_expr(cmd, "i", &includes);
+    __clove_cmdline_create_test_expr(cmd, "i", "include", &includes);
 
     __clove_vector_t excludes;
-    __clove_cmdline_create_test_expr(cmd, "e", &excludes);
+    __clove_cmdline_create_test_expr(cmd, "e", "exclude", &excludes);
     
     int run_result = __clove_run_tests_with_report(report, &includes, &excludes);
     report->free(report);
@@ -1436,13 +1481,13 @@ __clove_cmdline_errno_t __clove_cmdline_handle_default(__clove_cmdline_t* cmd) {
 }
 
 __clove_cmdline_errno_t __clove_cmdline_handle_list_tests(__clove_cmdline_t* cmd) {
-    if (!__clove_cmdline_has_opt(cmd, "list-tests")) return __CLOVE_CMD_ERRNO_UNMANAGED;
+    if (!__clove_cmdline_has_opt(cmd, "l") && !__clove_cmdline_has_opt(cmd, "list-tests")) return __CLOVE_CMD_ERRNO_UNMANAGED;
    
     __clove_vector_t includes;
-    __clove_cmdline_create_test_expr(cmd, "i", &includes);
+    __clove_cmdline_create_test_expr(cmd, "i", "include", &includes);
 
     __clove_vector_t excludes;
-    __clove_cmdline_create_test_expr(cmd, "e", &excludes);
+    __clove_cmdline_create_test_expr(cmd, "e", "exclude", &excludes);
     
     int run_result = 0;
      __clove_symbols_context_t context;
@@ -1473,21 +1518,34 @@ __clove_cmdline_errno_t __clove_cmdline_handle_list_tests(__clove_cmdline_t* cmd
     return __CLOVE_CMD_ERRNO_OK;
 }
 
-void __clove_cmdline_create_test_expr(__clove_cmdline_t* cmd, const char* opt,  __clove_vector_t* expressions) {
-    *expressions = __clove_vector_null();
-    if (__clove_cmdline_has_opt(cmd, opt)) {
-        __clove_vector_t* values = __clove_cmdline_get_opt_values(cmd, opt);
+void __clove_cmdline_create_test_expr(__clove_cmdline_t* cmd, const char* opt1, const char* opt2,  __clove_vector_t* expressions) {
+    __clove_vector_t values;
+    __CLOVE_VECTOR_INIT(&values, char*);
 
-        __clove_vector_params_t params = __clove_vector_params_defaulted(sizeof(__clove_test_expr_t));
-        params.initial_capacity = __clove_vector_count(values);
-        __clove_vector_init(expressions, &params);
+    if (__clove_cmdline_has_opt(cmd, opt1)) {
+        __clove_vector_t* values1 = __clove_cmdline_get_opt_values(cmd, opt1);
+        __clove_vector_add_all(&values, values1);
+    }
+    if (__clove_cmdline_has_opt(cmd, opt2)) {
+        __clove_vector_t* values2 = __clove_cmdline_get_opt_values(cmd, opt2);
+         __clove_vector_add_all(&values, values2);
+    }
 
-        for(size_t i = 0; i < __clove_vector_count(values); ++i) {
-            __clove_test_expr_t* expr = (__clove_test_expr_t*)__clove_vector_add_slot(expressions);
-            char* expr_str = *(char**)__clove_vector_get(values, i);
-            __clove_test_expr_init(expr, expr_str);
-        }
-    } 
+    size_t values_count = __clove_vector_count(&values);
+    if (values_count == 0) {
+        *expressions = __clove_vector_null();
+        return;
+    }
+
+    __CLOVE_VECTOR_INIT_CAPACITY(expressions, __clove_test_expr_t, values_count);
+
+    __CLOVE_VECTOR_FOREACH(&values, char*, expr_str, {
+        __clove_test_expr_t expr;
+        __clove_test_expr_init(&expr, *expr_str);
+
+        __CLOVE_VECTOR_ADD(expressions, __clove_test_expr_t, expr);
+    });
+    
 }
 #pragma endregion // CommandLine Impl
 

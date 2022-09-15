@@ -92,3 +92,47 @@ CLOVE_TEST(NullVectorFree) {
 
     CLOVE_PASS();
 }
+
+CLOVE_TEST(VectorAddAllWithoutExtendingCapacity) {    
+    __clove_vector_t vector1;
+    __CLOVE_VECTOR_INIT_CAPACITY(&vector1, int, 10);
+    __CLOVE_VECTOR_ADD(&vector1, int, 1);
+    __CLOVE_VECTOR_ADD(&vector1, int, 2);
+
+    __clove_vector_t vector2;
+    __CLOVE_VECTOR_INIT(&vector2, int);
+    __CLOVE_VECTOR_ADD(&vector2, int, 3);
+    __CLOVE_VECTOR_ADD(&vector2, int, 4);
+    __CLOVE_VECTOR_ADD(&vector2, int, 5);
+
+    __clove_vector_add_all(&vector1, &vector2);
+    CLOVE_INT_EQ(5, __clove_vector_count(&vector1));
+    CLOVE_INT_EQ(10, vector1.capacity);
+    CLOVE_INT_EQ(1, *(int*)__clove_vector_get(&vector1, 0));
+    CLOVE_INT_EQ(2, *(int*)__clove_vector_get(&vector1, 1));
+    CLOVE_INT_EQ(3, *(int*)__clove_vector_get(&vector1, 2));
+    CLOVE_INT_EQ(4, *(int*)__clove_vector_get(&vector1, 3));
+    CLOVE_INT_EQ(5, *(int*)__clove_vector_get(&vector1, 4));
+}
+
+CLOVE_TEST(VectorAddAllExpandingCapacity) {    
+    __clove_vector_t vector1;
+    __CLOVE_VECTOR_INIT_CAPACITY(&vector1, int, 2);
+    __CLOVE_VECTOR_ADD(&vector1, int, 1);
+    __CLOVE_VECTOR_ADD(&vector1, int, 2);
+
+    __clove_vector_t vector2;
+    __CLOVE_VECTOR_INIT(&vector2, int);
+    __CLOVE_VECTOR_ADD(&vector2, int, 3);
+    __CLOVE_VECTOR_ADD(&vector2, int, 4);
+    __CLOVE_VECTOR_ADD(&vector2, int, 5);
+
+    __clove_vector_add_all(&vector1, &vector2);
+    CLOVE_INT_EQ(5, __clove_vector_count(&vector1));
+    CLOVE_INT_EQ(5, vector1.capacity);
+    CLOVE_INT_EQ(1, *(int*)__clove_vector_get(&vector1, 0));
+    CLOVE_INT_EQ(2, *(int*)__clove_vector_get(&vector1, 1));
+    CLOVE_INT_EQ(3, *(int*)__clove_vector_get(&vector1, 2));
+    CLOVE_INT_EQ(4, *(int*)__clove_vector_get(&vector1, 3));
+    CLOVE_INT_EQ(5, *(int*)__clove_vector_get(&vector1, 4));
+}

@@ -163,7 +163,7 @@ A binary built with `CLove-Unit` library supports a set of commandline options:
 | -v, --version | Show CLove-Unit version|
 
 ## Test Inclusion/Exclusion
-Inclusion/Exclusion options can be repeated more the once in the commandline.
+Inclusion/Exclusion options are useful to collect a specific subset of Suite/Tests and can be repeated more the once in the commandline.
 > NOTE: If both inclusion and exclusion options are provided, the inclusion pattern always wins over the exclusion one.
 
 The `SELECT_PATTERN` works as follow:
@@ -181,6 +181,3 @@ So for instance the following are valids select patterns (non-exhaustive list):
 | \*Suite\* | will match all tests whose Suite Name contains "Suite" |
 | MySuite01.*01 | will match all tests whose Suite Name is MySuite01 and Test Name ends with "01" |
 | \*.\* | will match all suites and tests |
-
-
-
