@@ -47,8 +47,10 @@ __CLOVE_EXTERN_C FILE* __clove_file_open(const char* path, const char* mode);
 
 #ifdef _WIN32
 #define __CLOVE_PATH_SEPARATOR '\\'
+#define __CLOVE_PATH_SEPARATOR_STR "\\"
 #else 
 #define __CLOVE_PATH_SEPARATOR '/'
+#define __CLOVE_PATH_SEPARATOR_STR "/"
 #endif //_WIN32
 
 __CLOVE_EXTERN_C char* __clove_path_concat(const char separator, const char* path1, const char* path2);
@@ -274,7 +276,9 @@ typedef struct __clove_test_t {
     void (*funct)(struct __clove_test_t*);
     __clove_test_result_e result;
     __clove_time_t duration;
-    char file_name[256]; //was __CLOVE_STRING_LENGTH
+    const char* file_name;
+    bool dry_run;
+    size_t funct_line;
     struct {
         unsigned int line;
         __clove_assert_check_e assert;
@@ -315,7 +319,7 @@ __CLOVE_EXTERN_C void __clove_vector_suite_dtor(void* suite_ptr);
 
 #define __CLOVE_ASSERT_GUARD \
     if (_this->result == __CLOVE_TEST_RESULT_FAILED) { return; }\
-    if (_this->file_name[0] == '\0') __clove_string_strcpy(_this->file_name, __CLOVE_STRING_LENGTH, __clove_rel_src(__FILE__));\
+    if (_this->file_name == NULL) _this->file_name = __clove_rel_src(__FILE__); \
     _this->issue.line=__LINE__;
 
 #define __CLOVE_ASSERT_CHECK(mode, exp, act, type, field, test) \
@@ -350,8 +354,8 @@ __CLOVE_EXTERN_C void __clove_assert_string(__clove_assert_check_e check_mode, c
 
 #pragma region PRIVATE - Report Decl
 typedef struct __clove_report_t {
-    void (*start)(struct __clove_report_t* _this, int suite_count, int test_count);
-    void (*end)(struct __clove_report_t* _this, int test_count, int passed, int skipped, int failed);
+    void (*start)(struct __clove_report_t* _this, size_t suite_count, size_t test_count);
+    void (*end)(struct __clove_report_t* _this, size_t test_count, size_t passed, size_t skipped, size_t failed);
     void (*test_executed)(struct __clove_report_t* _this, __clove_suite_t* suite, __clove_test_t* test, size_t test_number);
     void (*free)(struct __clove_report_t* _this);
 } __clove_report_t;
@@ -382,9 +386,9 @@ typedef struct __clove_report_console_t {
 } __clove_report_console_t;
 __clove_report_console_t* __clove_report_console_new();
 __CLOVE_EXTERN_C void __clove_report_console_free(__clove_report_t* report);
-__CLOVE_EXTERN_C void __clove_report_console_start(__clove_report_t* _this, int suite_count, int test_count);
+__CLOVE_EXTERN_C void __clove_report_console_start(__clove_report_t* _this, size_t suite_count, size_t test_count);
 __CLOVE_EXTERN_C void __clove_report_console_test_executed(__clove_report_t* _this, __clove_suite_t* suite, __clove_test_t* test, size_t test_number);
-__CLOVE_EXTERN_C void __clove_report_console_end(__clove_report_t* _this, int test_count, int passed, int skipped, int failed);
+__CLOVE_EXTERN_C void __clove_report_console_end(__clove_report_t* _this, size_t test_count, size_t passed, size_t skipped, size_t failed);
 __CLOVE_EXTERN_C void __clove_report_console_string_ellipse(const char* exp, size_t exp_size, const char* act, size_t act_size, char* exp_short, char* act_short, size_t short_len);
 __CLOVE_EXTERN_C void __clove_report_console_pad_right(char* result, char* strToPad);
 __CLOVE_EXTERN_C bool __clove_report_console_setup_ansi();
@@ -408,18 +412,29 @@ typedef struct __clove_report_json_t {
 
 __CLOVE_EXTERN_C __clove_report_json_t* __clove_report_json_new(const char* file_path, const char* clove_version);
 __CLOVE_EXTERN_C void __clove_report_json_free(__clove_report_t* report);
-__CLOVE_EXTERN_C void __clove_report_json_start(__clove_report_t* _this, int suite_count, int test_count);
-__CLOVE_EXTERN_C void __clove_report_json_end(__clove_report_t* _this, int test_count, int passed, int skipped, int failed);
+__CLOVE_EXTERN_C void __clove_report_json_start(__clove_report_t* _this, size_t suite_count, size_t test_count);
+__CLOVE_EXTERN_C void __clove_report_json_end(__clove_report_t* _this, size_t test_count, size_t passed, size_t skipped, size_t failed);
 __CLOVE_EXTERN_C void __clove_report_json_test_executed(__clove_report_t* _this, __clove_suite_t* suite, __clove_test_t* test, size_t test_number);
 __CLOVE_EXTERN_C void __clove_report_json_print_data(__clove_report_json_t* _this, __clove_test_t* test, __clove_generic_u* data);
+#pragma endregion
+
+#pragma region PRIVATE - Report List Test Decl
+/* TODO: Make a list report struct or not?!
+typedef struct __clove_report_list_tests_t {
+    int (*execute)(struct __clove_report_list_tests_t* _this, __clove_symbols_context_t* context);
+} __clove_report_list_tests_t;
+*/
+
+int __clove_report_list_test_execute(__clove_suite_t* suites, size_t suite_count, size_t test_count);
 #pragma endregion
 
 #pragma region PRIVATE - Autodiscovery Decl
 #include <stdbool.h>
 typedef struct __clove_symbols_context_t {
     __clove_vector_t suites;
-    int suites_count;
-    int tests_count;
+    size_t suites_count;
+    size_t tests_count;
+    const char* prefix;
     size_t prefix_length;
     const __clove_vector_t* includes;
     const __clove_vector_t* excludes;
@@ -434,14 +449,14 @@ __CLOVE_EXTERN_C bool __clove_symbols_function_validate(__clove_string_view_t* s
 __CLOVE_EXTERN_C void __clove_symbols_function_collect(__clove_symbols_function_t exported_funct, __clove_symbols_context_t* context);
 //For each OS / symbols table format
 __CLOVE_EXTERN_C typedef void (*__clove_symbols_function_action)(__clove_symbols_function_t, __clove_symbols_context_t* context);
-__CLOVE_EXTERN_C int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symbols_function_action action, __clove_symbols_context_t* action_context);
+__CLOVE_EXTERN_C int __clove_symbols_for_each_function_by_prefix(__clove_symbols_context_t* context, __clove_symbols_function_action action);
 #pragma endregion //Autodiscovery Decl
 
 #pragma region PRIVATE - Run Decl
 __CLOVE_EXTERN_C int __clove_runner_auto(int argc, char* argv[]);
 __CLOVE_EXTERN_C int __clove_run_tests_with_report(__clove_report_t* report, __clove_vector_t* includes, __clove_vector_t* excludes);
-__CLOVE_EXTERN_C int __clove_exec_suites(__clove_suite_t* suites, int suite_count, int test_count, __clove_report_t* report);
-__CLOVE_EXTERN_C void __clove_exec_suite(__clove_suite_t* suite, size_t test_counter, unsigned int* passed, unsigned int* failed, unsigned int* skipped, __clove_report_t* report);
+__CLOVE_EXTERN_C int __clove_exec_suites(__clove_suite_t* suites, size_t suite_count, size_t test_count, __clove_report_t* report);
+__CLOVE_EXTERN_C void __clove_exec_suite(__clove_suite_t* suite, size_t test_counter, size_t* passed, size_t* failed, size_t* skipped, __clove_report_t* report);
 #pragma endregion // Run Decl
 
 #pragma region PRIVATE - Api Decl
@@ -451,14 +466,29 @@ __CLOVE_EXTERN_C void __clove_exec_suite(__clove_suite_t* suite, size_t test_cou
 #define __CLOVE_API_EXPORT __CLOVE_EXTERN_C
 #endif //_WIN32
 
-#define __CLOVE_SUITE_METHOD_AUTO_2(suite, title, param) __CLOVE_API_EXPORT void __clove_sym___##suite##___##title(param)
-#define __CLOVE_SUITE_METHOD_AUTO_1(suite, name, param) __CLOVE_SUITE_METHOD_AUTO_2(suite, name, param)
+//Note: Not exported for windows (symbol limit 65535). Even "extern c" directive is not needed
+//      Furthermore using prefix __clove_symint__ so that this kind of function is excluded from Symbol Discovery
+#define __CLOVE_SUITE_METHOD_INTERNAL_DECL_2(suite, title, param) void __clove_symint___##suite##___##title(param)
+#define __CLOVE_SUITE_METHOD_INTERNAL_DECL_1(suite, name, param) __CLOVE_SUITE_METHOD_INTERNAL_DECL_2(suite, name, param)
+#define __CLOVE_SUITE_METHOD_INTERNAL_INVOKE_2(suite, title, param) __clove_symint___##suite##___##title(param)
+#define __CLOVE_SUITE_METHOD_INTERNAL_INVOKE_1(suite, title, param) __CLOVE_SUITE_METHOD_INTERNAL_INVOKE_2(suite, title, param)
 
-#define __CLOVE_SUITE_SETUP_ONCE_AUTO() __CLOVE_SUITE_METHOD_AUTO_1( CLOVE_SUITE_NAME, 11_setuponce, void)
-#define __CLOVE_SUITE_TEARDOWN_ONCE_AUTO() __CLOVE_SUITE_METHOD_AUTO_1( CLOVE_SUITE_NAME, 12_teardownonce, void)
-#define __CLOVE_SUITE_SETUP_AUTO() __CLOVE_SUITE_METHOD_AUTO_1( CLOVE_SUITE_NAME, 13_setup, void)
-#define __CLOVE_SUITE_TEARDOWN_AUTO() __CLOVE_SUITE_METHOD_AUTO_1( CLOVE_SUITE_NAME, 14_teardown, void)
-#define __CLOVE_TEST_AUTO(title) __CLOVE_SUITE_METHOD_AUTO_1( CLOVE_SUITE_NAME, 20_ ## title, __clove_test_t *_this)
+#define __CLOVE_SUITE_METHOD_DECL_2(suite, title, param) __CLOVE_API_EXPORT void __clove_sym___##suite##___##title(param)
+#define __CLOVE_SUITE_METHOD_DECL_1(suite, name, param) __CLOVE_SUITE_METHOD_DECL_2(suite, name, param)
+
+#define __CLOVE_SUITE_SETUP_ONCE_AUTO() __CLOVE_SUITE_METHOD_DECL_1( CLOVE_SUITE_NAME, 11_setuponce, void)
+#define __CLOVE_SUITE_TEARDOWN_ONCE_AUTO() __CLOVE_SUITE_METHOD_DECL_1( CLOVE_SUITE_NAME, 12_teardownonce, void)
+#define __CLOVE_SUITE_SETUP_AUTO() __CLOVE_SUITE_METHOD_DECL_1( CLOVE_SUITE_NAME, 13_setup, void)
+#define __CLOVE_SUITE_TEARDOWN_AUTO() __CLOVE_SUITE_METHOD_DECL_1( CLOVE_SUITE_NAME, 14_teardown, void)
+#define __CLOVE_TEST_AUTO(title) \
+    __CLOVE_SUITE_METHOD_INTERNAL_DECL_1( CLOVE_SUITE_NAME, 21_ ## title, __clove_test_t *_this); \
+    __CLOVE_SUITE_METHOD_DECL_1( CLOVE_SUITE_NAME, 20_ ## title, __clove_test_t *_this) {\
+        _this->file_name = __clove_rel_src(__FILE__); \
+        _this->funct_line = __LINE__; \
+        if (_this->dry_run) return; \
+        __CLOVE_SUITE_METHOD_INTERNAL_INVOKE_1(CLOVE_SUITE_NAME, 21_ ## title, _this); \
+    } \
+    __CLOVE_SUITE_METHOD_INTERNAL_DECL_1( CLOVE_SUITE_NAME, 21_ ## title, __clove_test_t *_this)
 #pragma endregion
 
 #pragma endregion // DECLARATION
@@ -473,8 +503,8 @@ void __clove_utils_empty_funct() { }
 //TODO: To be reviewed when working on issue: https://github.com/fdefelici/clove-unit/issues/3
 const char* __clove_rel_src(const char* path) {
     //https://stackoverflow.com/questions/9834067/difference-between-char-and-const-char
-    const char* subpath = __clove_string_strstr(path, "\\src");
-    if (subpath == NULL) subpath = __clove_string_strstr(path, "\\tests");
+    const char* subpath = __clove_string_strstr(path, __CLOVE_PATH_SEPARATOR_STR"src");
+    if (subpath == NULL) subpath = __clove_string_strstr(path, "tests");
     if (subpath == NULL) return path;
     return subpath + 1;
 }
@@ -570,6 +600,7 @@ bool __clove_string_equal(const char* str1, const char* str2) {
 }
 
 bool __clove_string_startswith(const char* str1, const char* prefix) {
+    if (!str1 || !prefix) return false;
     return strncmp(str1, prefix, __clove_string_length(prefix)) == 0;
 }
 
@@ -982,6 +1013,7 @@ __clove_vector_t __clove_vector_null() {
     v.items = NULL;
     v.item_ctor = NULL;
     v.item_dtor = NULL;
+    v.swap_temp = NULL;
     return v;
 }
 
@@ -1035,8 +1067,16 @@ void __clove_vector_free(__clove_vector_t* vector) {
             vector->item_dtor(item);
         }
     }
-    free(vector->items);
-    free(vector->swap_temp);
+
+    if (vector->items) {
+        free(vector->items);
+        vector->items = NULL;
+    }
+
+    if (vector->swap_temp) {
+        free(vector->swap_temp);
+        vector->swap_temp = NULL;
+    }
     vector->capacity = 0;
     vector->count = 0;
 }
@@ -1240,9 +1280,12 @@ bool __clove_cmdline_next_opt(__clove_cmdline_t* cmdline, char** opt_out) {
     if (cmdline->arg_index >= cmdline->argc) return false;
 
     char* current = cmdline->argv[cmdline->arg_index];
-    if (__clove_string_length(current) == 2 && __clove_string_startswith(current, "-")) {
+    if (__clove_string_startswith(current, "--")) {
+        *opt_out = current + 2;
+    } else if (__clove_string_startswith(current, "-")) {
         *opt_out = current + 1;
     }
+
     cmdline->arg_index++;
     return true;
 }
@@ -1344,6 +1387,9 @@ __clove_cmdline_errno_t __clove_cmdline_handle_report(__clove_cmdline_t* cmd) {
     int run_result = __clove_run_tests_with_report(report, &includes, &excludes);
     report->free(report);
 
+    __clove_vector_free(&includes);
+    __clove_vector_free(&excludes);
+
     if (run_result != 0) return __CLOVE_CMD_ERRNO_GENERIC;
     return __CLOVE_CMD_ERRNO_OK;
 }
@@ -1351,6 +1397,44 @@ __clove_cmdline_errno_t __clove_cmdline_handle_report(__clove_cmdline_t* cmd) {
 __clove_cmdline_errno_t __clove_cmdline_handle_default(__clove_cmdline_t* cmd) {
     __clove_cmdline_add_opt(cmd, "r", "console");
     return __clove_cmdline_handle_report(cmd);
+}
+
+__clove_cmdline_errno_t __clove_cmdline_handle_list_tests(__clove_cmdline_t* cmd) {
+    if (!__clove_cmdline_has_opt(cmd, "list-tests")) return __CLOVE_CMD_ERRNO_UNMANAGED;
+   
+    __clove_vector_t includes;
+    __clove_cmdline_create_test_expr(cmd, "i", &includes);
+
+    __clove_vector_t excludes;
+    __clove_cmdline_create_test_expr(cmd, "e", &excludes);
+    
+    int run_result = 0;
+     __clove_symbols_context_t context;
+    context.includes = &includes;
+    context.excludes = &excludes;
+
+    __clove_vector_params_t vector_params = __clove_vector_params_defaulted(sizeof(__clove_suite_t));
+    vector_params.item_ctor = __clove_vector_suite_ctor;
+    vector_params.item_dtor = __clove_vector_suite_dtor;
+    __clove_vector_init(&context.suites, &vector_params);
+    context.prefix = "__clove_sym___";
+    context.prefix_length = __clove_string_length("__clove_sym___");
+    context.suites_count = 0;
+    context.tests_count = 0;
+
+    int result = __clove_symbols_for_each_function_by_prefix(&context, __clove_symbols_function_collect);
+    if (result == 0) {
+        run_result = __clove_report_list_test_execute((__clove_suite_t*)(context.suites.items), context.suites_count, context.tests_count);
+    }
+    else {
+        run_result = 1;
+    }
+    __clove_vector_free(&context.suites);
+    __clove_vector_free((__clove_vector_t*)context.includes);
+    __clove_vector_free((__clove_vector_t*)context.excludes);
+
+    if (run_result != 0) return __CLOVE_CMD_ERRNO_GENERIC;
+    return __CLOVE_CMD_ERRNO_OK;
 }
 
 void __clove_cmdline_create_test_expr(__clove_cmdline_t* cmd, const char* opt,  __clove_vector_t* expressions) {
@@ -1582,7 +1666,7 @@ void __clove_report_console_free(__clove_report_t* report) {
     free(report);
 }
 
-void __clove_report_console_start(__clove_report_t* _this, int suite_count, int test_count) {
+void __clove_report_console_start(__clove_report_t* _this, size_t suite_count, size_t test_count) {
     __clove_report_console_t* report = (__clove_report_console_t*)_this;
     report->start_time = __clove_time_now();
 
@@ -1605,16 +1689,16 @@ void __clove_report_console_start(__clove_report_t* _this, int suite_count, int 
     }
 
     printf("%s Executing Test Runner in 'Verbose' mode\n", report->labels.info);
-    printf("%s Suite / Tests found: %d / %d \n", report->labels.info, suite_count, test_count);
+    printf("%s Suite / Tests found: %zu / %zu \n", report->labels.info, suite_count, test_count);
 }
 
-void __clove_report_console_end(__clove_report_t* _this, int test_count, int passed, int skipped, int failed) {
+void __clove_report_console_end(__clove_report_t* _this, size_t test_count, size_t passed, size_t skipped, size_t failed) {
     __clove_report_console_t* report = (__clove_report_console_t*)_this;
     __clove_time_t end_time = __clove_time_now();
     __clove_time_t diff = __clove_time_sub(&end_time, &(report->start_time));
     unsigned long long millis = __clove_time_to_millis(&diff);
 
-    printf("%s Total: %d, Passed: %d, Failed: %d, Skipped: %d\n", report->labels.info, test_count, passed, failed, skipped);
+    printf("%s Total: %zu, Passed: %zu, Failed: %zu, Skipped: %zu\n", report->labels.info, test_count, passed, failed, skipped);
     printf("%s Run duration: %llu ms\n", report->labels.info, millis);
     if (passed == test_count) { printf("%s Run result: SUCCESS :-)\n", report->labels.info); }
     else if (failed > 0) { printf("%s Run result: FAILURE :_(\n", report->labels.erro); }
@@ -1857,7 +1941,7 @@ void __clove_report_json_free(__clove_report_t* report) {
     free(report);
 }
 
-void __clove_report_json_start(__clove_report_t* _this, int suite_count, int test_count) {
+void __clove_report_json_start(__clove_report_t* _this, size_t suite_count, size_t test_count) {
     __clove_report_json_t* instance = (__clove_report_json_t*)_this;
 
     instance->file = __clove_file_open(instance->file_path, "wb"); //binary mode so \n will stay \n (and not converted to \r\n on windows)
@@ -1867,12 +1951,12 @@ void __clove_report_json_start(__clove_report_t* _this, int suite_count, int tes
     fprintf(instance->file, "\t\"clove_version\" : \"%s\",\n", instance->clove_version);
     fprintf(instance->file, "\t\"api_version\" : %u,\n", instance->api_version);
     fprintf(instance->file, "\t\"result\" : {\n");
-    fprintf(instance->file, "\t\t\"suite_count\" : %d,\n", suite_count);
-    fprintf(instance->file, "\t\t\"test_count\" : %d,\n", test_count);
+    fprintf(instance->file, "\t\t\"suite_count\" : %zu,\n", suite_count);
+    fprintf(instance->file, "\t\t\"test_count\" : %zu,\n", test_count);
     fprintf(instance->file, "\t\t\"suites\" : {\n");
 }
 
-void __clove_report_json_end(__clove_report_t* _this, int test_count, int passed, int skipped, int failed) {
+void __clove_report_json_end(__clove_report_t* _this, size_t test_count, size_t passed, size_t skipped, size_t failed) {
     __clove_report_json_t* instance = (__clove_report_json_t*)_this;
 
     int status = -1;
@@ -1881,9 +1965,9 @@ void __clove_report_json_end(__clove_report_t* _this, int test_count, int passed
     else if (skipped > 0) status = __CLOVE_TEST_RESULT_SKIPPED;
 
     fprintf(instance->file, "\t\t},\n"); //suites
-    fprintf(instance->file, "\t\t\"test_passed\" : %d,\n", passed);
-    fprintf(instance->file, "\t\t\"test_skipped\" : %d,\n", skipped);
-    fprintf(instance->file, "\t\t\"test_failed\" : %d,\n", failed);
+    fprintf(instance->file, "\t\t\"test_passed\" : %zu,\n", passed);
+    fprintf(instance->file, "\t\t\"test_skipped\" : %zu,\n", skipped);
+    fprintf(instance->file, "\t\t\"test_failed\" : %zu,\n", failed);
     fprintf(instance->file, "\t\t\"status\" : %d\n", status);
     fprintf(instance->file, "\t}\n"); //result
     fprintf(instance->file, "}"); //object
@@ -1962,8 +2046,7 @@ void __clove_report_json_test_executed(__clove_report_t* _this, __clove_suite_t*
     }
 
     if (instance->current_suite == NULL || instance->current_suite != suite) {
-        char escaped_file[__CLOVE_STRING_LENGTH];
-        __clove_string_strcpy(escaped_file, __CLOVE_STRING_LENGTH, test->file_name);
+        char* escaped_file = __clove_string_strdup(test->file_name);
         __clove_string_replace_char(escaped_file, '\\', '/');
 
         fprintf(instance->file, "\t\t\t\"%s\" : {\n", suite->name);
@@ -1972,6 +2055,8 @@ void __clove_report_json_test_executed(__clove_report_t* _this, __clove_suite_t*
         fprintf(instance->file, "\t\t\t\t},\n");
         instance->current_suite = suite;
         instance->test_count = 0;
+
+        free(escaped_file);
     }
 
     instance->test_count++;
@@ -2005,6 +2090,23 @@ void __clove_report_json_test_executed(__clove_report_t* _this, __clove_suite_t*
     }
 }
 #pragma endregion // Report Json Impl
+
+#pragma region PRIVATE - Report List Test Impl
+//TODO: Add unit tests
+int __clove_report_list_test_execute(__clove_suite_t* suites, size_t suite_count, size_t test_count) {
+    for (size_t i = 0; i < suite_count; ++i) {
+        __clove_suite_t* each_suite = &suites[i];
+        for (size_t j = 0; j < each_suite->test_count; j++) {
+            __clove_test_t* each_test = (__clove_test_t*)__clove_vector_get(&each_suite->tests, j);
+            each_test->dry_run = true;
+            each_test->funct(each_test);
+            printf("%s,%s,%s,%zu\n", each_suite->name, each_test->name, each_test->file_name, each_test->funct_line);
+        }
+    }
+    return 0;
+}
+#pragma endregion
+
 
 #pragma region PRIVATE - Autodiscovery Impl
 bool __clove_symbols_function_validate(__clove_string_view_t* suite, __clove_string_view_t* type, __clove_string_view_t* name, __clove_symbols_context_t* context) {
@@ -2133,7 +2235,7 @@ PIMAGE_EXPORT_DIRECTORY __clove_symbols_win_get_export_table_from(HMODULE module
     return edt;
 }
 
-int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symbols_function_action action, __clove_symbols_context_t* action_context) {
+int __clove_symbols_for_each_function_by_prefix(__clove_symbols_context_t* context, __clove_symbols_function_action action) {
     HMODULE module = GetModuleHandle(0);
     PIMAGE_EXPORT_DIRECTORY export_dir = __clove_symbols_win_get_export_table_from(module);
     if (!export_dir) {
@@ -2153,7 +2255,8 @@ int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symb
     PWORD ordinals_ptr = (PWORD)(base_addr + export_dir->AddressOfNameOrdinals); //ordinal offset from base ordinal
     PDWORD functs_address_ptr = (PDWORD)(base_addr + export_dir->AddressOfFunctions);
 
-    size_t prefix_length = __clove_string_length(prefix);
+    const char* prefix = context->prefix;
+    size_t prefix_length = context->prefix_length;
 
     //Takes advantage of symbols are lexically sorted. 
     //And also that prefix starting with "__" will come first. So no need to start a binary search
@@ -2168,7 +2271,7 @@ int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symb
         if (strncmp(prefix, each_name, prefix_length) == 0) {
             if (!match_ongoing) match_ongoing = 1;
             __clove_symbols_function_t funct = { each_name, each_funct_addr };
-            action(funct, action_context);
+            action(funct, context);
         }
         else {
             //At the first failure, if match was ongoing then there are no more symbol with that prefix
@@ -2245,7 +2348,7 @@ struct load_command* __clove_symbols_macos_find_command(struct mach_header_64* h
     return NULL;
 }
 
-int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symbols_function_action action, __clove_symbols_context_t* action_context) {
+int __clove_symbols_for_each_function_by_prefix(__clove_symbols_context_t* context, __clove_symbols_function_action action) {
     const char* module_path = __clove_exec_path;
 
     __clove_symbols_macos_module_t module;
@@ -2272,7 +2375,8 @@ int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symb
     uint32_t external_symbol_start_index = dysymbol_cmd->iextdefsym;
     uint32_t external_symbol_end_index = external_symbol_start_index + dysymbol_cmd->nextdefsym - 1U;
 
-    const size_t prefix_length = __clove_string_length(prefix);
+    const char* prefix = context->prefix;
+    const size_t prefix_length = context->prefix_length;
     uint8_t match_ongoing = 0;
     for (uint32_t i = external_symbol_start_index; i <= external_symbol_end_index; i++) {
         struct nlist_64* sym = &symbol_table_64[i];
@@ -2286,7 +2390,7 @@ int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symb
                 match_ongoing = 1;
             }
             __clove_symbols_function_t funct = { each_name, each_funct_addr };
-            action(funct, action_context);
+            action(funct, context);
         }
         else {
             //At the first failure, if match was ongoing then there are no more symbol with that prefix
@@ -2390,7 +2494,7 @@ int __clove_symbols_funct_name_comparator(void* f1, void* f2) {
     return strcmp(funct1->name, funct2->name);
 }
 
-int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symbols_function_action action, __clove_symbols_context_t* action_context) {
+int __clove_symbols_for_each_function_by_prefix(__clove_symbols_context_t* context, __clove_symbols_function_action action) {
     const char* module_path = __clove_exec_path;
 
     __clove_symbols_lixux_module_t module;
@@ -2432,7 +2536,8 @@ int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symb
     __clove_vector_params_t params = __clove_vector_params_defaulted(sizeof(__clove_symbols_function_t));
     __clove_vector_init(&clove_functions, &params);
 
-    size_t prefix_length = __clove_string_length(prefix);
+    const char* prefix = context->prefix;
+    size_t prefix_length = context->prefix_length;
 
     for (size_t i = 0; i < symbol_count; ++i) {
         Elf64_Sym* sym = &symbol_table[i];
@@ -2453,7 +2558,7 @@ int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symb
     for (size_t i = 0; i < __clove_vector_count(&clove_functions); ++i)
     {
         __clove_symbols_function_t* each_funct = (__clove_symbols_function_t*)__clove_vector_get(&clove_functions, i);
-        action(*each_funct, action_context);
+        action(*each_funct, context);
     }
     __clove_vector_free(&clove_functions);
     __clove_symbols_lixux_close_module_handle(&module);
@@ -2461,7 +2566,7 @@ int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symb
 }
 #else 
 //Not Possible. Shoud be one of the OS cases before
-int __clove_symbols_for_each_function_by_prefix(const char* prefix, __clove_symbols_function_action action, __clove_symbols_context_t* action_context) {
+int __clove_symbols_for_each_function_by_prefix(__clove_symbols_context_t* context, __clove_symbols_function_action action) {
     puts("Autodiscovery not yet implemented for this OS!!!");
     return 1;
 }
@@ -2485,6 +2590,11 @@ int __clove_runner_auto(int argc, char* argv[]) {
        > <exe> -r console                       Run with console report (to implement: -m verbose or brief)
        > <exe> -r json [-f <report-path.json>]  Run with json mode
        > <exe> -v                               Print CLove-Unit version
+       
+       > <exe> --list-tests
+       > <exe> -r plain -o stdout
+       > <exe> -r plain -o prova.txt
+       > <exe> -r json  -o prova.json
     */
     //argc = 3;
     //char* argv2[] = {"exec", "-r", "console", "-i", "StringViewTest.Length"};
@@ -2502,8 +2612,10 @@ int __clove_runner_auto(int argc, char* argv[]) {
     *slot = __clove_cmdline_handle_report;
 
     slot = (__clove_cmdline_handler_f*)__clove_vector_add_slot(&cmd_handlers);
-    *slot = __clove_cmdline_handle_default;
+    *slot = __clove_cmdline_handle_list_tests;
 
+    slot = (__clove_cmdline_handler_f*)__clove_vector_add_slot(&cmd_handlers);
+    *slot = __clove_cmdline_handle_default;
 
     __clove_cmdline_errno_t cmd_result = __CLOVE_CMD_ERRNO_INVALID_PARAM;
     __clove_cmdline_t cmdline;
@@ -2533,11 +2645,12 @@ int __clove_run_tests_with_report(__clove_report_t* report, __clove_vector_t* in
     vector_params.item_ctor = __clove_vector_suite_ctor;
     vector_params.item_dtor = __clove_vector_suite_dtor;
     __clove_vector_init(&context.suites, &vector_params);
-    context.prefix_length = __clove_string_length("__clove_sym___"); //TODO: used in __clove_symbols_function_collect. Eventually set it inside __clove_symbols_for_each_function_by_prefix?
+    context.prefix = "__clove_sym___";
+    context.prefix_length = __clove_string_length("__clove_sym___");
     context.suites_count = 0;
     context.tests_count = 0;
 
-    int result = __clove_symbols_for_each_function_by_prefix("__clove_sym___", __clove_symbols_function_collect, &context);
+    int result = __clove_symbols_for_each_function_by_prefix(&context, __clove_symbols_function_collect);
     if (result == 0) {
         run_result = __clove_exec_suites((__clove_suite_t*)(context.suites.items), context.suites_count, context.tests_count, report);
     }
@@ -2548,15 +2661,15 @@ int __clove_run_tests_with_report(__clove_report_t* report, __clove_vector_t* in
     return run_result;
 }
 
-int __clove_exec_suites(__clove_suite_t* suites, int suite_count, int test_count, __clove_report_t* report) {
+int __clove_exec_suites(__clove_suite_t* suites, size_t suite_count, size_t test_count, __clove_report_t* report) {
     report->start(report, suite_count, test_count);
 
-    unsigned int passed = 0;  //TODO: Confert to size_t?
-    unsigned int failed = 0;  //TODO: Confert to size_t?
-    unsigned int skipped = 0; //TODO: Confert to size_t?
+    size_t passed = 0;
+    size_t failed = 0;
+    size_t skipped = 0;
 
     size_t test_start_counter = 1;
-    for (int i = 0; i < suite_count; ++i) {
+    for (size_t i = 0; i < suite_count; ++i) {
         __clove_suite_t* each_suite = &suites[i];
         __clove_exec_suite(each_suite, test_start_counter, &passed, &failed, &skipped, report);
         test_start_counter += each_suite->test_count;
@@ -2565,7 +2678,7 @@ int __clove_exec_suites(__clove_suite_t* suites, int suite_count, int test_count
     return failed == 0 ? 0 : 1;
 }
 
-void __clove_exec_suite(__clove_suite_t* suite, size_t test_counter, unsigned int* passed, unsigned int* failed, unsigned int* skipped, __clove_report_t* report) {
+void __clove_exec_suite(__clove_suite_t* suite, size_t test_counter, size_t* passed, size_t* failed, size_t* skipped, __clove_report_t* report) {
     __clove_time_t suite_start = __clove_time_now();
     suite->fixtures.setup_once();
 

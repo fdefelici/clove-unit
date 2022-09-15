@@ -1,4 +1,4 @@
-#define CLOVE_SUITE_NAME PathTest
+#define CLOVE_SUITE_NAME UNIT_PathTest
 #include "clove-unit.h"
 
 CLOVE_TEST(PathConcatenation) {
