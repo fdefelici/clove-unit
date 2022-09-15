@@ -28,4 +28,5 @@ add_compile_definitions(RES_PRJ01_EXEC_PATH=${RES_PRJ01_EXEC_PATH})
 
 #Automatically added by include CTest
 #enable_testing()
-add_test(NAME CLoveUnitTest COMMAND CLoveUnitTest)
+#clove-unit -x option make the process end with error in case of test failure
+add_test(NAME CLoveUnitTest COMMAND CLoveUnitTest -x)
