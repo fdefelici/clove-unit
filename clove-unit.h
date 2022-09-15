@@ -59,6 +59,20 @@ __CLOVE_EXTERN_C bool __clove_path_is_relative(const char* path);
 __CLOVE_EXTERN_C char* __clove_path_basepath(const char* path);
 #pragma endregion // Path Decl
 
+#pragma region PRIVATE - Memory Decl
+__CLOVE_EXTERN_C void* __clove_memory_malloc(size_t size);
+__CLOVE_EXTERN_C void* __clove_memory_calloc(size_t size);
+__CLOVE_EXTERN_C void* __clove_memory_realloc(void* source, size_t size);
+__CLOVE_EXTERN_C bool __clove_memory_memcpy(void* dest, size_t dest_size, const void* src, size_t src_size);
+__CLOVE_EXTERN_C bool __clove_memory_memset(void* dest, size_t size, unsigned char value);
+
+#define __CLOVE_MEMORY_MALLOC_TYPE_N(TYPE, COUNT) (TYPE*)__clove_memory_malloc(sizeof(TYPE) * COUNT)
+#define __CLOVE_MEMORY_MALLOC_TYPE(TYPE) __CLOVE_MEMORY_MALLOC_TYPE_N(TYPE, 1)
+
+#define __CLOVE_MEMORY_CALLOC_TYPE_N(TYPE, COUNT) (TYPE*)__clove_memory_calloc(sizeof(TYPE) * COUNT)
+#define __CLOVE_MEMORY_CALLOC_TYPE(TYPE) __CLOVE_MEMORY_CALLOC_TYPE_N(TYPE, 1)
+#pragma endregion //Memory Decl
+
 #pragma region PRIVATE - String Decl
 #include <stdbool.h>
 __CLOVE_EXTERN_C bool __clove_string_equal(const char* str1, const char* str2);
@@ -73,7 +87,7 @@ __CLOVE_EXTERN_C void __clove_string_sprintf(char* dest, size_t dest_size, const
 __CLOVE_EXTERN_C void __clove_string_vsprintf(char* dest, size_t dest_size, const char* format, va_list args);
 __CLOVE_EXTERN_C size_t __clove_string_length(const char* str);
 __CLOVE_EXTERN_C const char* __clove_string_strstr(const char* str1, const char* str2);
-__CLOVE_EXTERN_C bool __clove_string_contains(const char* str1, const char* str2);
+__CLOVE_EXTERN_C bool __clove_string_contains(const char* string, const char* contained);
 __CLOVE_EXTERN_C char* __clove_string_escape(const char* string);
 __CLOVE_EXTERN_C void __clove_string_ellipse(const char* string, size_t str_len, size_t pos, char* out, size_t out_len);
 __CLOVE_EXTERN_C void __clove_string_replace_char(char* path, char find, char replace);
@@ -162,6 +176,7 @@ __CLOVE_EXTERN_C void __clove_vector_init(__clove_vector_t* vector, __clove_vect
 __CLOVE_EXTERN_C size_t __clove_vector_count(const __clove_vector_t* vector);
 __CLOVE_EXTERN_C bool __clove_vector_is_empty(const __clove_vector_t* vector);
 __CLOVE_EXTERN_C void* __clove_vector_add_slot(__clove_vector_t* vector);
+__CLOVE_EXTERN_C void __clove_vector_add_all(__clove_vector_t* vector, __clove_vector_t* other);
 __CLOVE_EXTERN_C void* __clove_vector_get(const __clove_vector_t* vector, size_t index);
 __CLOVE_EXTERN_C void __clove_vector_set(__clove_vector_t* vector, size_t index, void* item);
 __CLOVE_EXTERN_C void __clove_vector_free(__clove_vector_t* vector);
@@ -169,6 +184,33 @@ __CLOVE_EXTERN_C void __clove_vector_swap(__clove_vector_t* vector, size_t index
 __CLOVE_EXTERN_C size_t __clove_vector_quicksort_partition(__clove_vector_t* vector, int (*comparator)(void*, void*), size_t start_index, size_t end_index);
 __CLOVE_EXTERN_C void __clove_vector_quicksort_iterative(__clove_vector_t* vector, int (*comparator)(void*, void*), size_t start_index, size_t end_index);
 __CLOVE_EXTERN_C void __clove_vector_sort(__clove_vector_t* vector, int (*comparator)(void*, void*));
+
+
+#define __CLOVE_MACRO_COMBINE_INTERNAL(A, B) A##B
+#define __CLOVE_MACRO_COMBINE(A, B) __CLOVE_MACRO_COMBINE_INTERNAL(A, B)
+
+#define __CLOVE_VECTOR_INIT(VECTOR_PTR, TYPE) \
+    __clove_vector_params_t __CLOVE_MACRO_COMBINE(params,__LINE__) = __clove_vector_params_defaulted(sizeof(TYPE)); \
+    __clove_vector_init(VECTOR_PTR, &__CLOVE_MACRO_COMBINE(params,__LINE__));
+
+#define __CLOVE_VECTOR_INIT_CAPACITY(VECTOR_PTR, TYPE, CAPACITY) \
+    __clove_vector_params_t __CLOVE_MACRO_COMBINE(params,__LINE__) = __clove_vector_params_defaulted(sizeof(TYPE)); \
+    __CLOVE_MACRO_COMBINE(params,__LINE__).initial_capacity = CAPACITY; \
+    __clove_vector_init(VECTOR_PTR, &__CLOVE_MACRO_COMBINE(params,__LINE__));
+
+#define __CLOVE_VECTOR_INIT_PARAMS(VECTOR_PTR, PARAMS) \
+    __clove_vector_params_t __CLOVE_MACRO_COMBINE(params,__LINE__) = PARAMS; \
+    __clove_vector_init(VECTOR_PTR, &__CLOVE_MACRO_COMBINE(params,__LINE__));
+
+#define __CLOVE_VECTOR_ADD(VECTOR_PTR, TYPE, ITEM) \
+    TYPE* __CLOVE_MACRO_COMBINE(__vector_slot,__LINE__) = (TYPE*)__clove_vector_add_slot(VECTOR_PTR); \
+    *__CLOVE_MACRO_COMBINE(__vector_slot,__LINE__) = ITEM;
+
+#define __CLOVE_VECTOR_FOREACH(VECTOR_PTR, TYPE, NAME, BODY) \
+    for(size_t vector_index=0; vector_index < __clove_vector_count(VECTOR_PTR); ++vector_index) { \
+        TYPE* NAME = (TYPE*)__clove_vector_get(VECTOR_PTR, vector_index); \
+        BODY \
+    }
 #pragma endregion // Vector Decl
 
 #pragma region PRIVATE - Map Decl
@@ -222,10 +264,11 @@ __CLOVE_EXTERN_C __clove_vector_t* __clove_cmdline_get_opt_values(__clove_cmdlin
 __CLOVE_EXTERN_C void __clove_cmdline_add_opt(__clove_cmdline_t* cmd, const char* opt, const char* value);
 //Command Handlers
  typedef __clove_cmdline_errno_t (*__clove_cmdline_handler_f)(__clove_cmdline_t*);
-__CLOVE_EXTERN_C __clove_cmdline_errno_t __clove_cmdline_handle_report(__clove_cmdline_t* cmd);
+__CLOVE_EXTERN_C __clove_cmdline_errno_t __clove_cmdline_handle_help(__clove_cmdline_t* cmd);
 __CLOVE_EXTERN_C __clove_cmdline_errno_t __clove_cmdline_handle_version(__clove_cmdline_t* cmd);
+__CLOVE_EXTERN_C __clove_cmdline_errno_t __clove_cmdline_handle_report(__clove_cmdline_t* cmd);
 __CLOVE_EXTERN_C __clove_cmdline_errno_t __clove_cmdline_handle_default(__clove_cmdline_t* cmd);
-__CLOVE_EXTERN_C void __clove_cmdline_create_test_expr(__clove_cmdline_t* cmd, const char* opt, __clove_vector_t* out_expressions);
+__CLOVE_EXTERN_C void __clove_cmdline_create_test_expr(__clove_cmdline_t* cmd, const char* opt1, const char* opt2, __clove_vector_t* out_expressions);
 #pragma endregion // CommandLine Decl
 
 #pragma region PRIVATE - Test Decl
@@ -534,7 +577,7 @@ FILE* __clove_file_open(const char* path, const char* mode) {
 #include <stdlib.h>
 char* __clove_path_concat(const char separator, const char* path1, const char* path2) {
     size_t count = __clove_string_length(path1) + 1 + __clove_string_length(path2) + 1;
-    char* path = (char*)calloc(count, sizeof(char));
+    char* path = __CLOVE_MEMORY_CALLOC_TYPE_N(char, count);
 
     __clove_string_strcat(path, count, path1);
     __clove_string_strncat(path, count, &separator, 1);
@@ -582,13 +625,39 @@ char* __clove_path_basepath(const char* a_path) {
     }
     int count = bytes_count + 1; // +1 take into account null terminator
 
-    char* base_path = (char*)calloc(count, sizeof(char));
+    char* base_path = __CLOVE_MEMORY_CALLOC_TYPE_N(char, count);
     __clove_string_strncpy(base_path, count, path_choosen, bytes_count);
     free(path);
     return base_path;
 }
 #pragma endregion // Path Impl
 
+#pragma region PRIVATE - Memory Impl
+#include <string.h>
+void* __clove_memory_malloc(size_t size) {
+    return malloc(size);
+}
+
+void* __clove_memory_calloc(size_t size) {
+    return calloc(1, size);
+}
+
+void* __clove_memory_realloc(void* source, size_t size) {
+    return realloc(source, size);
+}
+
+bool __clove_memory_memcpy(void* dest, size_t dest_size, const void* src, size_t src_size) {
+#ifdef _WIN32
+    return memcpy_s(dest, dest_size, src, src_size) == 0;
+#else
+    return memcpy(dest, src, src_size) != NULL;
+#endif
+}
+
+bool __clove_memory_memset(void* dest, size_t size, unsigned char value) {
+    return memset(dest, value, size) != NULL;
+}
+#pragma endregion //Memory Impl
 
 #pragma region PRIVATE - String Impl
 #include <string.h>
@@ -612,7 +681,7 @@ bool __clove_string_strcpy(char* dest, size_t dest_size, const char* source) {
 #ifdef _WIN32
     return strcpy_s(dest, dest_size, source) == 0;
 #else
-    return strcpy(dest, source) == NULL;
+    return strcpy(dest, source) != NULL;
 #endif
 }
 
@@ -620,7 +689,7 @@ bool __clove_string_strncpy(char* dest, size_t dest_size, const char* source, si
 #ifdef _WIN32
     return strncpy_s(dest, dest_size, source, count) == 0;
 #else
-    return strncpy(dest, source, count) == NULL;
+    return strncpy(dest, source, count) != NULL;
 #endif
 }
 
@@ -628,7 +697,7 @@ bool __clove_string_strcat(char* dest, size_t dest_size, const char* source) {
 #ifdef _WIN32
     return strcat_s(dest, dest_size, source) == 0;
 #else
-    return strcat(dest, source) == NULL;
+    return strcat(dest, source) != NULL;
 #endif
 }
 
@@ -636,7 +705,7 @@ bool __clove_string_strncat(char* dest, size_t dest_size, const char* source, si
 #ifdef _WIN32
     return strncat_s(dest, dest_size, source, count) == 0;
 #else
-    return strncat(dest, source, count) == NULL;
+    return strncat(dest, source, count) != NULL;
 #endif
 }
 
@@ -681,8 +750,8 @@ bool __clove_string_contains(const char* str, const char* contained) {
 
 char* __clove_string_escape(const char* string) {
     size_t str_len = __clove_string_length(string);
-    size_t esc_len = str_len * 2 + 1; //worst case where each char need escape
-    char* escaped = (char*)calloc(esc_len, sizeof(char));
+    size_t esc_len = str_len * 2 + 1; //worst case where each char needs escape
+    char* escaped = __CLOVE_MEMORY_CALLOC_TYPE_N(char, esc_len);
 
     size_t esc_index = 0;
     for (size_t str_index = 0; str_index < str_len; ++str_index) {
@@ -844,7 +913,7 @@ bool __clove_string_view_strequals(const __clove_string_view_t* view, const char
 }
 
 char* __clove_string_view_as_string(const __clove_string_view_t* view) {
-    char* str = (char*)malloc(view->length + 1); //size+1 for null terminator
+    char* str = (char*)__clove_memory_malloc(view->length + 1); //size+1 for null terminator
     __clove_string_strncpy(str, view->length + 1, view->begin, view->length);
     str[view->length] = '\0'; //maybe could be avoided?!
     return str;
@@ -956,7 +1025,7 @@ void __clove_stack_init(__clove_stack_t* stack, size_t initial_capacity) {
     stack->capacity = initial_capacity;
     stack->count = 0;
     stack->item_size = sizeof(size_t);
-    stack->items = (unsigned char*)malloc(stack->item_size * stack->capacity);
+    stack->items = (unsigned char*)__clove_memory_malloc(stack->item_size * stack->capacity);
 }
 
 bool __clove_stack_is_empty(__clove_stack_t* stack) {
@@ -966,7 +1035,7 @@ bool __clove_stack_is_empty(__clove_stack_t* stack) {
 void __clove_stack_push(__clove_stack_t* stack, size_t item) {
     if (stack->count == stack->capacity) {
         stack->capacity *= 2;
-        stack->items = (unsigned char*)realloc(stack->items, stack->item_size * stack->capacity);
+        stack->items = (unsigned char*)__clove_memory_realloc(stack->items, stack->item_size * stack->capacity);
     }
     size_t byte_index = stack->count * stack->item_size;
     size_t* item_ptr = (size_t*)&(stack->items[byte_index]);
@@ -1021,10 +1090,10 @@ void __clove_vector_init(__clove_vector_t* vector, __clove_vector_params_t* para
     vector->capacity = params->initial_capacity;
     vector->count = 0;
     vector->item_size = params->item_size;
-    vector->items = (unsigned char*)malloc(vector->item_size * vector->capacity);
+    vector->items = (unsigned char*)__clove_memory_malloc(vector->item_size * vector->capacity);
     vector->item_ctor = params->item_ctor;
     vector->item_dtor = params->item_dtor;
-    vector->swap_temp = malloc(vector->item_size);
+    vector->swap_temp = __clove_memory_malloc(vector->item_size);
 }
 
 size_t __clove_vector_count(const __clove_vector_t* vector) {
@@ -1038,13 +1107,34 @@ bool __clove_vector_is_empty(const __clove_vector_t* vector) {
 void* __clove_vector_add_slot(__clove_vector_t* vector) {
     if (vector->count == vector->capacity) {
         vector->capacity *= 2;
-        vector->items = (unsigned char*)realloc(vector->items, vector->item_size * vector->capacity);
+        vector->items = (unsigned char*)__clove_memory_realloc(vector->items, vector->item_size * vector->capacity);
     }
     size_t byte_index = vector->count * vector->item_size;
     vector->count++;
     void* item = (void*)&(vector->items[byte_index]);
     if (vector->item_ctor) vector->item_ctor(item);
     return item;
+}
+
+void __clove_vector_add_all(__clove_vector_t* vector, __clove_vector_t* other) {
+    if (vector->item_size != other->item_size) return;
+    
+    size_t vector_free_slots = vector->capacity - vector->count;
+    if (vector_free_slots < other->count)
+    {
+        vector->capacity = vector->count + other->count;
+        vector->items = (unsigned char*)__clove_memory_realloc(vector->items, vector->item_size * vector->capacity);
+    }
+    
+    size_t byte_index = vector->count * vector->item_size;
+    
+    void* dest = (void*)&(vector->items[byte_index]);
+    size_t dest_size = (vector->capacity - vector->count) * vector->item_size;
+    void* src = other->items;
+    size_t src_size =  other->count * other->item_size;
+    __clove_memory_memcpy(dest, dest_size, src, src_size);
+    
+    vector->count += other->count;
 }
 
 void* __clove_vector_get(const __clove_vector_t* vector, size_t index) {
@@ -1057,7 +1147,7 @@ void* __clove_vector_get(const __clove_vector_t* vector, size_t index) {
 void __clove_vector_set(__clove_vector_t* vector, size_t index, void* item) {
     void* found = __clove_vector_get(vector, index);
     if (!found) return;
-    memcpy(found, item, vector->item_size);
+    __clove_memory_memcpy(found, vector->item_size, item, vector->item_size);
 }
 
 void __clove_vector_free(__clove_vector_t* vector) {
@@ -1085,7 +1175,7 @@ void __clove_vector_swap(__clove_vector_t* vector, size_t index1, size_t index2)
     void* curr = __clove_vector_get(vector, index1);
     void* next = __clove_vector_get(vector, index2);
     if (!curr || !next) return;
-    memcpy(vector->swap_temp, curr, vector->item_size);
+    __clove_memory_memcpy(vector->swap_temp, vector->item_size, curr, vector->item_size);
     __clove_vector_set(vector, index1, next);
     __clove_vector_set(vector, index2, vector->swap_temp);
 }
@@ -1183,7 +1273,7 @@ size_t __clove_map_hash_djb33x(void *key, size_t keylen) {
 
 void __clove_map_init(__clove_map_t* map) {
     map->hashmap_size = 10; //default capacity
-    map->hashmap = (__clove_map_node_t**)calloc(map->hashmap_size, sizeof(__clove_map_node_t*));
+    map->hashmap = __CLOVE_MEMORY_CALLOC_TYPE_N(__clove_map_node_t*, map->hashmap_size);
     map->hash_funct = __clove_map_hash_djb33x;
     map->count = 0;
 }
@@ -1224,7 +1314,7 @@ void __clove_map_put(__clove_map_t* dict, const char* key, void* value) {
     size_t hash_index = hash % dict->hashmap_size;
     //Scenario 1: hash(Key) not present
     if (!dict->hashmap[hash_index]) {
-        __clove_map_node_t* node = (__clove_map_node_t*)malloc(sizeof(__clove_map_node_t));
+        __clove_map_node_t* node = __CLOVE_MEMORY_MALLOC_TYPE(__clove_map_node_t);
         node->key = __clove_string_strdup(key);
         node->key_size = key_size;
         node->value = value;
@@ -1247,7 +1337,7 @@ void __clove_map_put(__clove_map_t* dict, const char* key, void* value) {
         }
 
         //Scenario 2.2: key not exists
-        __clove_map_node_t* new_node = (__clove_map_node_t*)malloc(sizeof(__clove_map_node_t));
+        __clove_map_node_t* new_node = __CLOVE_MEMORY_MALLOC_TYPE(__clove_map_node_t);
         new_node->key = __clove_string_strdup(key);
         new_node->key_size = key_size;
         new_node->value = value;
@@ -1326,7 +1416,7 @@ void __clove_cmdline_add_opt(__clove_cmdline_t* cmd, const char* opt, const char
         values = (__clove_vector_t*)__clove_map_get(&(cmd->map), opt);
     } else {
         __clove_vector_params_t params = __clove_vector_params_defaulted(sizeof(char*));
-        values = (__clove_vector_t*)malloc(sizeof(__clove_vector_t));
+        values = __CLOVE_MEMORY_MALLOC_TYPE(__clove_vector_t);
         __clove_vector_init(values, &params);
         __clove_map_put(&(cmd->map), opt, values);
     }
@@ -1346,8 +1436,25 @@ __clove_vector_t* __clove_cmdline_get_opt_values(__clove_cmdline_t* cmdline, con
     return (__clove_vector_t*)__clove_map_get(&(cmdline->map), opt);
 }
 
+__clove_cmdline_errno_t __clove_cmdline_handle_help(__clove_cmdline_t* cmd) {
+    if (!__clove_cmdline_has_opt(cmd, "h") && !__clove_cmdline_has_opt(cmd, "help")) return __CLOVE_CMD_ERRNO_UNMANAGED;    
+    printf("CLove-Unit v%s\n", __CLOVE_VERSION); 
+    printf("usage:\n");
+    printf("%*s<executable> [options]\n", 3," ");
+    printf("where options are:\n");
+    printf("%*s%-*s%*s%s\n", 3," ", 30,"<no-options>",         5," ", "Run all tests (default behaviour).");
+    printf("%*s%-*s%*s%s\n", 3," ", 30,"-e, --exclude <expr>", 5," ", "Suite/Test expression to be excluded. Works when running/listing tests.");
+    printf("%*s%-*s%*s%s\n", 3," ", 30,"-h, --help",           5," ", "Display usage information.");
+    printf("%*s%-*s%*s%s\n", 3," ", 30,"-i, --include <expr>", 5," ", "Suite/Test expression to be included. Works when running/listing tests.");
+    printf("%*s%-*s%*s%s\n", 3," ", 30,"-l, --list-tests",     5," ", "List all/matching test cases in CSV format: <SuiteName,TestName,SourcePath,TestLine>.");
+    printf("%*s%-*s%*s%s\n", 3," ", 30,"-v, --version",        5," ", "Show CLove-Unit version.");
+    printf("\n");
+    printf("For detailed usage please read look at the README in https://github.com/fdefelici/clove-unit.\n");
+    return __CLOVE_CMD_ERRNO_OK;
+}
+
 __clove_cmdline_errno_t __clove_cmdline_handle_version(__clove_cmdline_t* cmd) {
-    if (!__clove_cmdline_has_opt(cmd, "v")) return __CLOVE_CMD_ERRNO_UNMANAGED;
+    if (!__clove_cmdline_has_opt(cmd, "v") && !__clove_cmdline_has_opt(cmd, "version")) return __CLOVE_CMD_ERRNO_UNMANAGED;
     printf("%s", __CLOVE_VERSION); //to avoid new_line character(s)
     return __CLOVE_CMD_ERRNO_OK;
 }
@@ -1379,10 +1486,10 @@ __clove_cmdline_errno_t __clove_cmdline_handle_report(__clove_cmdline_t* cmd) {
     }
 
     __clove_vector_t includes;
-    __clove_cmdline_create_test_expr(cmd, "i", &includes);
+    __clove_cmdline_create_test_expr(cmd, "i", "include", &includes);
 
     __clove_vector_t excludes;
-    __clove_cmdline_create_test_expr(cmd, "e", &excludes);
+    __clove_cmdline_create_test_expr(cmd, "e", "exclude", &excludes);
     
     int run_result = __clove_run_tests_with_report(report, &includes, &excludes);
     report->free(report);
@@ -1400,13 +1507,13 @@ __clove_cmdline_errno_t __clove_cmdline_handle_default(__clove_cmdline_t* cmd) {
 }
 
 __clove_cmdline_errno_t __clove_cmdline_handle_list_tests(__clove_cmdline_t* cmd) {
-    if (!__clove_cmdline_has_opt(cmd, "list-tests")) return __CLOVE_CMD_ERRNO_UNMANAGED;
+    if (!__clove_cmdline_has_opt(cmd, "l") && !__clove_cmdline_has_opt(cmd, "list-tests")) return __CLOVE_CMD_ERRNO_UNMANAGED;
    
     __clove_vector_t includes;
-    __clove_cmdline_create_test_expr(cmd, "i", &includes);
+    __clove_cmdline_create_test_expr(cmd, "i", "include", &includes);
 
     __clove_vector_t excludes;
-    __clove_cmdline_create_test_expr(cmd, "e", &excludes);
+    __clove_cmdline_create_test_expr(cmd, "e", "exclude", &excludes);
     
     int run_result = 0;
      __clove_symbols_context_t context;
@@ -1437,21 +1544,34 @@ __clove_cmdline_errno_t __clove_cmdline_handle_list_tests(__clove_cmdline_t* cmd
     return __CLOVE_CMD_ERRNO_OK;
 }
 
-void __clove_cmdline_create_test_expr(__clove_cmdline_t* cmd, const char* opt,  __clove_vector_t* expressions) {
-    *expressions = __clove_vector_null();
-    if (__clove_cmdline_has_opt(cmd, opt)) {
-        __clove_vector_t* values = __clove_cmdline_get_opt_values(cmd, opt);
+void __clove_cmdline_create_test_expr(__clove_cmdline_t* cmd, const char* opt1, const char* opt2,  __clove_vector_t* expressions) {
+    __clove_vector_t values;
+    __CLOVE_VECTOR_INIT(&values, char*);
 
-        __clove_vector_params_t params = __clove_vector_params_defaulted(sizeof(__clove_test_expr_t));
-        params.initial_capacity = __clove_vector_count(values);
-        __clove_vector_init(expressions, &params);
+    if (__clove_cmdline_has_opt(cmd, opt1)) {
+        __clove_vector_t* values1 = __clove_cmdline_get_opt_values(cmd, opt1);
+        __clove_vector_add_all(&values, values1);
+    }
+    if (__clove_cmdline_has_opt(cmd, opt2)) {
+        __clove_vector_t* values2 = __clove_cmdline_get_opt_values(cmd, opt2);
+         __clove_vector_add_all(&values, values2);
+    }
 
-        for(size_t i = 0; i < __clove_vector_count(values); ++i) {
-            __clove_test_expr_t* expr = (__clove_test_expr_t*)__clove_vector_add_slot(expressions);
-            char* expr_str = *(char**)__clove_vector_get(values, i);
-            __clove_test_expr_init(expr, expr_str);
-        }
-    } 
+    size_t values_count = __clove_vector_count(&values);
+    if (values_count == 0) {
+        *expressions = __clove_vector_null();
+        return;
+    }
+
+    __CLOVE_VECTOR_INIT_CAPACITY(expressions, __clove_test_expr_t, values_count);
+
+    __CLOVE_VECTOR_FOREACH(&values, char*, expr_str, {
+        __clove_test_expr_t expr;
+        __clove_test_expr_init(&expr, *expr_str);
+
+        __CLOVE_VECTOR_ADD(expressions, __clove_test_expr_t, expr);
+    });
+    
 }
 #pragma endregion // CommandLine Impl
 
@@ -1459,7 +1579,7 @@ void __clove_cmdline_create_test_expr(__clove_cmdline_t* cmd, const char* opt,  
 #include <string.h>
 void __clove_vector_test_ctor(void* test) {
     //cast to __clove_test_t* not needed
-    memset(test, 0, sizeof(__clove_test_t));
+    __clove_memory_memset(test, sizeof(__clove_test_t), 0);
 }
 
 void __clove_vector_test_dtor(void* test_ptr) {
@@ -1654,7 +1774,7 @@ bool __clove_test_expr_validate(__clove_test_expr_t* expr, const __clove_string_
 #pragma region PRIVATE - Report Console Impl
 #include <stdio.h>
 __clove_report_console_t* __clove_report_console_new() {
-    __clove_report_console_t* result = (__clove_report_console_t*)malloc(sizeof(__clove_report_console_t));
+    __clove_report_console_t* result = __CLOVE_MEMORY_MALLOC_TYPE(__clove_report_console_t);
     result->base.start = __clove_report_console_start;
     result->base.end = __clove_report_console_end;
     result->base.test_executed = __clove_report_console_test_executed;
@@ -1924,7 +2044,7 @@ bool __clove_report_console_setup_ansi() {
 #include <stdio.h>
 #include <stdlib.h>
 __clove_report_json_t* __clove_report_json_new(const char* file_path, const char* clove_version) {
-    __clove_report_json_t* result = (__clove_report_json_t*)malloc(sizeof(__clove_report_json_t));
+    __clove_report_json_t* result = __CLOVE_MEMORY_MALLOC_TYPE(__clove_report_json_t);
     result->base.start = __clove_report_json_start;
     result->base.end = __clove_report_json_end;
     result->base.test_executed = __clove_report_json_test_executed;
@@ -2601,33 +2721,25 @@ int __clove_runner_auto(int argc, char* argv[]) {
     //const char* argv2[] = {"exec", "-e", "String*"};
 
     __clove_vector_t cmd_handlers;
-    __clove_vector_params_t params = __clove_vector_params_defaulted(sizeof(__clove_cmdline_handler_f));
-    __clove_vector_init(&cmd_handlers, &params);
-    __clove_cmdline_handler_f* slot;
-    
-    slot = (__clove_cmdline_handler_f*)__clove_vector_add_slot(&cmd_handlers);
-    *slot = __clove_cmdline_handle_version;
-
-    slot = (__clove_cmdline_handler_f*)__clove_vector_add_slot(&cmd_handlers);
-    *slot = __clove_cmdline_handle_report;
-
-    slot = (__clove_cmdline_handler_f*)__clove_vector_add_slot(&cmd_handlers);
-    *slot = __clove_cmdline_handle_list_tests;
-
-    slot = (__clove_cmdline_handler_f*)__clove_vector_add_slot(&cmd_handlers);
-    *slot = __clove_cmdline_handle_default;
+    __CLOVE_VECTOR_INIT(&cmd_handlers, __clove_cmdline_handler_f);
+    __CLOVE_VECTOR_ADD(&cmd_handlers, __clove_cmdline_handler_f, __clove_cmdline_handle_help);
+    __CLOVE_VECTOR_ADD(&cmd_handlers, __clove_cmdline_handler_f, __clove_cmdline_handle_version);
+    __CLOVE_VECTOR_ADD(&cmd_handlers, __clove_cmdline_handler_f, __clove_cmdline_handle_report);
+    __CLOVE_VECTOR_ADD(&cmd_handlers, __clove_cmdline_handler_f, __clove_cmdline_handle_list_tests);
+    __CLOVE_VECTOR_ADD(&cmd_handlers, __clove_cmdline_handler_f, __clove_cmdline_handle_default);
 
     __clove_cmdline_errno_t cmd_result = __CLOVE_CMD_ERRNO_INVALID_PARAM;
     __clove_cmdline_t cmdline;
     __clove_cmdline_init(&cmdline, argv, argc);
-    for(size_t i=0; i < __clove_vector_count(&cmd_handlers); ++i) {
-        __clove_cmdline_handler_f* handler = (__clove_cmdline_handler_f*)__clove_vector_get(&cmd_handlers, i);
+
+    __CLOVE_VECTOR_FOREACH(&cmd_handlers, __clove_cmdline_handler_f, handler, {
         __clove_cmdline_errno_t result = (*handler)(&cmdline);
         if (result != __CLOVE_CMD_ERRNO_UNMANAGED) {
             cmd_result =  result;
             break;
         }
-    }
+    });
+
     __clove_vector_free(&cmd_handlers);
     __clove_cmdline_free(&cmdline);
     free(__clove_exec_base_path);
