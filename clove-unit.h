@@ -1491,13 +1491,16 @@ __clove_cmdline_errno_t __clove_cmdline_handle_report(__clove_cmdline_t* cmd) {
     __clove_vector_t excludes;
     __clove_cmdline_create_test_expr(cmd, "e", "exclude", &excludes);
     
+    bool enable_error_in_case_of_test_failure = __clove_cmdline_has_opt(cmd, "x");
+
     int run_result = __clove_run_tests_with_report(report, &includes, &excludes);
     report->free(report);
 
     __clove_vector_free(&includes);
     __clove_vector_free(&excludes);
 
-    if (run_result != 0) return __CLOVE_CMD_ERRNO_GENERIC;
+    if (run_result == 1) return __CLOVE_CMD_ERRNO_GENERIC;
+    if (run_result == 2 && enable_error_in_case_of_test_failure) return __CLOVE_CMD_ERRNO_GENERIC;
     return __CLOVE_CMD_ERRNO_OK;
 }
 
@@ -2747,6 +2750,10 @@ int __clove_runner_auto(int argc, char* argv[]) {
 }
 
 int __clove_run_tests_with_report(__clove_report_t* report, __clove_vector_t* includes,  __clove_vector_t* excludes) {
+    //0 => OK
+    //1 => ERROR
+    //2 => TESTS WITH FAILURES
+    
     int run_result = 0;
 
     __clove_symbols_context_t context;
@@ -2764,7 +2771,10 @@ int __clove_run_tests_with_report(__clove_report_t* report, __clove_vector_t* in
 
     int result = __clove_symbols_for_each_function_by_prefix(&context, __clove_symbols_function_collect);
     if (result == 0) {
+        //0 in case of test success/warning
+        //1 in case of test failure
         run_result = __clove_exec_suites((__clove_suite_t*)(context.suites.items), context.suites_count, context.tests_count, report);
+        if (run_result != 0) run_result = 2;
     }
     else {
         run_result = 1;

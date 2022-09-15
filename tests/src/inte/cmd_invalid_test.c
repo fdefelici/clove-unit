@@ -12,34 +12,33 @@ CLOVE_SUITE_TEARDOWN() {
     if (cmd_out) free(cmd_out);
 }
 
-//Note: Getting Generic error just because PRJ01 has one test with failure
-//      Important for this unit test is to demostrate that with invalid params the process ends gracefully
+//Note: Important for this unit test is to demostrate that with invalid params the process ends gracefully
 CLOVE_TEST(InvalidDash) {
     const char* cmd = RES_PRJ01_EXEC_PATH" -";
     int cmd_code = exec_cmd(cmd, &cmd_out);
-    CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_GENERIC, cmd_code);
+    CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_OK, cmd_code);
 }
 
 CLOVE_TEST(InvalidDashOneLetter) {
     const char* cmd = RES_PRJ01_EXEC_PATH" -j";
     int cmd_code = exec_cmd(cmd, &cmd_out);
-    CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_GENERIC, cmd_code);
+    CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_OK, cmd_code);
 }
 
 CLOVE_TEST(InvalidDashTwoLetters) {
     const char* cmd = RES_PRJ01_EXEC_PATH" -jj";
     int cmd_code = exec_cmd(cmd, &cmd_out);
-    CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_GENERIC, cmd_code);
+    CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_OK, cmd_code);
 }
 
 CLOVE_TEST(InvalidDoubleDash) {
     const char* cmd = RES_PRJ01_EXEC_PATH" --";
     int cmd_code = exec_cmd(cmd, &cmd_out);
-    CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_GENERIC, cmd_code);
+    CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_OK, cmd_code);
 } 
 
 CLOVE_TEST(InvalidDoubleDashParam) {
     const char* cmd = RES_PRJ01_EXEC_PATH" --hello";
     int cmd_code = exec_cmd(cmd, &cmd_out);
-    CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_GENERIC, cmd_code);
+    CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_OK, cmd_code);
 } 
