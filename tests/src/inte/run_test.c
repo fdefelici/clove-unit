@@ -19,7 +19,7 @@ CLOVE_TEST(JsonReport) {
 
     const char* cmd = cmd_fmt("\"%s\" -r json -f \"%s\"", RES_PRJ01_EXEC_PATH, report_path);
     int cmd_code = exec_cmd(cmd, &cmd_out);
-    CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_GENERIC, cmd_code); //1 test with failure
+    CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_OK, cmd_code); 
 
     CLOVE_IS_TRUE(file_exists(report_path));
 
@@ -28,8 +28,20 @@ CLOVE_TEST(JsonReport) {
     free(report_path);
 }
 
+CLOVE_TEST(ConsoleReportWithOptXTest) {
+    const char* cmd = RES_PRJ01_EXEC_PATH" -r console -x"; //x enable exec error in case of test failure
+    int cmd_code = exec_cmd(cmd, &cmd_out);
+    CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_GENERIC, cmd_code); //project contains 1 test with failure
+}
+
+CLOVE_TEST(ConsoleReportWithOptErrorOnTestFailTest) {
+    const char* cmd = RES_PRJ01_EXEC_PATH" -r console --error-on-test-fail"; //x enable exec error in case of test failure
+    int cmd_code = exec_cmd(cmd, &cmd_out);
+    CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_GENERIC, cmd_code); //project contains 1 test with failure
+}
+
 CLOVE_TEST(ConsoleReportIncludeOneTest) {
-    const char* cmd = RES_PRJ01_EXEC_PATH" -r console -i Prj01Suite01.Test01"; //-e per il futuro
+    const char* cmd = RES_PRJ01_EXEC_PATH" -r console -i Prj01Suite01.Test01";
     int cmd_code = exec_cmd(cmd, &cmd_out);
     CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_OK, cmd_code);
     CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "Suite / Tests found: 1 / 1"));

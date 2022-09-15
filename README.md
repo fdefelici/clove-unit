@@ -156,11 +156,12 @@ A binary built with `CLove-Unit` library supports a set of commandline options:
 | Option | Description |
 | ------------- | ------------- |
 | \<no-option\>  | Running executable with no args will produce a verbose console report (default) |
-| -e, --exclude `SELECT_PATTERN` | exclude tests to be run/listed<br /> (can be repeated more than once)<br /> [[read here for more details](#test-inclusionexclusion)] |
+| -e, --exclude `SELECT_PATTERN` | Exclude tests to be run/listed<br /> (can be repeated more than once)<br /> [[read here for more details](#test-inclusionexclusion)] |
 | -h, --help | Display usage information |
-| -i, --include `SELECT_PATTERN` | include tests to be run/listed<br /> (can be repeated more than once)<br /> [[read here for more details](#test-inclusionexclusion)]|
+| -i, --include `SELECT_PATTERN` | Include tests to be run/listed<br /> (can be repeated more than once)<br /> [[read here for more details](#test-inclusionexclusion)]|
 | -l, --list-tests | List all/matching test cases in CSV format: <SuiteName,TestName,SourcePath,TestLine><br />Accepts inclusion/exclusion expression|
 | -v, --version | Show CLove-Unit version|
+| -x, --error-on-test-fail | Test run process will end with error in case of test failure. Default is to end the process succesfully |
 
 ## Test Inclusion/Exclusion
 Inclusion/Exclusion options are useful to collect a specific subset of Suite/Tests and can be repeated more the once in the commandline.
