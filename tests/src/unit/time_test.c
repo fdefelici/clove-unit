@@ -1,4 +1,4 @@
-#define CLOVE_SUITE_NAME TimeTest
+#define CLOVE_SUITE_NAME UNIT_TimeTest
 #include "clove-unit.h"
 
 #ifdef _WIN32

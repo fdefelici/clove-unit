@@ -1,7 +1,27 @@
-#define CLOVE_SUITE_NAME CommandLineTest
+#define CLOVE_SUITE_NAME UNIT_CommandLineTest
 #include "clove-unit.h"
 
-CLOVE_TEST(Init) {
+CLOVE_TEST(InitWithNoArgs) {
+    char* argv[1] = {"exec"};
+    int argc = 1;
+    __clove_cmdline_t cmd;
+    __clove_cmdline_init(&cmd, argv, argc);
+
+    CLOVE_PASS();
+    __clove_cmdline_free(&cmd);
+} 
+
+CLOVE_TEST(InitWithOneOptNoValue) {
+    char* argv[2] = {"exec", "-o"};
+    int argc = 2;
+    __clove_cmdline_t cmd;
+    __clove_cmdline_init(&cmd, argv, argc);
+
+    CLOVE_IS_TRUE(__clove_cmdline_has_opt(&cmd, "o"));
+    __clove_cmdline_free(&cmd);
+} 
+
+CLOVE_TEST(InitWithMultipleOpt) {
     char* argv[7] = {"exec", "-r", "json", "-i", "one", "-i", "two"};
     int argc = 7;
     __clove_cmdline_t cmd;
@@ -30,6 +50,46 @@ CLOVE_TEST(InitAndAdd) {
     CLOVE_STRING_EQ("one", __clove_cmdline_get_opt_value(&cmd, "i"));
 
     __clove_cmdline_free(&cmd);
-} 
+}
+
+CLOVE_TEST(OptDashWithTwoLetter) {
+    char* argv[2] = {"exec", "-ii"};
+    int argc = 2;
+    __clove_cmdline_t cmd;
+    __clove_cmdline_init(&cmd, argv, argc);
+
+    CLOVE_IS_TRUE(__clove_cmdline_has_opt(&cmd, "ii"));
+    __clove_cmdline_free(&cmd);
+}
+
+CLOVE_TEST(OptDoubleDash) {
+    char* argv[2] = {"exec", "--ii"};
+    int argc = 2;
+    __clove_cmdline_t cmd;
+    __clove_cmdline_init(&cmd, argv, argc);
+
+    CLOVE_IS_TRUE(__clove_cmdline_has_opt(&cmd, "ii"));
+    __clove_cmdline_free(&cmd);
+}
+
+CLOVE_TEST(OptDoubleDashSeparatedByDash) {
+    char* argv[2] = {"exec", "--list-tests"};
+    int argc = 2;
+    __clove_cmdline_t cmd;
+    __clove_cmdline_init(&cmd, argv, argc);
+
+    CLOVE_IS_TRUE(__clove_cmdline_has_opt(&cmd, "list-tests"));
+    __clove_cmdline_free(&cmd);
+}
+
+CLOVE_TEST(InvalidOptJustDash) {
+    char* argv[2] = {"exec", "-"};
+    int argc = 2;
+    __clove_cmdline_t cmd;
+    __clove_cmdline_init(&cmd, argv, argc);
+
+    CLOVE_PASS();
+    __clove_cmdline_free(&cmd);
+}
 
 

@@ -1,4 +1,4 @@
-#define CLOVE_SUITE_NAME StringViewTest
+#define CLOVE_SUITE_NAME UNIT_StringViewTest
 #include <clove-unit.h>
 #include <stdlib.h>
 

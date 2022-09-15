@@ -1,4 +1,4 @@
-#define CLOVE_SUITE_NAME ReportJsonTest
+#define CLOVE_SUITE_NAME UNIT_ReportJsonTest
 #include "clove-unit.h"
 #include <stdlib.h>
 
@@ -60,7 +60,7 @@ CLOVE_TEST(ReportOneSuiteWithOnePassedTest) {
 
     __clove_test_t test11;
     test11.name = "Test11";
-    __clove_string_strcpy(test11.file_name, __CLOVE_STRING_LENGTH, "test-file.c");
+    test11.file_name = "test-file.c";
     test11.result = __CLOVE_TEST_RESULT_PASSED;
     test11.duration.seconds = 0;
     test11.duration.nanos_after_seconds = 100;
@@ -108,14 +108,14 @@ CLOVE_TEST(ReportOneSuiteWithTwoTests) {
 
     __clove_test_t test11;
     test11.name = "Test11";
-    __clove_string_strcpy(test11.file_name, __CLOVE_STRING_LENGTH, "test-file.c");
+    test11.file_name = "test-file.c";
     test11.result = __CLOVE_TEST_RESULT_PASSED;
     test11.duration.seconds = 0;
     test11.duration.nanos_after_seconds = 100;
 
     __clove_test_t test12;
     test12.name = "Test12";
-    __clove_string_strcpy(test12.file_name, __CLOVE_STRING_LENGTH, "test-file.c");
+    test12.file_name = "test-file.c";
     test12.result = __CLOVE_TEST_RESULT_FAILED;
     test12.duration.seconds = 0;
     test12.duration.nanos_after_seconds = 100;
