@@ -148,17 +148,23 @@ Helper apis to support test implementation
 | CLOVE_EXEC_PATH()  | Macro to easily retrive executable path as a char* |
 | CLOVE_EXEC_BASE_PATH() | Macro to easily retrive executable base path a char* |
 
-# Console Apis
-Commandline options supported by the binary produced by a `CLove-Unit` test project compilation.
+# Command-Line Api
+A binary built with `CLove-Unit` library supports a set of commandline options:
 
+```<executable> [options] ```
 
-| Command line | Description |
+| Option | Description |
 | ------------- | ------------- |
-| \<exec\>  | Running executable with no args will produce a verbose console report |
-| \<exec\> -i `SELECT_PATTERN` | include tests to be executed by the runner <br /> (optional argument, can be repeated more than once) |
-| \<exec\> -e `SELECT_PATTERN` | exclude tests to be executed by the runner  <br /> (optional argument, can be repeated more than once) |
+| \<no-option\>  | Running executable with no args will produce a verbose console report (default) |
+| -e, --exclude `SELECT_PATTERN` | exclude tests to be run/listed<br /> (can be repeated more than once)<br /> [[read here for more details](#test-inclusionexclusion)] |
+| -h, --help | Display usage information |
+| -i, --include `SELECT_PATTERN` | include tests to be run/listed<br /> (can be repeated more than once)<br /> [[read here for more details](#test-inclusionexclusion)]|
+| -l, --list-tests | List all/matching test cases in CSV format: <SuiteName,TestName,SourcePath,TestLine><br />Accepts inclusion/exclusion expression|
+| -v, --version | Show CLove-Unit version|
 
-> NOTE: If both -i and -e options are provided, the inclusion pattern always wins over the exclusion one.
+## Test Inclusion/Exclusion
+Inclusion/Exclusion options can be repeated more the once in the commandline.
+> NOTE: If both inclusion and exclusion options are provided, the inclusion pattern always wins over the exclusion one.
 
 The `SELECT_PATTERN` works as follow:
 * Basic: `SuiteName.TestName`
@@ -175,5 +181,6 @@ So for instance the following are valids select patterns (non-exhaustive list):
 | \*Suite\* | will match all tests whose Suite Name contains "Suite" |
 | MySuite01.*01 | will match all tests whose Suite Name is MySuite01 and Test Name ends with "01" |
 | \*.\* | will match all suites and tests |
+
 
 
