@@ -1,6 +1,6 @@
 /*
  * clove-unit
- * v2.2.4
+ * v2.3.0
  * Single-Header Unit Testing library for C/C++
  * https://github.com/fdefelici/clove-unit
  *
@@ -9,9 +9,9 @@
 #define __CLOVE_H
 
 #define __CLOVE_VERSION_MAJOR 2
-#define __CLOVE_VERSION_MINOR 2
-#define __CLOVE_VERSION_PATCH 4
-#define __CLOVE_VERSION "2.2.4"
+#define __CLOVE_VERSION_MINOR 3
+#define __CLOVE_VERSION_PATCH 0
+#define __CLOVE_VERSION "2.3.0"
 
 #pragma region PRIVATE
 
