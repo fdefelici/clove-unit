@@ -73,7 +73,7 @@ __CLOVE_EXTERN_C void __clove_string_sprintf(char* dest, size_t dest_size, const
 __CLOVE_EXTERN_C void __clove_string_vsprintf(char* dest, size_t dest_size, const char* format, va_list args);
 __CLOVE_EXTERN_C size_t __clove_string_length(const char* str);
 __CLOVE_EXTERN_C const char* __clove_string_strstr(const char* str1, const char* str2);
-__CLOVE_EXTERN_C bool __clove_string_contains(const char* str1, const char* str2);
+__CLOVE_EXTERN_C bool __clove_string_contains(const char* string, const char* contained);
 __CLOVE_EXTERN_C char* __clove_string_escape(const char* string);
 __CLOVE_EXTERN_C void __clove_string_ellipse(const char* string, size_t str_len, size_t pos, char* out, size_t out_len);
 __CLOVE_EXTERN_C void __clove_string_replace_char(char* path, char find, char replace);
