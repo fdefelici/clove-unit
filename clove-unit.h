@@ -169,6 +169,24 @@ __CLOVE_EXTERN_C void __clove_vector_swap(__clove_vector_t* vector, size_t index
 __CLOVE_EXTERN_C size_t __clove_vector_quicksort_partition(__clove_vector_t* vector, int (*comparator)(void*, void*), size_t start_index, size_t end_index);
 __CLOVE_EXTERN_C void __clove_vector_quicksort_iterative(__clove_vector_t* vector, int (*comparator)(void*, void*), size_t start_index, size_t end_index);
 __CLOVE_EXTERN_C void __clove_vector_sort(__clove_vector_t* vector, int (*comparator)(void*, void*));
+
+
+#define __CLOVE_MACRO_COMBINE_INTERNAL(A, B) A##B
+#define __CLOVE_MACRO_COMBINE(A, B) __CLOVE_MACRO_COMBINE_INTERNAL(A, B)
+
+#define __CLOVE_VECTOR_INIT(VECTOR_PTR, TYPE) \
+    __clove_vector_params_t __CLOVE_MACRO_COMBINE(params,__LINE__) = __clove_vector_params_defaulted(sizeof(TYPE)); \
+    __clove_vector_init(VECTOR_PTR, &__CLOVE_MACRO_COMBINE(params,__LINE__));
+
+#define __CLOVE_VECTOR_ADD(VECTOR_PTR, TYPE, ITEM) \
+    TYPE* __CLOVE_MACRO_COMBINE(__vector_slot,__LINE__) = (TYPE*)__clove_vector_add_slot(VECTOR_PTR); \
+    *__CLOVE_MACRO_COMBINE(__vector_slot,__LINE__) = ITEM;
+
+#define __CLOVE_VECTOR_FOREACH(VECTOR_PTR, TYPE, NAME, BODY) \
+    for(size_t vector_index=0; vector_index < __clove_vector_count(VECTOR_PTR); ++vector_index) { \
+        TYPE* NAME = (TYPE*)__clove_vector_get(VECTOR_PTR, vector_index); \
+        BODY \
+    }
 #pragma endregion // Vector Decl
 
 #pragma region PRIVATE - Map Decl
@@ -222,8 +240,9 @@ __CLOVE_EXTERN_C __clove_vector_t* __clove_cmdline_get_opt_values(__clove_cmdlin
 __CLOVE_EXTERN_C void __clove_cmdline_add_opt(__clove_cmdline_t* cmd, const char* opt, const char* value);
 //Command Handlers
  typedef __clove_cmdline_errno_t (*__clove_cmdline_handler_f)(__clove_cmdline_t*);
-__CLOVE_EXTERN_C __clove_cmdline_errno_t __clove_cmdline_handle_report(__clove_cmdline_t* cmd);
+__CLOVE_EXTERN_C __clove_cmdline_errno_t __clove_cmdline_handle_help(__clove_cmdline_t* cmd);
 __CLOVE_EXTERN_C __clove_cmdline_errno_t __clove_cmdline_handle_version(__clove_cmdline_t* cmd);
+__CLOVE_EXTERN_C __clove_cmdline_errno_t __clove_cmdline_handle_report(__clove_cmdline_t* cmd);
 __CLOVE_EXTERN_C __clove_cmdline_errno_t __clove_cmdline_handle_default(__clove_cmdline_t* cmd);
 __CLOVE_EXTERN_C void __clove_cmdline_create_test_expr(__clove_cmdline_t* cmd, const char* opt, __clove_vector_t* out_expressions);
 #pragma endregion // CommandLine Decl
@@ -1344,6 +1363,23 @@ char* __clove_cmdline_get_opt_value(__clove_cmdline_t* cmdline, const char* opt)
 }
 __clove_vector_t* __clove_cmdline_get_opt_values(__clove_cmdline_t* cmdline, const char* opt) {
     return (__clove_vector_t*)__clove_map_get(&(cmdline->map), opt);
+}
+
+__clove_cmdline_errno_t __clove_cmdline_handle_help(__clove_cmdline_t* cmd) {
+    if (!__clove_cmdline_has_opt(cmd, "h") && !__clove_cmdline_has_opt(cmd, "help")) return __CLOVE_CMD_ERRNO_UNMANAGED;    
+    printf("CLove-Unit v%s\n", __CLOVE_VERSION); 
+    printf("usage:\n");
+    printf("%*s<executable> [options]\n", 3," ");
+    printf("where options are:\n");
+    printf("%*s%-*s%*s%s\n", 3," ", 30,"<no-options>",         5," ", "Run all tests (default behaviour).");
+    printf("%*s%-*s%*s%s\n", 3," ", 30,"-e, --exclude <expr>", 5," ", "Suite/Test expression to be excluded. Works when running/listing tests.");
+    printf("%*s%-*s%*s%s\n", 3," ", 30,"-h, --help",           5," ", "Display usage information.");
+    printf("%*s%-*s%*s%s\n", 3," ", 30,"-i, --include <expr>", 5," ", "Suite/Test expression to be included. Works when running/listing tests.");
+    printf("%*s%-*s%*s%s\n", 3," ", 30,"-l, --list-tests",     5," ", "List all/matching test cases in CSV format: <SuiteName,TestName,SourcePath,TestLine>.");
+    printf("%*s%-*s%*s%s\n", 3," ", 30,"-v, --version",        5," ", "Show CLove-Unit version.");
+    printf("\n");
+    printf("For detailed usage please read look at the README in https://github.com/fdefelici/clove-unit.\n");
+    return __CLOVE_CMD_ERRNO_OK;
 }
 
 __clove_cmdline_errno_t __clove_cmdline_handle_version(__clove_cmdline_t* cmd) {
@@ -2601,33 +2637,25 @@ int __clove_runner_auto(int argc, char* argv[]) {
     //const char* argv2[] = {"exec", "-e", "String*"};
 
     __clove_vector_t cmd_handlers;
-    __clove_vector_params_t params = __clove_vector_params_defaulted(sizeof(__clove_cmdline_handler_f));
-    __clove_vector_init(&cmd_handlers, &params);
-    __clove_cmdline_handler_f* slot;
-    
-    slot = (__clove_cmdline_handler_f*)__clove_vector_add_slot(&cmd_handlers);
-    *slot = __clove_cmdline_handle_version;
-
-    slot = (__clove_cmdline_handler_f*)__clove_vector_add_slot(&cmd_handlers);
-    *slot = __clove_cmdline_handle_report;
-
-    slot = (__clove_cmdline_handler_f*)__clove_vector_add_slot(&cmd_handlers);
-    *slot = __clove_cmdline_handle_list_tests;
-
-    slot = (__clove_cmdline_handler_f*)__clove_vector_add_slot(&cmd_handlers);
-    *slot = __clove_cmdline_handle_default;
+    __CLOVE_VECTOR_INIT(&cmd_handlers, __clove_cmdline_handler_f);
+    __CLOVE_VECTOR_ADD(&cmd_handlers, __clove_cmdline_handler_f, __clove_cmdline_handle_help);
+    __CLOVE_VECTOR_ADD(&cmd_handlers, __clove_cmdline_handler_f, __clove_cmdline_handle_version);
+    __CLOVE_VECTOR_ADD(&cmd_handlers, __clove_cmdline_handler_f, __clove_cmdline_handle_report);
+    __CLOVE_VECTOR_ADD(&cmd_handlers, __clove_cmdline_handler_f, __clove_cmdline_handle_list_tests);
+    __CLOVE_VECTOR_ADD(&cmd_handlers, __clove_cmdline_handler_f, __clove_cmdline_handle_default);
 
     __clove_cmdline_errno_t cmd_result = __CLOVE_CMD_ERRNO_INVALID_PARAM;
     __clove_cmdline_t cmdline;
     __clove_cmdline_init(&cmdline, argv, argc);
-    for(size_t i=0; i < __clove_vector_count(&cmd_handlers); ++i) {
-        __clove_cmdline_handler_f* handler = (__clove_cmdline_handler_f*)__clove_vector_get(&cmd_handlers, i);
+
+    __CLOVE_VECTOR_FOREACH(&cmd_handlers, __clove_cmdline_handler_f, handler, {
         __clove_cmdline_errno_t result = (*handler)(&cmdline);
         if (result != __CLOVE_CMD_ERRNO_UNMANAGED) {
             cmd_result =  result;
             break;
         }
-    }
+    });
+
     __clove_vector_free(&cmd_handlers);
     __clove_cmdline_free(&cmdline);
     free(__clove_exec_base_path);
