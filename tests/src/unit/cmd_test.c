@@ -53,12 +53,12 @@ CLOVE_TEST(InitAndAdd) {
 }
 
 CLOVE_TEST(OptDashWithTwoLetter) {
-    char* argv[2] = {"exec", "-ii"};
+    char* argv[2] = {"exec", "-ii"}; //single dash option accept only 1 char option name
     int argc = 2;
     __clove_cmdline_t cmd;
     __clove_cmdline_init(&cmd, argv, argc);
 
-    CLOVE_IS_TRUE(__clove_cmdline_has_opt(&cmd, "ii"));
+    CLOVE_IS_FALSE(__clove_cmdline_has_opt(&cmd, "ii"));
     __clove_cmdline_free(&cmd);
 }
 
@@ -92,4 +92,30 @@ CLOVE_TEST(InvalidOptJustDash) {
     __clove_cmdline_free(&cmd);
 }
 
+CLOVE_TEST(HasOneOpt) {
+    char* argv[4] = {"exec", "-o", "--output", "-a"};
+    int argc = 4;
+    __clove_cmdline_t cmd;
+    __clove_cmdline_init(&cmd, argv, argc);
 
+    CLOVE_IS_TRUE(__clove_cmdline_has_one_opt(&cmd, "o", "output"));
+    CLOVE_IS_TRUE(__clove_cmdline_has_one_opt(&cmd, "a", "unexistent"));
+    CLOVE_IS_FALSE(__clove_cmdline_has_one_opt(&cmd, "unexistent", "unexistent"));
+
+    __clove_cmdline_free(&cmd);
+}
+
+CLOVE_TEST(GetOneOptValue) {
+    #define argc 7
+    char* argv[argc] = {"exec", "-o", "value1", "--output", "value2", "-a", "value3"};
+    __clove_cmdline_t cmd;
+    __clove_cmdline_init(&cmd, argv, argc);
+
+    CLOVE_STRING_EQ("value1", __clove_cmdline_get_one_opt_value(&cmd, "o", "output"));
+    CLOVE_STRING_EQ("value2", __clove_cmdline_get_one_opt_value(&cmd, "output", "o"));
+    CLOVE_STRING_EQ("value3", __clove_cmdline_get_one_opt_value(&cmd, "a", "unexistent"));
+    CLOVE_STRING_EQ("value3", __clove_cmdline_get_one_opt_value(&cmd, "unexistent", "a"));
+    CLOVE_NULL( __clove_cmdline_get_one_opt_value(&cmd, "unexistent", "unexistent"));
+
+    __clove_cmdline_free(&cmd);
+}

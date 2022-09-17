@@ -12,12 +12,12 @@ CLOVE_SUITE_TEARDOWN() {
     if (cmd_out) free(cmd_out);
 }
  
-CLOVE_TEST(JsonReport) {
+CLOVE_TEST(JsonReportWithOptOonFile) {
     char* base_path = __clove_path_basepath(RES_PRJ01_EXEC_PATH);
     char* report_path = __clove_path_concat(__CLOVE_PATH_SEPARATOR, base_path, "cmd_json_report.json");
     //file_delete(report_path);
 
-    const char* cmd = cmd_fmt("\"%s\" -r json -f \"%s\"", RES_PRJ01_EXEC_PATH, report_path);
+    const char* cmd = cmd_fmt("\"%s\" -r json -o \"%s\"", RES_PRJ01_EXEC_PATH, report_path);
     int cmd_code = exec_cmd(cmd, &cmd_out);
     CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_OK, cmd_code); 
 
@@ -26,6 +26,49 @@ CLOVE_TEST(JsonReport) {
     file_delete(report_path);
     free(base_path);
     free(report_path);
+}
+
+CLOVE_TEST(JsonReportWithOptOuputOnFile) {
+    char* base_path = __clove_path_basepath(RES_PRJ01_EXEC_PATH);
+    char* report_path = __clove_path_concat(__CLOVE_PATH_SEPARATOR, base_path, "cmd_json_report.json");
+    //file_delete(report_path);
+
+    const char* cmd = cmd_fmt("\"%s\" -r json --output \"%s\"", RES_PRJ01_EXEC_PATH, report_path);
+    int cmd_code = exec_cmd(cmd, &cmd_out);
+    CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_OK, cmd_code); 
+
+    CLOVE_IS_TRUE(file_exists(report_path));
+
+    file_delete(report_path);
+    free(base_path);
+    free(report_path);
+}
+
+CLOVE_TEST(JsonReportWithOptOuputOnStdoutAsDefault) {
+    const char* cmd = cmd_fmt("\"%s\" -r json", RES_PRJ01_EXEC_PATH);
+    int cmd_code = exec_cmd(cmd, &cmd_out);
+    CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_OK, cmd_code); 
+    
+    CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "\"suite_count\" : 2"));
+    CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "\"test_count\" : 3"));
+}
+
+CLOVE_TEST(JsonReportWithOptOuputOnStdout) {
+    const char* cmd = cmd_fmt("\"%s\" -r json --output stdout", RES_PRJ01_EXEC_PATH);
+    int cmd_code = exec_cmd(cmd, &cmd_out);
+    CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_OK, cmd_code); 
+    
+    CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "\"suite_count\" : 2"));
+    CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "\"test_count\" : 3"));
+}
+
+CLOVE_TEST(JsonReportWithOptReportOnStdoutDefault) {
+    const char* cmd = cmd_fmt("\"%s\" --report json", RES_PRJ01_EXEC_PATH);
+    int cmd_code = exec_cmd(cmd, &cmd_out);
+    CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_OK, cmd_code); 
+    
+    CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "\"suite_count\" : 2"));
+    CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "\"test_count\" : 3"));
 }
 
 CLOVE_TEST(ConsoleReportWithOptXTest) {
@@ -59,6 +102,12 @@ CLOVE_TEST(ConsoleReportIncludeTwoTest) {
     CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "Total: 2, Passed: 2, Failed: 0, Skipped: 0"));
 }
 
+CLOVE_TEST(ConsoleReportWithOptReport) {
+    const char* cmd = RES_PRJ01_EXEC_PATH" --report console";
+    int cmd_code = exec_cmd(cmd, &cmd_out);
+    CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_OK, cmd_code);
+}
+
 CLOVE_TEST(DefaultReportIncludeOneTest) {
     const char* cmd = RES_PRJ01_EXEC_PATH" -i Prj01Suite01.Test01";
     int cmd_code = exec_cmd(cmd, &cmd_out);
@@ -85,5 +134,21 @@ CLOVE_TEST(DefaultReportIncludeOverExcludeOneTest) {
     CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "Suite / Tests found: 1 / 1"));
     CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "1) Prj01Suite01.Test01"));
     CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "Total: 1, Passed: 1, Failed: 0, Skipped: 0"));
+}
+
+CLOVE_TEST(DefaultReportWithOptOonFile) {
+    char* base_path = __clove_path_basepath(RES_PRJ01_EXEC_PATH);
+    char* report_path = __clove_path_concat(__CLOVE_PATH_SEPARATOR, base_path, "cmd_console_report.txt");
+    //file_delete(report_path);
+
+    const char* cmd = cmd_fmt("\"%s\" -o \"%s\"", RES_PRJ01_EXEC_PATH, report_path);
+    int cmd_code = exec_cmd(cmd, &cmd_out);
+    CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_OK, cmd_code); 
+
+    CLOVE_IS_TRUE(file_exists(report_path));
+
+    file_delete(report_path);
+    free(base_path);
+    free(report_path);
 }
 

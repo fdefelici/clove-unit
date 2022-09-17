@@ -39,7 +39,6 @@ extern char* __clove_exec_path;
 extern char* __clove_exec_base_path;
 __CLOVE_EXTERN_C const char* __clove_get_exec_base_path();
 __CLOVE_EXTERN_C const char* __clove_get_exec_path();
-__CLOVE_EXTERN_C FILE* __clove_file_open(const char* path, const char* mode);
 #pragma endregion // Utils Decl
 
 #pragma region PRIVATE - Path Decl
@@ -72,6 +71,62 @@ __CLOVE_EXTERN_C bool __clove_memory_memset(void* dest, size_t size, unsigned ch
 #define __CLOVE_MEMORY_CALLOC_TYPE_N(TYPE, COUNT) (TYPE*)__clove_memory_calloc(sizeof(TYPE) * COUNT)
 #define __CLOVE_MEMORY_CALLOC_TYPE(TYPE) __CLOVE_MEMORY_CALLOC_TYPE_N(TYPE, 1)
 #pragma endregion //Memory Decl
+
+#pragma region PRIVATE - Console Decl
+#include <stdarg.h>
+__CLOVE_EXTERN_C void __clove_console_printf(const char* format, ...);
+__CLOVE_EXTERN_C void __clove_console_vprintf(const char* format, va_list args);
+__CLOVE_EXTERN_C void __clove_console_write(const char* str);
+__CLOVE_EXTERN_C void __clove_console_writeline(const char* str);
+#pragma endregion //Console Decl
+
+#pragma region PRIVATE - File Decl
+#include <stdarg.h>
+__CLOVE_EXTERN_C FILE* __clove_file_open(const char* path, const char* mode);
+__CLOVE_EXTERN_C void __clove_file_close(FILE* file);
+__CLOVE_EXTERN_C void __clove_file_printf(FILE* file, const char* format, ...);
+__CLOVE_EXTERN_C void __clove_file_vprintf(FILE* file, const char* format, va_list args);
+__CLOVE_EXTERN_C void __clove_file_write(FILE* file, const char* str);
+__CLOVE_EXTERN_C void __clove_file_writeline(FILE* file, const char* str);
+#pragma endregion //File Decl
+
+#pragma region PRIVATE - Stream Decl
+typedef struct __clove_stream_t {
+    bool (*open)(struct __clove_stream_t* _this);
+    void (*close)(struct __clove_stream_t* _this);
+    void (*writef)(struct __clove_stream_t* _this, const char* format, ...);
+    void (*seek)(struct __clove_stream_t* _this, long offset, int origin);
+    bool (*has_ansi_support)(struct __clove_stream_t* _this);
+    void (*free)(struct __clove_stream_t* _this);
+} __clove_stream_t;
+
+typedef struct __clove_stream_console_t {
+    __clove_stream_t base;
+} __clove_stream_console_t;
+
+__CLOVE_EXTERN_C __clove_stream_console_t* __clove_stream_console_new();
+__CLOVE_EXTERN_C bool __clove_stream_console_open(__clove_stream_t* stream);
+__CLOVE_EXTERN_C void __clove_stream_console_close(__clove_stream_t* stream);
+__CLOVE_EXTERN_C void __clove_stream_console_writef(__clove_stream_t* stream, const char* format, ...);
+__CLOVE_EXTERN_C void __clove_stream_console_seek(__clove_stream_t* stream, long offset, int origin);
+__CLOVE_EXTERN_C bool __clove_stream_console_has_ansi_support(struct __clove_stream_t* _this);
+__CLOVE_EXTERN_C void __clove_stream_console_free(__clove_stream_t* stream);
+
+#include <stdio.h> 
+typedef struct __clove_stream_file_t {
+    __clove_stream_t base;
+     const char* file_path;
+    FILE* file; //No way to forward declaring FILE. the only way should be to use void*
+} __clove_stream_file_t;
+
+__CLOVE_EXTERN_C __clove_stream_file_t* __clove_stream_file_new(const char* file_path);
+__CLOVE_EXTERN_C bool __clove_stream_file_open(__clove_stream_t* stream);
+__CLOVE_EXTERN_C void __clove_stream_file_close(__clove_stream_t* stream);
+__CLOVE_EXTERN_C void __clove_stream_file_writef(__clove_stream_t* stream, const char* format, ...);
+__CLOVE_EXTERN_C void __clove_stream_file_seek(__clove_stream_t* stream, long offset, int origin);
+__CLOVE_EXTERN_C bool __clove_stream_file_has_ansi_support(struct __clove_stream_t* _this);
+__CLOVE_EXTERN_C void __clove_stream_file_free(__clove_stream_t* stream);
+#pragma endregion //Stream Decl
 
 #pragma region PRIVATE - String Decl
 #include <stdbool.h>
@@ -243,7 +298,7 @@ bool __clove_map_has_key(__clove_map_t* map, const char* key);
 typedef struct __clove_cmdline_t {
     int arg_index;
     int argc;
-    char** argv;
+    const char** argv;
     __clove_map_t map;
 } __clove_cmdline_t;
 
@@ -254,12 +309,14 @@ typedef enum __clove_cmdline_errno_t {
     __CLOVE_CMD_ERRNO_INVALID_PARAM = 2,
 } __clove_cmdline_errno_t;
 
-__CLOVE_EXTERN_C void __clove_cmdline_init(__clove_cmdline_t* cmdline, char** argv, int argc);
+__CLOVE_EXTERN_C void __clove_cmdline_init(__clove_cmdline_t* cmdline, const char** argv, int argc);
 __CLOVE_EXTERN_C void __clove_cmdline_free(__clove_cmdline_t* cmdline);
-__CLOVE_EXTERN_C bool __clove_cmdline_next_opt(__clove_cmdline_t* cmdline, char** opt_out);
-__CLOVE_EXTERN_C bool __clove_cmdline_next_arg(__clove_cmdline_t* cmdline, char** arg_out);
+__CLOVE_EXTERN_C bool __clove_cmdline_next_opt(__clove_cmdline_t* cmdline, const char** opt_out);
+__CLOVE_EXTERN_C bool __clove_cmdline_next_arg(__clove_cmdline_t* cmdline, const char** arg_out);
 __CLOVE_EXTERN_C bool __clove_cmdline_has_opt(__clove_cmdline_t* cmdline, const char* opt);
+__CLOVE_EXTERN_C bool __clove_cmdline_has_one_opt(__clove_cmdline_t* cmdline, const char* opt1, const char* opt2);
 __CLOVE_EXTERN_C char* __clove_cmdline_get_opt_value(__clove_cmdline_t* cmdline, const char* opt);
+__CLOVE_EXTERN_C char* __clove_cmdline_get_one_opt_value(__clove_cmdline_t* cmdline, const char* opt1, const char* opt2);
 __CLOVE_EXTERN_C __clove_vector_t* __clove_cmdline_get_opt_values(__clove_cmdline_t* cmdline, const char* opt);
 __CLOVE_EXTERN_C void __clove_cmdline_add_opt(__clove_cmdline_t* cmd, const char* opt, const char* value);
 //Command Handlers
@@ -417,6 +474,7 @@ __CLOVE_EXTERN_C bool __clove_test_expr_validate(__clove_test_expr_t* expr, cons
 #include <stdbool.h>
 typedef struct __clove_report_console_t {
     __clove_report_t base;
+    __clove_stream_t* stream;
     __clove_time_t start_time;
     struct {
         const char* info;
@@ -427,33 +485,28 @@ typedef struct __clove_report_console_t {
         const char* fail;
     } labels;
 } __clove_report_console_t;
-__clove_report_console_t* __clove_report_console_new();
+__clove_report_console_t* __clove_report_console_new(__clove_stream_t* stream);
 __CLOVE_EXTERN_C void __clove_report_console_free(__clove_report_t* report);
 __CLOVE_EXTERN_C void __clove_report_console_start(__clove_report_t* _this, size_t suite_count, size_t test_count);
 __CLOVE_EXTERN_C void __clove_report_console_test_executed(__clove_report_t* _this, __clove_suite_t* suite, __clove_test_t* test, size_t test_number);
 __CLOVE_EXTERN_C void __clove_report_console_end(__clove_report_t* _this, size_t test_count, size_t passed, size_t skipped, size_t failed);
 __CLOVE_EXTERN_C void __clove_report_console_string_ellipse(const char* exp, size_t exp_size, const char* act, size_t act_size, char* exp_short, char* act_short, size_t short_len);
 __CLOVE_EXTERN_C void __clove_report_console_pad_right(char* result, char* strToPad);
-__CLOVE_EXTERN_C bool __clove_report_console_setup_ansi();
-
-
 #define __CLOVE_STRING_LENGTH 256
 #define __CLOVE_TEST_ENTRY_LENGTH 60
 #pragma endregion
 
 #pragma region PRIVATE - Report Json Decl
-#include <stdio.h>
 typedef struct __clove_report_json_t {
     __clove_report_t base;
-    const char* file_path;
+    __clove_stream_t* stream;
     const char* clove_version;
     unsigned int api_version;
-    FILE* file; //No way to forward declaring FILE. the only way should be to use void*
     __clove_suite_t* current_suite;
     size_t test_count;
 } __clove_report_json_t;
 
-__CLOVE_EXTERN_C __clove_report_json_t* __clove_report_json_new(const char* file_path, const char* clove_version);
+__CLOVE_EXTERN_C __clove_report_json_t* __clove_report_json_new(__clove_stream_t* stream, const char* clove_version);
 __CLOVE_EXTERN_C void __clove_report_json_free(__clove_report_t* report);
 __CLOVE_EXTERN_C void __clove_report_json_start(__clove_report_t* _this, size_t suite_count, size_t test_count);
 __CLOVE_EXTERN_C void __clove_report_json_end(__clove_report_t* _this, size_t test_count, size_t passed, size_t skipped, size_t failed);
@@ -559,16 +612,6 @@ const char* __clove_get_exec_base_path() {
 const char* __clove_get_exec_path() {
     return __clove_exec_path;
 }
-
-FILE* __clove_file_open(const char* path, const char* mode) {
-#ifdef _WIN32
-    FILE* file;
-    fopen_s(&file, path, mode);
-    return file;
-#else
-    return fopen(path, mode);
-#endif
-}
 #pragma endregion // Utils Impl
 
 #pragma region PRIVATE - Path Impl
@@ -632,6 +675,62 @@ char* __clove_path_basepath(const char* a_path) {
 }
 #pragma endregion // Path Impl
 
+#pragma region PRIVATE - Console Impl
+#include <stdio.h>
+#include <stdarg.h>
+void __clove_console_printf(const char* format, ...) {
+    va_list args;
+    va_start(args, format);
+    __clove_console_vprintf(format, args);
+    va_end(args);
+}
+void __clove_console_vprintf(const char* format, va_list args) {
+     vprintf(format, args);
+}
+void __clove_console_write(const char* str) {
+    __clove_console_printf("%s", str);
+}
+void __clove_console_writeline(const char* str) {
+    __clove_console_printf("%s\n", str);
+}
+#pragma endregion //Console Impl
+
+#pragma region PRIVATE - File Impl
+FILE* __clove_file_open(const char* path, const char* mode) {
+#ifdef _WIN32
+    FILE* file;
+    fopen_s(&file, path, mode);
+    return file;
+#else
+    return fopen(path, mode);
+#endif
+}
+
+void __clove_file_close(FILE* file) {
+    if (file) fclose(file);
+}
+
+void __clove_file_printf(FILE* file, const char* format, ...) {
+    va_list args;
+    va_start(args, format);
+    __clove_file_vprintf(file, format, args);
+    va_end(args);
+}
+
+void __clove_file_vprintf(FILE* file, const char* format, va_list args) {
+    vfprintf(file, format, args);
+}
+
+void __clove_file_write(FILE* file, const char* str) {
+    __clove_file_printf(file, "%s", str);
+}
+
+void __clove_file_writeline(FILE* file, const char* str) {
+    __clove_file_printf(file, "%s\n", str);
+}
+#pragma endregion //File Impl
+
+
 #pragma region PRIVATE - Memory Impl
 #include <string.h>
 void* __clove_memory_malloc(size_t size) {
@@ -658,6 +757,125 @@ bool __clove_memory_memset(void* dest, size_t size, unsigned char value) {
     return memset(dest, value, size) != NULL;
 }
 #pragma endregion //Memory Impl
+
+#pragma region PRIVATE - Stream Impl
+__clove_stream_console_t* __clove_stream_console_new() {
+    __clove_stream_console_t* stream = __CLOVE_MEMORY_MALLOC_TYPE(__clove_stream_console_t);
+    stream->base.open = __clove_stream_console_open;
+    stream->base.close = __clove_stream_console_close;
+    stream->base.writef = __clove_stream_console_writef;
+    stream->base.seek = __clove_stream_console_seek;
+    stream->base.has_ansi_support = __clove_stream_console_has_ansi_support;
+    stream->base.free = __clove_stream_console_free;
+    return stream;
+}
+bool __clove_stream_console_open(__clove_stream_t* stream) {
+    return true;
+}
+void __clove_stream_console_close(__clove_stream_t* stream) { 
+    //nothing todo
+}
+void __clove_stream_console_writef(__clove_stream_t* stream, const char* format, ...) {
+    va_list args;
+    va_start(args, format);
+    __clove_console_vprintf(format, args);
+    va_end(args);
+}
+void __clove_stream_console_seek(__clove_stream_t* stream, long offset, int origin) {
+    //nothing todo
+}
+
+#ifdef _WIN32
+#include <windows.h>
+#include <stdbool.h>
+#ifndef ENABLE_VIRTUAL_TERMINAL_PROCESSING
+#define ENABLE_VIRTUAL_TERMINAL_PROCESSING  0x0004
+#endif
+bool __clove_stream_console_has_ansi_support(__clove_stream_t* stream) {
+    DWORD outMode = 0, inMode = 0;
+    HANDLE stdoutHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+    HANDLE stdinHandle = GetStdHandle(STD_INPUT_HANDLE);
+
+    if (stdoutHandle == INVALID_HANDLE_VALUE || stdinHandle == INVALID_HANDLE_VALUE) {
+        //exit(GetLastError());
+        return false;
+    }
+
+    if (!GetConsoleMode(stdoutHandle, &outMode) || !GetConsoleMode(stdinHandle, &inMode)) {
+        //exit(GetLastError());
+        return false;
+    }
+
+    DWORD outModeInit = outMode;
+    DWORD inModeInit = inMode;
+
+    // Enable ANSI escape codes
+    outMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+
+    // Set stdin as no echo and unbuffered
+    inMode &= ~(ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT);
+
+    if (!SetConsoleMode(stdoutHandle, outMode) || !SetConsoleMode(stdinHandle, inMode)) {
+        //exit(GetLastError());
+        return false;
+    }
+    return true;
+}
+#else
+#include <stdbool.h>
+bool __clove_stream_console_has_ansi_support(__clove_stream_t* stream) {
+    /* Nothing to do at the moment for other OS. Ansi enabled by default. */
+    return true;
+}
+#endif //_WIN32
+
+
+void __clove_stream_console_free(__clove_stream_t* stream) {
+    free(stream);
+}
+
+__clove_stream_file_t* __clove_stream_file_new(const char* file_path) {
+    __clove_stream_file_t* stream = __CLOVE_MEMORY_MALLOC_TYPE(__clove_stream_file_t);
+    stream->base.open = __clove_stream_file_open;
+    stream->base.close = __clove_stream_file_close;
+    stream->base.writef = __clove_stream_file_writef;
+    stream->base.seek = __clove_stream_file_seek;
+    stream->base.has_ansi_support = __clove_stream_file_has_ansi_support;
+    stream->base.free = __clove_stream_file_free;
+    stream->file_path = __clove_string_strdup(file_path);
+    stream->file = NULL;
+    return stream;
+}
+bool __clove_stream_file_open(__clove_stream_t* stream) {
+    __clove_stream_file_t* _this = (__clove_stream_file_t*)stream;
+    _this->file = __clove_file_open(_this->file_path, "wb"); //binary mode so \n will stay \n (and not converted to \r\n on windows)
+    return _this->file != NULL;
+}
+void __clove_stream_file_close(__clove_stream_t* stream) {
+    __clove_stream_file_t* _this = (__clove_stream_file_t*)stream;
+    __clove_file_close(_this->file);
+}
+void __clove_stream_file_writef(__clove_stream_t* stream, const char* format, ...) {
+    __clove_stream_file_t* _this = (__clove_stream_file_t*)stream;
+    va_list args;
+    va_start(args, format);
+    __clove_file_vprintf(_this->file, format, args);
+    va_end(args);
+}
+void __clove_stream_file_seek(__clove_stream_t* stream, long offset, int origin) {
+     __clove_stream_file_t* _this = (__clove_stream_file_t*)stream;
+    fseek(_this->file, offset, origin); //TODO: wrap into __clove_file_seek method
+}
+bool __clove_stream_file_has_ansi_support(struct __clove_stream_t* _this) {
+    return false;
+}
+void __clove_stream_file_free(__clove_stream_t* stream) {
+    __clove_stream_file_t* _this = (__clove_stream_file_t*)stream;
+    _this->file = NULL;
+    free((char*)_this->file_path);
+    free(_this);
+}
+#pragma endregion //Stream Impl
 
 #pragma region PRIVATE - String Impl
 #include <string.h>
@@ -1366,38 +1584,52 @@ void* __clove_map_get(__clove_map_t* map, const char* key) {
 #pragma region PRIVATE - CommandLine Impl
 #include <stdbool.h>
 #include <string.h>
-bool __clove_cmdline_next_opt(__clove_cmdline_t* cmdline, char** opt_out) {
+bool __clove_cmdline_next_opt(__clove_cmdline_t* cmdline, const char** opt_out) {
+    /*
     if (cmdline->arg_index >= cmdline->argc) return false;
 
     char* current = cmdline->argv[cmdline->arg_index];
-    if (__clove_string_startswith(current, "--")) {
+    if (__clove_string_startswith(current, "--") && __clove_string_length(current) > 3) {
         *opt_out = current + 2;
-    } else if (__clove_string_startswith(current, "-")) {
+    } else if (__clove_string_startswith(current, "-") && __clove_string_length(current) == 2) {
         *opt_out = current + 1;
     }
 
     cmdline->arg_index++;
     return true;
+    */
+   while(cmdline->arg_index < cmdline->argc) {
+        const char* current = cmdline->argv[cmdline->arg_index];
+        cmdline->arg_index++;
+        if (__clove_string_startswith(current, "--") && __clove_string_length(current) > 3) {
+            *opt_out = current + 2;
+            return true;
+        } else if (__clove_string_startswith(current, "-") && __clove_string_length(current) == 2) {
+            *opt_out = current + 1;
+            return true;
+        }
+   }
+   return false;
 }
 
-bool __clove_cmdline_next_arg(__clove_cmdline_t* cmdline, char** arg_out) {
+bool __clove_cmdline_next_arg(__clove_cmdline_t* cmdline, const char** arg_out) {
     if (cmdline->arg_index >= cmdline->argc) return false;
-    char* arg = cmdline->argv[cmdline->arg_index];
+    const char* arg = cmdline->argv[cmdline->arg_index];
     if (__clove_string_startswith(arg, "-")) return false; 
     *arg_out = arg;
     cmdline->arg_index++;
     return true;
 }
 
-void __clove_cmdline_init(__clove_cmdline_t* cmd, char** argv, int argc) {
+void __clove_cmdline_init(__clove_cmdline_t* cmd, const char** argv, int argc) {
     cmd->argv = argv;
     cmd->argc = argc;
     cmd->arg_index = 1;
     __clove_map_init(&(cmd->map));
 
-    char* opt;
+    const char* opt;
     while(__clove_cmdline_next_opt(cmd, &opt)) {
-        char* arg = NULL;
+        const char* arg = NULL;
         __clove_cmdline_next_arg(cmd, &arg);
         __clove_cmdline_add_opt(cmd, opt, arg);
     }
@@ -1436,17 +1668,29 @@ __clove_vector_t* __clove_cmdline_get_opt_values(__clove_cmdline_t* cmdline, con
     return (__clove_vector_t*)__clove_map_get(&(cmdline->map), opt);
 }
 
+bool __clove_cmdline_has_one_opt(__clove_cmdline_t* cmdline, const char* opt1, const char* opt2) {
+    return __clove_cmdline_has_opt(cmdline, opt1) || __clove_cmdline_has_opt(cmdline, opt2);
+}
+
+char* __clove_cmdline_get_one_opt_value(__clove_cmdline_t* cmdline, const char* opt1, const char* opt2) {
+    char* result = __clove_cmdline_get_opt_value(cmdline, opt1);
+    if (result) return result;
+    return __clove_cmdline_get_opt_value(cmdline, opt2);
+}
+
 __clove_cmdline_errno_t __clove_cmdline_handle_help(__clove_cmdline_t* cmd) {
-    if (!__clove_cmdline_has_opt(cmd, "h") && !__clove_cmdline_has_opt(cmd, "help")) return __CLOVE_CMD_ERRNO_UNMANAGED;    
+    if (!__clove_cmdline_has_one_opt(cmd, "h", "help")) return __CLOVE_CMD_ERRNO_UNMANAGED;    
     printf("CLove-Unit v%s\n", __CLOVE_VERSION); 
     printf("usage:\n");
     printf("%*s<executable> [options]\n", 3," ");
     printf("where options are:\n");
-    printf("%*s%-*s%*s%s\n", 3," ", 30,"<no-options>",             5," ", "Run all tests (default behaviour).");
+    printf("%*s%-*s%*s%s\n", 3," ", 30,"<no-options>",             5," ", "Run all tests with console report (default behaviour).");
     printf("%*s%-*s%*s%s\n", 3," ", 30,"-e, --exclude <expr>",     5," ", "Suite/Test expression to be excluded. Works when running/listing tests.");
     printf("%*s%-*s%*s%s\n", 3," ", 30,"-h, --help",               5," ", "Display usage information.");
     printf("%*s%-*s%*s%s\n", 3," ", 30,"-i, --include <expr>",     5," ", "Suite/Test expression to be included. Works when running/listing tests.");
     printf("%*s%-*s%*s%s\n", 3," ", 30,"-l, --list-tests",         5," ", "List all/matching test cases in CSV format: <SuiteName,TestName,SourcePath,TestLine>.");
+    printf("%*s%-*s%*s%s\n", 3," ", 30,"-o, --output <stream>",    5," ", "Specify output stream for a report: 'stdout' (default) or file path.");
+    printf("%*s%-*s%*s%s\n", 3," ", 30,"-r, --report <format>",    5," ", "Specify report format when running tests: 'console', 'json'. ");
     printf("%*s%-*s%*s%s\n", 3," ", 30,"-v, --version",            5," ", "Show CLove-Unit version.");
     printf("%*s%-*s%*s%s\n", 3," ", 30,"-x, --error-on-test-fail", 5," ", "Test run process will end with error in case of test failure. Default is to end the process succesfully.");
     printf("\n");
@@ -1455,33 +1699,42 @@ __clove_cmdline_errno_t __clove_cmdline_handle_help(__clove_cmdline_t* cmd) {
 }
 
 __clove_cmdline_errno_t __clove_cmdline_handle_version(__clove_cmdline_t* cmd) {
-    if (!__clove_cmdline_has_opt(cmd, "v") && !__clove_cmdline_has_opt(cmd, "version")) return __CLOVE_CMD_ERRNO_UNMANAGED;
+    if (!__clove_cmdline_has_one_opt(cmd, "v", "version")) return __CLOVE_CMD_ERRNO_UNMANAGED;
     printf("%s", __CLOVE_VERSION); //to avoid new_line character(s)
     return __CLOVE_CMD_ERRNO_OK;
 }
 
 __clove_cmdline_errno_t __clove_cmdline_handle_report(__clove_cmdline_t* cmd) {
-    if (!__clove_cmdline_has_opt(cmd, "r")) return __CLOVE_CMD_ERRNO_UNMANAGED;
+    if (!__clove_cmdline_has_one_opt(cmd, "r", "report")) return __CLOVE_CMD_ERRNO_UNMANAGED;
 
-    char* r_type = __clove_cmdline_get_opt_value(cmd, "r");
+    char* r_type = __clove_cmdline_get_one_opt_value(cmd, "r", "report");
     if (!r_type) return __CLOVE_CMD_ERRNO_INVALID_PARAM;
 
-    __clove_report_t* report;
-    if (__clove_string_equal("json", r_type)) {
-        const char* file_path = "clove_report.json";
-        if (__clove_cmdline_has_opt(cmd, "f")) {
-            file_path = __clove_cmdline_get_opt_value(cmd, "f");
-        }
+    //Select Output Type
+    const char* out = "stdout"; //default output is console
+    if (__clove_cmdline_has_one_opt(cmd, "o", "output")) {
+        out = __clove_cmdline_get_one_opt_value(cmd, "o", "output");
+    }
+    __clove_stream_t* stream;
+    if (__clove_string_equal(out, "stdout")) {
+        stream = (__clove_stream_t*)__clove_stream_console_new();
+    } else {
         const char* report_path;
-        if (__clove_path_is_relative(file_path)) {
-            report_path = __clove_path_rel_to_abs_exec_path(file_path);
+        if (__clove_path_is_relative(out)) {
+            report_path = __clove_path_rel_to_abs_exec_path(out);
         }
         else {
-            report_path = file_path;
-        }
-        report = (__clove_report_t*)__clove_report_json_new(report_path, __CLOVE_VERSION);
+            report_path = out;
+        } 
+        stream = (__clove_stream_t*)__clove_stream_file_new(report_path);
+    }
+
+    //Select Report Format
+    __clove_report_t* report;
+    if (__clove_string_equal("json", r_type)) {
+        report = (__clove_report_t*)__clove_report_json_new(stream, __CLOVE_VERSION);
     } else if (__clove_string_equal("console", r_type)) {
-        report = (__clove_report_t*)__clove_report_console_new();
+        report = (__clove_report_t*)__clove_report_console_new(stream);
     } else {
         return __CLOVE_CMD_ERRNO_INVALID_PARAM;
     }
@@ -1492,10 +1745,11 @@ __clove_cmdline_errno_t __clove_cmdline_handle_report(__clove_cmdline_t* cmd) {
     __clove_vector_t excludes;
     __clove_cmdline_create_test_expr(cmd, "e", "exclude", &excludes);
     
-    bool enable_error_in_case_of_test_failure = __clove_cmdline_has_opt(cmd, "x") || __clove_cmdline_has_opt(cmd, "error-on-test-fail");
-
+    bool enable_error_in_case_of_test_failure = __clove_cmdline_has_one_opt(cmd, "x", "error-on-test-fail");
+    
     int run_result = __clove_run_tests_with_report(report, &includes, &excludes);
     report->free(report);
+    stream->free(stream);
 
     __clove_vector_free(&includes);
     __clove_vector_free(&excludes);
@@ -1777,12 +2031,13 @@ bool __clove_test_expr_validate(__clove_test_expr_t* expr, const __clove_string_
 
 #pragma region PRIVATE - Report Console Impl
 #include <stdio.h>
-__clove_report_console_t* __clove_report_console_new() {
+__clove_report_console_t* __clove_report_console_new(__clove_stream_t* stream) {
     __clove_report_console_t* result = __CLOVE_MEMORY_MALLOC_TYPE(__clove_report_console_t);
     result->base.start = __clove_report_console_start;
     result->base.end = __clove_report_console_end;
     result->base.test_executed = __clove_report_console_test_executed;
     result->base.free = __clove_report_console_free;
+    result->stream = stream;
     return result;
 }
 
@@ -1794,7 +2049,7 @@ void __clove_report_console_start(__clove_report_t* _this, size_t suite_count, s
     __clove_report_console_t* report = (__clove_report_console_t*)_this;
     report->start_time = __clove_time_now();
 
-    bool activated = __clove_report_console_setup_ansi();
+    bool activated = report->stream->has_ansi_support(report->stream);
     if (activated) {
         report->labels.info = "[\x1b[1;34mINFO\x1b[0m]";
         report->labels.warn = "[\x1b[33mWARN\x1b[0m]";
@@ -1812,8 +2067,9 @@ void __clove_report_console_start(__clove_report_t* _this, size_t suite_count, s
         report->labels.fail = "[FAIL]";
     }
 
-    printf("%s Executing Test Runner in 'Verbose' mode\n", report->labels.info);
-    printf("%s Suite / Tests found: %zu / %zu \n", report->labels.info, suite_count, test_count);
+    report->stream->open(report->stream);
+    report->stream->writef(report->stream, "%s Executing Test Runner in 'Verbose' mode\n", report->labels.info);
+    report->stream->writef(report->stream, "%s Suite / Tests found: %zu / %zu \n", report->labels.info, suite_count, test_count);
 }
 
 void __clove_report_console_end(__clove_report_t* _this, size_t test_count, size_t passed, size_t skipped, size_t failed) {
@@ -1822,11 +2078,13 @@ void __clove_report_console_end(__clove_report_t* _this, size_t test_count, size
     __clove_time_t diff = __clove_time_sub(&end_time, &(report->start_time));
     unsigned long long millis = __clove_time_to_millis(&diff);
 
-    printf("%s Total: %zu, Passed: %zu, Failed: %zu, Skipped: %zu\n", report->labels.info, test_count, passed, failed, skipped);
-    printf("%s Run duration: %llu ms\n", report->labels.info, millis);
-    if (passed == test_count) { printf("%s Run result: SUCCESS :-)\n", report->labels.info); }
-    else if (failed > 0) { printf("%s Run result: FAILURE :_(\n", report->labels.erro); }
-    else if (skipped > 0) { printf("%s Run result: OK, but some test has been skipped!\n", report->labels.warn); }
+    report->stream->writef(report->stream, "%s Total: %zu, Passed: %zu, Failed: %zu, Skipped: %zu\n", report->labels.info, test_count, passed, failed, skipped);
+    report->stream->writef(report->stream, "%s Run duration: %llu ms\n", report->labels.info, millis);
+    if (passed == test_count) { report->stream->writef(report->stream, "%s Run result: SUCCESS :-)\n", report->labels.info); }
+    else if (failed > 0) { report->stream->writef(report->stream, "%s Run result: FAILURE :_(\n", report->labels.erro); }
+    else if (skipped > 0) { report->stream->writef(report->stream, "%s Run result: OK, but some test has been skipped!\n", report->labels.warn); }
+
+     report->stream->close(report->stream);
 }
 
 void __clove_report_console_test_executed(__clove_report_t* _this, __clove_suite_t* suite, __clove_test_t* test, size_t test_number) {
@@ -1838,7 +2096,7 @@ void __clove_report_console_test_executed(__clove_report_t* _this, __clove_suite
     if (test->result == __CLOVE_TEST_RESULT_PASSED) {
         float millis = (float)(__clove_time_to_nanos(&(test->duration))) / (float)__CLOVE_TIME_TRASL_NANOS_PER_MILLIS;
         int decimal = millis > 1.f ? 0 : 3;
-        printf("%s %s%s (%.*f ms)\n", report->labels.info, result, report->labels.pass, decimal, millis);
+        report->stream->writef(report->stream, "%s %s%s (%.*f ms)\n", report->labels.info, result, report->labels.pass, decimal, millis);
     }
     else if (test->result == __CLOVE_TEST_RESULT_FAILED) {
         char msg[__CLOVE_STRING_LENGTH] = "FAILURE but NO MESSAGE!!!";
@@ -1958,10 +2216,10 @@ void __clove_report_console_test_executed(__clove_report_t* _this, __clove_suite
                 break;
             }
         }
-        printf("%s %s%s => %s@%d: %s\n", report->labels.erro, result, report->labels.fail, test->file_name, test->issue.line, msg);
+        report->stream->writef(report->stream, "%s %s%s => %s@%d: %s\n", report->labels.erro, result, report->labels.fail, test->file_name, test->issue.line, msg);
     }
     else if (test->result == __CLOVE_TEST_RESULT_SKIPPED) {
-        printf("%s %s%s\n", report->labels.warn, result, report->labels.skip);
+        report->stream->writef(report->stream, "%s %s%s\n", report->labels.warn, result, report->labels.skip);
     }
 }
 
@@ -1998,62 +2256,18 @@ void __clove_report_console_pad_right(char* result, char* strToPad) {
     // .* => precision, exact length of the string taken from the padding string
     __clove_string_sprintf(result, __CLOVE_STRING_LENGTH, "%s%*.*s", strToPad, padLen, padLen, padding);  // LEFT Padding 
 }
-
-#ifdef _WIN32
-#include <windows.h>
-#include <stdbool.h>
-#ifndef ENABLE_VIRTUAL_TERMINAL_PROCESSING
-#define ENABLE_VIRTUAL_TERMINAL_PROCESSING  0x0004
-#endif
-bool __clove_report_console_setup_ansi() {
-    DWORD outMode = 0, inMode = 0;
-    HANDLE stdoutHandle = GetStdHandle(STD_OUTPUT_HANDLE);
-    HANDLE stdinHandle = GetStdHandle(STD_INPUT_HANDLE);
-
-    if (stdoutHandle == INVALID_HANDLE_VALUE || stdinHandle == INVALID_HANDLE_VALUE) {
-        //exit(GetLastError());
-        return false;
-    }
-
-    if (!GetConsoleMode(stdoutHandle, &outMode) || !GetConsoleMode(stdinHandle, &inMode)) {
-        //exit(GetLastError());
-        return false;
-    }
-
-    DWORD outModeInit = outMode;
-    DWORD inModeInit = inMode;
-
-    // Enable ANSI escape codes
-    outMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-
-    // Set stdin as no echo and unbuffered
-    inMode &= ~(ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT);
-
-    if (!SetConsoleMode(stdoutHandle, outMode) || !SetConsoleMode(stdinHandle, inMode)) {
-        //exit(GetLastError());
-        return false;
-    }
-    return true;
-}
-#else
-#include <stdbool.h>
-bool __clove_report_console_setup_ansi() {
-    /* Nothing to do at the moment for other OS */
-    return true;
-}
-#endif //_WIN32
 #pragma endregion // Report Console Impl
 
 #pragma region PRIVATE - Report Json Impl
 #include <stdio.h>
 #include <stdlib.h>
-__clove_report_json_t* __clove_report_json_new(const char* file_path, const char* clove_version) {
+__clove_report_json_t* __clove_report_json_new(__clove_stream_t* stream, const char* clove_version) {
     __clove_report_json_t* result = __CLOVE_MEMORY_MALLOC_TYPE(__clove_report_json_t);
     result->base.start = __clove_report_json_start;
     result->base.end = __clove_report_json_end;
     result->base.test_executed = __clove_report_json_test_executed;
     result->base.free = __clove_report_json_free;
-    result->file_path = file_path;
+    result->stream = stream;
     result->clove_version = clove_version;
     result->api_version = 1;
     result->current_suite = NULL;
@@ -2068,16 +2282,16 @@ void __clove_report_json_free(__clove_report_t* report) {
 void __clove_report_json_start(__clove_report_t* _this, size_t suite_count, size_t test_count) {
     __clove_report_json_t* instance = (__clove_report_json_t*)_this;
 
-    instance->file = __clove_file_open(instance->file_path, "wb"); //binary mode so \n will stay \n (and not converted to \r\n on windows)
-    if (instance->file == NULL) { printf("ERROR OPENING FILE: %s\n", instance->file_path); }
+    bool opened = instance->stream->open(instance->stream);
+    if (!opened) { __clove_console_printf("ERROR OPENING STREAM\n"); } //TODO: ToString stream
 
-    fprintf(instance->file, "{\n");
-    fprintf(instance->file, "\t\"clove_version\" : \"%s\",\n", instance->clove_version);
-    fprintf(instance->file, "\t\"api_version\" : %u,\n", instance->api_version);
-    fprintf(instance->file, "\t\"result\" : {\n");
-    fprintf(instance->file, "\t\t\"suite_count\" : %zu,\n", suite_count);
-    fprintf(instance->file, "\t\t\"test_count\" : %zu,\n", test_count);
-    fprintf(instance->file, "\t\t\"suites\" : {\n");
+    instance->stream->writef(instance->stream, "{\n");
+    instance->stream->writef(instance->stream, "\t\"clove_version\" : \"%s\",\n", instance->clove_version);
+    instance->stream->writef(instance->stream, "\t\"api_version\" : %u,\n", instance->api_version);
+    instance->stream->writef(instance->stream, "\t\"result\" : {\n");
+    instance->stream->writef(instance->stream, "\t\t\"suite_count\" : %zu,\n", suite_count);
+    instance->stream->writef(instance->stream, "\t\t\"test_count\" : %zu,\n", test_count);
+    instance->stream->writef(instance->stream, "\t\t\"suites\" : {\n");
 }
 
 void __clove_report_json_end(__clove_report_t* _this, size_t test_count, size_t passed, size_t skipped, size_t failed) {
@@ -2088,71 +2302,71 @@ void __clove_report_json_end(__clove_report_t* _this, size_t test_count, size_t 
     else if (failed > 0) status = __CLOVE_TEST_RESULT_FAILED;
     else if (skipped > 0) status = __CLOVE_TEST_RESULT_SKIPPED;
 
-    fprintf(instance->file, "\t\t},\n"); //suites
-    fprintf(instance->file, "\t\t\"test_passed\" : %zu,\n", passed);
-    fprintf(instance->file, "\t\t\"test_skipped\" : %zu,\n", skipped);
-    fprintf(instance->file, "\t\t\"test_failed\" : %zu,\n", failed);
-    fprintf(instance->file, "\t\t\"status\" : %d\n", status);
-    fprintf(instance->file, "\t}\n"); //result
-    fprintf(instance->file, "}"); //object
+    instance->stream->writef(instance->stream, "\t\t},\n"); //suites
+    instance->stream->writef(instance->stream, "\t\t\"test_passed\" : %zu,\n", passed);
+    instance->stream->writef(instance->stream, "\t\t\"test_skipped\" : %zu,\n", skipped);
+    instance->stream->writef(instance->stream, "\t\t\"test_failed\" : %zu,\n", failed);
+    instance->stream->writef(instance->stream, "\t\t\"status\" : %d\n", status);
+    instance->stream->writef(instance->stream, "\t}\n"); //result
+    instance->stream->writef(instance->stream, "}"); //object
 
-    fclose(instance->file);
+    instance->stream->close(instance->stream);
 }
 
 void __clove_report_json_print_data(__clove_report_json_t* instance, __clove_test_t* test, __clove_generic_u* data) {
     if (test->issue.assert == __CLOVE_ASSERT_FAIL) {
-        fprintf(instance->file, "%s", ""); \
+        instance->stream->writef(instance->stream, "%s", ""); \
     }
     else {
         switch (test->issue.data_type)
         {
         case __CLOVE_GENERIC_BOOL:\
-            fprintf(instance->file, "%s", data->_bool ? "true" : "false");
+            instance->stream->writef(instance->stream, "%s", data->_bool ? "true" : "false");
             break;
         case __CLOVE_GENERIC_CHAR: {
-            fprintf(instance->file, "%c", data->_char);
+            instance->stream->writef(instance->stream, "%c", data->_char);
             break;
         }
         case __CLOVE_GENERIC_INT: {
-            fprintf(instance->file, "%d", data->_int);
+            instance->stream->writef(instance->stream, "%d", data->_int);
             break;
         }
         case __CLOVE_GENERIC_UINT: {
-            fprintf(instance->file, "%u", data->_uint);
+            instance->stream->writef(instance->stream, "%u", data->_uint);
             break;
         }
         case __CLOVE_GENERIC_LONG: {
-            fprintf(instance->file, "%ld", data->_long);
+            instance->stream->writef(instance->stream, "%ld", data->_long);
             break;
         }
         case __CLOVE_GENERIC_ULONG: {
-            fprintf(instance->file, "%lu", data->_ulong);
+            instance->stream->writef(instance->stream, "%lu", data->_ulong);
             break;
         }
         case __CLOVE_GENERIC_LLONG: {
-            fprintf(instance->file, "%lld", data->_llong);
+            instance->stream->writef(instance->stream, "%lld", data->_llong);
             break;
         }
         case __CLOVE_GENERIC_ULLONG: {
-            fprintf(instance->file, "%llu", data->_ullong);
+            instance->stream->writef(instance->stream, "%llu", data->_ullong);
             break;
         }
         case __CLOVE_GENERIC_FLOAT: {
-            fprintf(instance->file, "%f", data->_float);
+            instance->stream->writef(instance->stream, "%f", data->_float);
             break;
         }
         case __CLOVE_GENERIC_DOUBLE: {
-            fprintf(instance->file, "%f", data->_double);
+            instance->stream->writef(instance->stream, "%f", data->_double);
             break;
         }
         case __CLOVE_GENERIC_STRING: {
             char* escaped = __clove_string_escape(data->_string);
-            fprintf(instance->file, "%s", escaped);
+            instance->stream->writef(instance->stream, "%s", escaped);
             free(escaped);
             break;
         }
         case __CLOVE_GENERIC_PTR: {
-            fprintf(instance->file, "%p", data->_ptr);
+            instance->stream->writef(instance->stream, "%p", data->_ptr);
             break;
         }
         default:
@@ -2165,18 +2379,19 @@ void __clove_report_json_test_executed(__clove_report_t* _this, __clove_suite_t*
     __clove_report_json_t* instance = (__clove_report_json_t*)_this;
     //case for suites > 1
     if (instance->current_suite != NULL && instance->current_suite != suite) {
-        fseek(instance->file, -1L, SEEK_CUR); //replacing "\n" with ",\n"
-        fprintf(instance->file, ",\n");
+        //TODO: try to avoid to seek within stream (to make it work easily with console)
+        instance->stream->seek(instance->stream, -1L, SEEK_CUR); //replacing "\n" with ",\n"
+        instance->stream->writef(instance->stream, ",\n");
     }
 
     if (instance->current_suite == NULL || instance->current_suite != suite) {
         char* escaped_file = __clove_string_strdup(test->file_name);
         __clove_string_replace_char(escaped_file, '\\', '/');
 
-        fprintf(instance->file, "\t\t\t\"%s\" : {\n", suite->name);
-        fprintf(instance->file, "\t\t\t\t\"_data\" : {\n");
-        fprintf(instance->file, "\t\t\t\t\t\"file\" : \"%s\"\n", escaped_file);
-        fprintf(instance->file, "\t\t\t\t},\n");
+        instance->stream->writef(instance->stream, "\t\t\t\"%s\" : {\n", suite->name);
+        instance->stream->writef(instance->stream, "\t\t\t\t\"_data\" : {\n");
+        instance->stream->writef(instance->stream, "\t\t\t\t\t\"file\" : \"%s\"\n", escaped_file);
+        instance->stream->writef(instance->stream, "\t\t\t\t},\n");
         instance->current_suite = suite;
         instance->test_count = 0;
 
@@ -2184,33 +2399,33 @@ void __clove_report_json_test_executed(__clove_report_t* _this, __clove_suite_t*
     }
 
     instance->test_count++;
-    fprintf(instance->file, "\t\t\t\t\"%s\" : {\n", test->name);
-    fprintf(instance->file, "\t\t\t\t\t\"status\" : %d,\n", test->result);
-    fprintf(instance->file, "\t\t\t\t\t\"duration\" : %llu", __clove_time_to_nanos(&(test->duration)));
+    instance->stream->writef(instance->stream, "\t\t\t\t\"%s\" : {\n", test->name);
+    instance->stream->writef(instance->stream, "\t\t\t\t\t\"status\" : %d,\n", test->result);
+    instance->stream->writef(instance->stream, "\t\t\t\t\t\"duration\" : %llu", __clove_time_to_nanos(&(test->duration)));
     if (test->result == __CLOVE_TEST_RESULT_FAILED) {
-        fprintf(instance->file, ",\n");
-        fprintf(instance->file, "\t\t\t\t\t\"line\" : %u,\n", test->issue.line);
-        fprintf(instance->file, "\t\t\t\t\t\"assert\" : %d,\n", test->issue.assert);
-        fprintf(instance->file, "\t\t\t\t\t\"type\" : %d,\n", test->issue.data_type);
-        fprintf(instance->file, "\t\t\t\t\t\"expected\" : \"");
+        instance->stream->writef(instance->stream, ",\n");
+        instance->stream->writef(instance->stream, "\t\t\t\t\t\"line\" : %u,\n", test->issue.line);
+        instance->stream->writef(instance->stream, "\t\t\t\t\t\"assert\" : %d,\n", test->issue.assert);
+        instance->stream->writef(instance->stream, "\t\t\t\t\t\"type\" : %d,\n", test->issue.data_type);
+        instance->stream->writef(instance->stream, "\t\t\t\t\t\"expected\" : \"");
         __clove_report_json_print_data(instance, test, &(test->issue.expected));
-        fprintf(instance->file, "\",\n");
-        fprintf(instance->file, "\t\t\t\t\t\"actual\" : \"");
+        instance->stream->writef(instance->stream, "\",\n");
+        instance->stream->writef(instance->stream, "\t\t\t\t\t\"actual\" : \"");
         __clove_report_json_print_data(instance, test, &(test->issue.actual));
-        fprintf(instance->file, "\"\n");
+        instance->stream->writef(instance->stream, "\"\n");
     }
     else {
-        fprintf(instance->file, "\n");
+        instance->stream->writef(instance->stream, "\n");
     }
-    fprintf(instance->file, "\t\t\t\t}");
+    instance->stream->writef(instance->stream, "\t\t\t\t}");
 
 
     if (instance->test_count < suite->test_count) {
-        fprintf(instance->file, ",\n");
+        instance->stream->writef(instance->stream, ",\n");
     }
     else {
-        fprintf(instance->file, "\n");
-        fprintf(instance->file, "\t\t\t}\n"); //close suite
+        instance->stream->writef(instance->stream, "\n");
+        instance->stream->writef(instance->stream, "\t\t\t}\n"); //close suite
     }
 }
 #pragma endregion // Report Json Impl
@@ -2224,7 +2439,7 @@ int __clove_report_list_test_execute(__clove_suite_t* suites, size_t suite_count
             __clove_test_t* each_test = (__clove_test_t*)__clove_vector_get(&each_suite->tests, j);
             each_test->dry_run = true;
             each_test->funct(each_test);
-            printf("%s,%s,%s,%zu\n", each_suite->name, each_test->name, each_test->file_name, each_test->funct_line);
+            __clove_console_printf("%s,%s,%s,%zu\n", each_suite->name, each_test->name, each_test->file_name, each_test->funct_line);
         }
     }
     return 0;
@@ -2723,6 +2938,8 @@ int __clove_runner_auto(int argc, char* argv[]) {
     //argc = 3;
     //char* argv2[] = {"exec", "-r", "console", "-i", "StringViewTest.Length"};
     //const char* argv2[] = {"exec", "-e", "String*"};
+    //const char* argv2[] = {"exec", "-i", "*.OptDashWithTwoLetter"};
+    //argc = 3;
 
     __clove_vector_t cmd_handlers;
     __CLOVE_VECTOR_INIT(&cmd_handlers, __clove_cmdline_handler_f);
@@ -2734,7 +2951,7 @@ int __clove_runner_auto(int argc, char* argv[]) {
 
     __clove_cmdline_errno_t cmd_result = __CLOVE_CMD_ERRNO_INVALID_PARAM;
     __clove_cmdline_t cmdline;
-    __clove_cmdline_init(&cmdline, argv, argc);
+    __clove_cmdline_init(&cmdline, (const char**)argv, argc);
 
     __CLOVE_VECTOR_FOREACH(&cmd_handlers, __clove_cmdline_handler_f, handler, {
         __clove_cmdline_errno_t result = (*handler)(&cmdline);
@@ -2786,7 +3003,6 @@ int __clove_run_tests_with_report(__clove_report_t* report, __clove_vector_t* in
 
 int __clove_exec_suites(__clove_suite_t* suites, size_t suite_count, size_t test_count, __clove_report_t* report) {
     report->start(report, suite_count, test_count);
-
     size_t passed = 0;
     size_t failed = 0;
     size_t skipped = 0;

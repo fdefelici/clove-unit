@@ -109,7 +109,8 @@ bool file_exists(const char* path) {
  */
 
 void file_delete(const char* path) {
-    remove(path);
+    if (file_exists(path))
+        remove(path);
 }
 
 //NOTE: Dangerous if in future will run test multithreaded

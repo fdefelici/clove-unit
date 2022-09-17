@@ -156,18 +156,21 @@ A binary built with `CLove-Unit` library supports a set of commandline options:
 | Option | Description |
 | ------------- | ------------- |
 | \<no-option\>  | Running executable with no args will produce a verbose console report (default) |
-| -e, --exclude `SELECT_PATTERN` | Exclude tests to be run/listed<br /> (can be repeated more than once)<br /> [[read here for more details](#test-inclusionexclusion)] |
+| -e, --exclude \<expr\> | Exclude tests to be run/listed<br /> (can be repeated more than once)<br /> [[read here for more details](#test-inclusionexclusion)] |
 | -h, --help | Display usage information |
-| -i, --include `SELECT_PATTERN` | Include tests to be run/listed<br /> (can be repeated more than once)<br /> [[read here for more details](#test-inclusionexclusion)]|
+| -i, --include \<expr\> | Include tests to be run/listed<br /> (can be repeated more than once)<br /> [[read here for more details](#test-inclusionexclusion)]|
 | -l, --list-tests | List all/matching test cases in CSV format: <SuiteName,TestName,SourcePath,TestLine><br />Accepts inclusion/exclusion expression|
-| -v, --version | Show CLove-Unit version|
+| -o, --output \<stream\> | Specify output stream for a report. Possible choise: `stdout` (default) or `<file path>` |
+| -r, --report \<format\> | Specify report format when running tests. Possible choise: `console`, `json` |
+| -v, --version | Show CLove-Unit version |
 | -x, --error-on-test-fail | Test run process will end with error in case of test failure. Default is to end the process succesfully |
 
 ## Test Inclusion/Exclusion
 Inclusion/Exclusion options are useful to collect a specific subset of Suite/Tests and can be repeated more the once in the commandline.
+
 > NOTE: If both inclusion and exclusion options are provided, the inclusion pattern always wins over the exclusion one.
 
-The `SELECT_PATTERN` works as follow:
+These options allow to specify an expression that works as follow:
 * Basic: `SuiteName.TestName`
 * Wildcard: Only `*` is supported, and can be used to implement pattern such as "start with", "end with", "contains", "all", for both the SuiteName and TestName
 
