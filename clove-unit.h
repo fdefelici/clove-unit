@@ -39,6 +39,18 @@ extern char* __clove_exec_path;
 extern char* __clove_exec_base_path;
 __CLOVE_EXTERN_C const char* __clove_get_exec_base_path();
 __CLOVE_EXTERN_C const char* __clove_get_exec_path();
+
+
+//Switch implementation for pointer types
+#define __CLOVE_SWITCH_BEG(X) \
+    { \
+        size_t* expr = (size_t*)(size_t)X; \
+        if (false)  { }
+#define __CLOVE_SWITCH_CASE(Y) \
+    else if (expr == (size_t*)(size_t)Y)
+#define __CLOVE_SWITCH_DEFAULT() \
+    else 
+#define __CLOVE_SWITCH_END() }
 #pragma endregion // Utils Decl
 
 #pragma region PRIVATE - Path Decl
@@ -344,6 +356,7 @@ typedef union __clove_generic_u {
     void* _ptr;
 } __clove_generic_u;
 
+/* TODO: Delete in favor of a crazy custom implementation of string enum... (See below)
 typedef enum __clove_generic_type_e {
     __CLOVE_GENERIC_BOOL = 1,
     __CLOVE_GENERIC_CHAR = 2,
@@ -370,6 +383,55 @@ typedef enum __clove_test_result_e {
     __CLOVE_TEST_RESULT_FAILED = 2,
     __CLOVE_TEST_RESULT_SKIPPED = 3
 } __clove_test_result_e;
+*/
+
+/* Custom String Enum for Generic Type */
+typedef const char* __clove_generic_type_e;
+extern const char* __CLOVE_GENERIC_BOOL;
+extern const char* __CLOVE_GENERIC_CHAR;
+extern const char* __CLOVE_GENERIC_INT;
+extern const char* __CLOVE_GENERIC_UINT;
+extern const char* __CLOVE_GENERIC_LONG;
+extern const char* __CLOVE_GENERIC_ULONG;
+extern const char* __CLOVE_GENERIC_LLONG;
+extern const char* __CLOVE_GENERIC_ULLONG;
+extern const char* __CLOVE_GENERIC_FLOAT;
+extern const char* __CLOVE_GENERIC_DOUBLE;
+extern const char* __CLOVE_GENERIC_STRING;
+extern const char* __CLOVE_GENERIC_PTR;
+#define __CLOVE_GENERIC_TYPE_E_DECL() \
+    const char* __CLOVE_GENERIC_BOOL = "BOOL"; \
+    const char* __CLOVE_GENERIC_CHAR   = "CHAR"; \
+    const char* __CLOVE_GENERIC_INT    = "INT"; \
+    const char* __CLOVE_GENERIC_UINT   = "UINT"; \
+    const char* __CLOVE_GENERIC_LONG   = "LONG"; \
+    const char* __CLOVE_GENERIC_ULONG  = "ULONG"; \
+    const char* __CLOVE_GENERIC_LLONG  = "LLONG"; \
+    const char* __CLOVE_GENERIC_ULLONG = "ULLONG"; \
+    const char* __CLOVE_GENERIC_FLOAT  = "FLOAT"; \
+    const char* __CLOVE_GENERIC_DOUBLE = "DOUBLE"; \
+    const char* __CLOVE_GENERIC_STRING = "STRING"; \
+    const char* __CLOVE_GENERIC_PTR    = "PTR"; 
+    
+/* Custom String Enum for Assert Check */
+typedef const char*  __clove_assert_check_e;
+extern const char* __CLOVE_ASSERT_EQ;
+extern const char* __CLOVE_ASSERT_NE;
+extern const char* __CLOVE_ASSERT_FAIL;
+#define __CLOVE_ASSERT_CHECK_E_DECL() \
+    const char* __CLOVE_ASSERT_EQ   = "EQ";\
+    const char* __CLOVE_ASSERT_NE   = "NE";\
+    const char* __CLOVE_ASSERT_FAIL = "FAIL";
+
+/* Custom String Enum for Test Result */
+typedef const char* __clove_test_result_e;
+extern const char* __CLOVE_TEST_RESULT_PASSED;
+extern const char* __CLOVE_TEST_RESULT_SKIPPED;
+extern const char* __CLOVE_TEST_RESULT_FAILED;
+#define __CLOVE_TEST_RESULT_E_DECL() \
+    const char* __CLOVE_TEST_RESULT_PASSED  = "PASS";\
+    const char* __CLOVE_TEST_RESULT_FAILED  = "FAIL";\
+    const char* __CLOVE_TEST_RESULT_SKIPPED = "SKIP";
 
 typedef struct __clove_test_t {
     char* name;
@@ -2105,116 +2167,101 @@ void __clove_report_console_test_executed(__clove_report_t* _this, __clove_suite
             __clove_string_sprintf(msg, sizeof(msg), "%s", "A FAIL assertion was met!");
         }
         else {
-            switch (test->issue.data_type)
-            {
-            case __CLOVE_GENERIC_BOOL: {
-                const char* exp = test->issue.expected._bool ? "true" : "false";
-                const char* act = test->issue.actual._bool ? "true" : "false";
-                __clove_string_sprintf(msg, sizeof(msg), "expected [%s] but was [%s]", exp, act);
-                break;
-            }
-            case __CLOVE_GENERIC_CHAR: {
-                const char* non = test->issue.assert == __CLOVE_ASSERT_EQ ? "" : "not ";
-                const char exp = test->issue.expected._char;
-                const char act = test->issue.actual._char;
-                __clove_string_sprintf(msg, sizeof(msg), "%sexpected [%c] but was [%c]", non, exp, act);
-                break;
-            }
-            case __CLOVE_GENERIC_INT: {
-                const char* non = test->issue.assert == __CLOVE_ASSERT_EQ ? "" : "not ";
-                const int exp = test->issue.expected._int;
-                const int act = test->issue.actual._int;
-                __clove_string_sprintf(msg, sizeof(msg), "%sexpected [%d] but was [%d]", non, exp, act);
-                break;
-            }
-            case __CLOVE_GENERIC_UINT: {
-                const char* non = test->issue.assert == __CLOVE_ASSERT_EQ ? "" : "not ";
-                const unsigned int exp = test->issue.expected._uint;
-                const unsigned int act = test->issue.actual._uint;
-                __clove_string_sprintf(msg, sizeof(msg), "%sexpected [%u] but was [%u]", non, exp, act);
-                break;
-            }
-            case __CLOVE_GENERIC_LONG: {
-                const char* non = test->issue.assert == __CLOVE_ASSERT_EQ ? "" : "not ";
-                const long exp = test->issue.expected._long;
-                const long act = test->issue.actual._long;
-                __clove_string_sprintf(msg, sizeof(msg), "%sexpected [%ld] but was [%ld]", non, exp, act);
-                break;
-            }
-            case __CLOVE_GENERIC_ULONG: {
-                const char* non = test->issue.assert == __CLOVE_ASSERT_EQ ? "" : "not ";
-                const unsigned long exp = test->issue.expected._ulong;
-                const unsigned long act = test->issue.actual._ulong;
-                __clove_string_sprintf(msg, sizeof(msg), "%sexpected [%lu] but was [%lu]", non, exp, act);
-                break;
-            }
-            case __CLOVE_GENERIC_LLONG: {
-                const char* non = test->issue.assert == __CLOVE_ASSERT_EQ ? "" : "not ";
-                const long long exp = test->issue.expected._llong;
-                const long long act = test->issue.actual._llong;
-                __clove_string_sprintf(msg, sizeof(msg), "%sexpected [%lld] but was [%lld]", non, exp, act);
-                break;
-            }
-            case __CLOVE_GENERIC_ULLONG: {
-                const char* non = test->issue.assert == __CLOVE_ASSERT_EQ ? "" : "not ";
-                const unsigned long long exp = test->issue.expected._ullong;
-                const unsigned long long act = test->issue.actual._ullong;
-                __clove_string_sprintf(msg, sizeof(msg), "%sexpected [%llu] but was [%llu]", non, exp, act);
-                break;
-            }
-            case __CLOVE_GENERIC_FLOAT: {
-                const char* non = test->issue.assert == __CLOVE_ASSERT_EQ ? "" : "not ";
-                const float exp = test->issue.expected._float;
-                const float act = test->issue.actual._float;
-                __clove_string_sprintf(msg, sizeof(msg), "%sexpected [%f] but was [%f]", non, exp, act);
-                break;
-            }
-            case __CLOVE_GENERIC_DOUBLE: {
-                const char* non = test->issue.assert == __CLOVE_ASSERT_EQ ? "" : "not ";
-                const double exp = test->issue.expected._double;
-                const double act = test->issue.actual._double;
-                __clove_string_sprintf(msg, sizeof(msg), "%sexpected [%f] but was [%f]", non, exp, act);
-                break;
-            }
-            case __CLOVE_GENERIC_STRING: {
-                const char* non = test->issue.assert == __CLOVE_ASSERT_EQ ? "" : "not ";
-                const char* exp = test->issue.expected._string;
-                const char* act = test->issue.actual._string;
-
-                const size_t max_len = 16;
-                const size_t exp_len = __clove_string_length(exp);
-                const size_t act_len = __clove_string_length(act);
-
-                if (exp_len <= max_len && act_len <= max_len) {
-                    char* exp_escaped = __clove_string_escape(exp);
-                    char* act_escaped = __clove_string_escape(act);
-                    __clove_string_sprintf(msg, sizeof(msg), "%sexpected \"%s\" but was \"%s\"", non, exp_escaped, act_escaped);
-                    free(exp_escaped);
-                    free(act_escaped);
+            __CLOVE_SWITCH_BEG(test->issue.data_type)
+                __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_BOOL) {
+                    const char* exp = test->issue.expected._bool ? "true" : "false";
+                    const char* act = test->issue.actual._bool ? "true" : "false";
+                    __clove_string_sprintf(msg, sizeof(msg), "expected [%s] but was [%s]", exp, act);
                 }
-                else {
-                    char exp_short[16];
-                    char act_short[16];
-                    __clove_report_console_string_ellipse(exp, exp_len, act, act_len, exp_short, act_short, 16);
-
-                    char* exp_escaped = __clove_string_escape(exp_short);
-                    char* act_escaped = __clove_string_escape(act_short);
-                    __clove_string_sprintf(msg, sizeof(msg), "%sexpected [%zu]\"%s\" but was [%zu]\"%s\"", non, exp_len, exp_escaped, act_len, act_escaped);
-                    free(exp_escaped);
-                    free(act_escaped);
+                __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_CHAR) {
+                    const char* non = test->issue.assert == __CLOVE_ASSERT_EQ ? "" : "not ";
+                    const char exp = test->issue.expected._char;
+                    const char act = test->issue.actual._char;
+                    __clove_string_sprintf(msg, sizeof(msg), "%sexpected [%c] but was [%c]", non, exp, act);
                 }
-                break;
-            }
-            case __CLOVE_GENERIC_PTR: {
-                const char* non = test->issue.assert == __CLOVE_ASSERT_EQ ? "" : "not ";
-                const void* exp = test->issue.expected._ptr;
-                const void* act = test->issue.actual._ptr;
-                __clove_string_sprintf(msg, sizeof(msg), "%sexpected [%p] but was [%p]", non, exp, act);
-                break;
-            }
-            default:
-                break;
-            }
+                __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_INT) {
+                    const char* non = test->issue.assert == __CLOVE_ASSERT_EQ ? "" : "not ";
+                    const int exp = test->issue.expected._int;
+                    const int act = test->issue.actual._int;
+                    __clove_string_sprintf(msg, sizeof(msg), "%sexpected [%d] but was [%d]", non, exp, act);
+                }
+                __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_UINT) {
+                    const char* non = test->issue.assert == __CLOVE_ASSERT_EQ ? "" : "not ";
+                    const unsigned int exp = test->issue.expected._uint;
+                    const unsigned int act = test->issue.actual._uint;
+                    __clove_string_sprintf(msg, sizeof(msg), "%sexpected [%u] but was [%u]", non, exp, act);
+                }
+                __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_LONG) {
+                    const char* non = test->issue.assert == __CLOVE_ASSERT_EQ ? "" : "not ";
+                    const long exp = test->issue.expected._long;
+                    const long act = test->issue.actual._long;
+                    __clove_string_sprintf(msg, sizeof(msg), "%sexpected [%ld] but was [%ld]", non, exp, act);
+                }
+                __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_ULONG) {
+                    const char* non = test->issue.assert == __CLOVE_ASSERT_EQ ? "" : "not ";
+                    const unsigned long exp = test->issue.expected._ulong;
+                    const unsigned long act = test->issue.actual._ulong;
+                    __clove_string_sprintf(msg, sizeof(msg), "%sexpected [%lu] but was [%lu]", non, exp, act);
+                }
+                __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_LLONG) {
+                    const char* non = test->issue.assert == __CLOVE_ASSERT_EQ ? "" : "not ";
+                    const long long exp = test->issue.expected._llong;
+                    const long long act = test->issue.actual._llong;
+                    __clove_string_sprintf(msg, sizeof(msg), "%sexpected [%lld] but was [%lld]", non, exp, act);
+                }
+                __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_ULLONG) {
+                    const char* non = test->issue.assert == __CLOVE_ASSERT_EQ ? "" : "not ";
+                    const unsigned long long exp = test->issue.expected._ullong;
+                    const unsigned long long act = test->issue.actual._ullong;
+                    __clove_string_sprintf(msg, sizeof(msg), "%sexpected [%llu] but was [%llu]", non, exp, act);
+                }
+                __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_FLOAT) {
+                    const char* non = test->issue.assert == __CLOVE_ASSERT_EQ ? "" : "not ";
+                    const float exp = test->issue.expected._float;
+                    const float act = test->issue.actual._float;
+                    __clove_string_sprintf(msg, sizeof(msg), "%sexpected [%f] but was [%f]", non, exp, act);
+                }
+                __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_DOUBLE) {
+                    const char* non = test->issue.assert == __CLOVE_ASSERT_EQ ? "" : "not ";
+                    const double exp = test->issue.expected._double;
+                    const double act = test->issue.actual._double;
+                    __clove_string_sprintf(msg, sizeof(msg), "%sexpected [%f] but was [%f]", non, exp, act);
+                }
+                __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_STRING) {
+                    const char* non = test->issue.assert == __CLOVE_ASSERT_EQ ? "" : "not ";
+                    const char* exp = test->issue.expected._string;
+                    const char* act = test->issue.actual._string;
+
+                    const size_t max_len = 16;
+                    const size_t exp_len = __clove_string_length(exp);
+                    const size_t act_len = __clove_string_length(act);
+
+                    if (exp_len <= max_len && act_len <= max_len) {
+                        char* exp_escaped = __clove_string_escape(exp);
+                        char* act_escaped = __clove_string_escape(act);
+                        __clove_string_sprintf(msg, sizeof(msg), "%sexpected \"%s\" but was \"%s\"", non, exp_escaped, act_escaped);
+                        free(exp_escaped);
+                        free(act_escaped);
+                    }
+                    else {
+                        char exp_short[16];
+                        char act_short[16];
+                        __clove_report_console_string_ellipse(exp, exp_len, act, act_len, exp_short, act_short, 16);
+
+                        char* exp_escaped = __clove_string_escape(exp_short);
+                        char* act_escaped = __clove_string_escape(act_short);
+                        __clove_string_sprintf(msg, sizeof(msg), "%sexpected [%zu]\"%s\" but was [%zu]\"%s\"", non, exp_len, exp_escaped, act_len, act_escaped);
+                        free(exp_escaped);
+                        free(act_escaped);
+                    }
+                }
+                __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_PTR) {
+                    const char* non = test->issue.assert == __CLOVE_ASSERT_EQ ? "" : "not ";
+                    const void* exp = test->issue.expected._ptr;
+                    const void* act = test->issue.actual._ptr;
+                    __clove_string_sprintf(msg, sizeof(msg), "%sexpected [%p] but was [%p]", non, exp, act);
+                }
+            __CLOVE_SWITCH_END()
         }
         report->stream->writef(report->stream, "%s %s%s => %s@%d: %s\n", report->labels.erro, result, report->labels.fail, test->file_name, test->issue.line, msg);
     }
@@ -2297,7 +2344,7 @@ void __clove_report_json_start(__clove_report_t* _this, size_t suite_count, size
 void __clove_report_json_end(__clove_report_t* _this, size_t test_count, size_t passed, size_t skipped, size_t failed) {
     __clove_report_json_t* instance = (__clove_report_json_t*)_this;
 
-    int status = -1;
+    const char* status = "UNKNOWN";
     if (passed == test_count) status = __CLOVE_TEST_RESULT_PASSED;
     else if (failed > 0) status = __CLOVE_TEST_RESULT_FAILED;
     else if (skipped > 0) status = __CLOVE_TEST_RESULT_SKIPPED;
@@ -2306,7 +2353,7 @@ void __clove_report_json_end(__clove_report_t* _this, size_t test_count, size_t 
     instance->stream->writef(instance->stream, "\t\t\"test_passed\" : %zu,\n", passed);
     instance->stream->writef(instance->stream, "\t\t\"test_skipped\" : %zu,\n", skipped);
     instance->stream->writef(instance->stream, "\t\t\"test_failed\" : %zu,\n", failed);
-    instance->stream->writef(instance->stream, "\t\t\"status\" : %d\n", status);
+    instance->stream->writef(instance->stream, "\t\t\"status\" : \"%s\"\n", status);
     instance->stream->writef(instance->stream, "\t}\n"); //result
     instance->stream->writef(instance->stream, "}"); //object
 
@@ -2315,63 +2362,37 @@ void __clove_report_json_end(__clove_report_t* _this, size_t test_count, size_t 
 
 void __clove_report_json_print_data(__clove_report_json_t* instance, __clove_test_t* test, __clove_generic_u* data) {
     if (test->issue.assert == __CLOVE_ASSERT_FAIL) {
-        instance->stream->writef(instance->stream, "%s", ""); \
-    }
-    else {
-        switch (test->issue.data_type)
-        {
-        case __CLOVE_GENERIC_BOOL:\
-            instance->stream->writef(instance->stream, "%s", data->_bool ? "true" : "false");
-            break;
-        case __CLOVE_GENERIC_CHAR: {
-            instance->stream->writef(instance->stream, "%c", data->_char);
-            break;
-        }
-        case __CLOVE_GENERIC_INT: {
-            instance->stream->writef(instance->stream, "%d", data->_int);
-            break;
-        }
-        case __CLOVE_GENERIC_UINT: {
-            instance->stream->writef(instance->stream, "%u", data->_uint);
-            break;
-        }
-        case __CLOVE_GENERIC_LONG: {
-            instance->stream->writef(instance->stream, "%ld", data->_long);
-            break;
-        }
-        case __CLOVE_GENERIC_ULONG: {
-            instance->stream->writef(instance->stream, "%lu", data->_ulong);
-            break;
-        }
-        case __CLOVE_GENERIC_LLONG: {
-            instance->stream->writef(instance->stream, "%lld", data->_llong);
-            break;
-        }
-        case __CLOVE_GENERIC_ULLONG: {
-            instance->stream->writef(instance->stream, "%llu", data->_ullong);
-            break;
-        }
-        case __CLOVE_GENERIC_FLOAT: {
-            instance->stream->writef(instance->stream, "%f", data->_float);
-            break;
-        }
-        case __CLOVE_GENERIC_DOUBLE: {
-            instance->stream->writef(instance->stream, "%f", data->_double);
-            break;
-        }
-        case __CLOVE_GENERIC_STRING: {
-            char* escaped = __clove_string_escape(data->_string);
-            instance->stream->writef(instance->stream, "%s", escaped);
-            free(escaped);
-            break;
-        }
-        case __CLOVE_GENERIC_PTR: {
-            instance->stream->writef(instance->stream, "%p", data->_ptr);
-            break;
-        }
-        default:
-            break;
-        }
+        instance->stream->writef(instance->stream, "%s", "");
+    } else {
+        __CLOVE_SWITCH_BEG(test->issue.data_type)
+            __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_BOOL)
+                instance->stream->writef(instance->stream, "%s", data->_bool ? "true" : "false");
+            __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_CHAR)
+                instance->stream->writef(instance->stream, "%c", data->_char);
+            __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_INT)
+                instance->stream->writef(instance->stream, "%d", data->_int);
+            __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_UINT)
+                instance->stream->writef(instance->stream, "%u", data->_uint);
+            __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_LONG)
+                instance->stream->writef(instance->stream, "%ld", data->_long);
+            __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_ULONG)
+                instance->stream->writef(instance->stream, "%lu", data->_ulong);
+            __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_LLONG)
+                instance->stream->writef(instance->stream, "%lld", data->_llong);
+            __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_ULLONG)
+                instance->stream->writef(instance->stream, "%llu", data->_ullong);
+            __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_FLOAT)
+                instance->stream->writef(instance->stream, "%f", data->_float);
+            __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_DOUBLE)
+                instance->stream->writef(instance->stream, "%f", data->_double);
+            __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_STRING) {
+                char* escaped = __clove_string_escape(data->_string);
+                instance->stream->writef(instance->stream, "%s", escaped);
+                free(escaped);
+            }
+            __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_PTR)
+                instance->stream->writef(instance->stream, "%p", data->_ptr);
+        __CLOVE_SWITCH_END()
     }
 }
 
@@ -2400,13 +2421,13 @@ void __clove_report_json_test_executed(__clove_report_t* _this, __clove_suite_t*
 
     instance->test_count++;
     instance->stream->writef(instance->stream, "\t\t\t\t\"%s\" : {\n", test->name);
-    instance->stream->writef(instance->stream, "\t\t\t\t\t\"status\" : %d,\n", test->result);
+    instance->stream->writef(instance->stream, "\t\t\t\t\t\"status\" : \"%s\",\n", test->result);
     instance->stream->writef(instance->stream, "\t\t\t\t\t\"duration\" : %llu", __clove_time_to_nanos(&(test->duration)));
     if (test->result == __CLOVE_TEST_RESULT_FAILED) {
         instance->stream->writef(instance->stream, ",\n");
         instance->stream->writef(instance->stream, "\t\t\t\t\t\"line\" : %u,\n", test->issue.line);
-        instance->stream->writef(instance->stream, "\t\t\t\t\t\"assert\" : %d,\n", test->issue.assert);
-        instance->stream->writef(instance->stream, "\t\t\t\t\t\"type\" : %d,\n", test->issue.data_type);
+        instance->stream->writef(instance->stream, "\t\t\t\t\t\"assert\" : \"%s\",\n", test->issue.assert);
+        instance->stream->writef(instance->stream, "\t\t\t\t\t\"type\" : \"%s\",\n", test->issue.data_type);
         instance->stream->writef(instance->stream, "\t\t\t\t\t\"expected\" : \"");
         __clove_report_json_print_data(instance, test, &(test->issue.expected));
         instance->stream->writef(instance->stream, "\",\n");
@@ -2916,6 +2937,9 @@ int __clove_symbols_for_each_function_by_prefix(__clove_symbols_context_t* conte
 #define __CLOVE_RUNNER_AUTO() \
 char* __clove_exec_path;\
 char* __clove_exec_base_path;\
+__CLOVE_ASSERT_CHECK_E_DECL() \
+__CLOVE_TEST_RESULT_E_DECL() \
+__CLOVE_GENERIC_TYPE_E_DECL() \
 int main(int argc, char* argv[]) {\
     return __clove_runner_auto(argc, argv);\
 }
@@ -2938,7 +2962,7 @@ int __clove_runner_auto(int argc, char* argv[]) {
     //argc = 3;
     //char* argv2[] = {"exec", "-r", "console", "-i", "StringViewTest.Length"};
     //const char* argv2[] = {"exec", "-e", "String*"};
-    //const char* argv2[] = {"exec", "-i", "*.OptDashWithTwoLetter"};
+    //const char* argv2[] = {"exec", "-i", "*.ReportOneSuiteWithTwoTests"};
     //argc = 3;
 
     __clove_vector_t cmd_handlers;
@@ -3032,22 +3056,12 @@ void __clove_exec_suite(__clove_suite_t* suite, size_t test_counter, size_t* pas
         __clove_time_t test_end = __clove_time_now();
         each_test->duration = __clove_time_sub(&test_end, &test_start);
 
-        switch (each_test->result) {
-        case __CLOVE_TEST_RESULT_PASSED: {
-            (*passed)++;
-            break;
-        }
-        case __CLOVE_TEST_RESULT_FAILED: {
-            (*failed)++;
-            break;
-        }
-        case __CLOVE_TEST_RESULT_SKIPPED: {
-            (*skipped)++;
-            break;
-        }
-        default:
-            break;
-        }
+        __CLOVE_SWITCH_BEG(each_test->result) 
+            __CLOVE_SWITCH_CASE(__CLOVE_TEST_RESULT_PASSED)  { (*passed)++; }
+            __CLOVE_SWITCH_CASE(__CLOVE_TEST_RESULT_FAILED)  { (*failed)++; }
+            __CLOVE_SWITCH_CASE(__CLOVE_TEST_RESULT_SKIPPED) { (*skipped)++;}
+        __CLOVE_SWITCH_END()
+
         report->test_executed(report, suite, each_test, test_counter + i);
     }
     suite->fixtures.teardown_once();

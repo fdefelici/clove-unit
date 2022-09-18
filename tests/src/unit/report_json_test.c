@@ -49,7 +49,7 @@ CLOVE_TEST(EmptyReport) {
     "\t\t\"test_passed\" : 0,\n"
     "\t\t\"test_skipped\" : 0,\n"
     "\t\t\"test_failed\" : 0,\n"
-    "\t\t\"status\" : 1\n"
+    "\t\t\"status\" : \"PASS\"\n"
     "\t}\n"
     "}";
 
@@ -89,7 +89,7 @@ CLOVE_TEST(ReportOneSuiteWithOnePassedTest) {
     "\t\t\t\t\t\"file\" : \"test-file.c\"\n"
     "\t\t\t\t},\n"
     "\t\t\t\t\"Test11\" : {\n"
-    "\t\t\t\t\t\"status\" : 1,\n"
+    "\t\t\t\t\t\"status\" : \"PASS\",\n"
     "\t\t\t\t\t\"duration\" : 100\n"
     "\t\t\t\t}\n"
     "\t\t\t}\n"
@@ -97,7 +97,7 @@ CLOVE_TEST(ReportOneSuiteWithOnePassedTest) {
     "\t\t\"test_passed\" : 1,\n"
     "\t\t\"test_skipped\" : 0,\n"
     "\t\t\"test_failed\" : 0,\n"
-    "\t\t\"status\" : 1\n"
+    "\t\t\"status\" : \"PASS\"\n"
     "\t}\n"
     "}";
 
@@ -150,15 +150,15 @@ CLOVE_TEST(ReportOneSuiteWithTwoTests) {
     "\t\t\t\t\t\"file\" : \"test-file.c\"\n"
     "\t\t\t\t},\n"
     "\t\t\t\t\"Test11\" : {\n"
-    "\t\t\t\t\t\"status\" : 1,\n"
+    "\t\t\t\t\t\"status\" : \"PASS\",\n"
     "\t\t\t\t\t\"duration\" : 100\n"
     "\t\t\t\t},\n"
     "\t\t\t\t\"Test12\" : {\n"
-    "\t\t\t\t\t\"status\" : 2,\n"
+    "\t\t\t\t\t\"status\" : \"FAIL\",\n"
     "\t\t\t\t\t\"duration\" : 100,\n"
     "\t\t\t\t\t\"line\" : 8,\n"
-    "\t\t\t\t\t\"assert\" : 1,\n"
-    "\t\t\t\t\t\"type\" : 1,\n"
+    "\t\t\t\t\t\"assert\" : \"EQ\",\n"
+    "\t\t\t\t\t\"type\" : \"BOOL\",\n"
     "\t\t\t\t\t\"expected\" : \"false\",\n"
     "\t\t\t\t\t\"actual\" : \"true\"\n"
     "\t\t\t\t}\n"
@@ -167,10 +167,9 @@ CLOVE_TEST(ReportOneSuiteWithTwoTests) {
     "\t\t\"test_passed\" : 3,\n"
     "\t\t\"test_skipped\" : 2,\n"
     "\t\t\"test_failed\" : 1,\n"
-    "\t\t\"status\" : 2\n"
+    "\t\t\"status\" : \"FAIL\"\n"
     "\t}\n"
     "}";
-    
     CLOVE_STRING_EQ(expected, actual);
 }
 
@@ -219,7 +218,7 @@ CLOVE_TEST(ReportTwoSuitesWithOnePassedTestEach) {
     "\t\t\t\t\t\"file\" : \"test-file.c\"\n"
     "\t\t\t\t},\n"
     "\t\t\t\t\"Test11\" : {\n"
-    "\t\t\t\t\t\"status\" : 1,\n"
+    "\t\t\t\t\t\"status\" : \"PASS\",\n"
     "\t\t\t\t\t\"duration\" : 100\n"
     "\t\t\t\t}\n"
     "\t\t\t},\n"
@@ -228,7 +227,7 @@ CLOVE_TEST(ReportTwoSuitesWithOnePassedTestEach) {
     "\t\t\t\t\t\"file\" : \"test-file2.c\"\n"
     "\t\t\t\t},\n"
     "\t\t\t\t\"Test21\" : {\n"
-    "\t\t\t\t\t\"status\" : 1,\n"
+    "\t\t\t\t\t\"status\" : \"PASS\",\n"
     "\t\t\t\t\t\"duration\" : 100\n"
     "\t\t\t\t}\n"
     "\t\t\t}\n"
@@ -236,7 +235,7 @@ CLOVE_TEST(ReportTwoSuitesWithOnePassedTestEach) {
     "\t\t\"test_passed\" : 2,\n"
     "\t\t\"test_skipped\" : 0,\n"
     "\t\t\"test_failed\" : 0,\n"
-    "\t\t\"status\" : 1\n"
+    "\t\t\"status\" : \"PASS\"\n"
     "\t}\n"
     "}";
 
