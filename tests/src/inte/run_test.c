@@ -152,3 +152,18 @@ CLOVE_TEST(DefaultReportWithOptOonFile) {
     free(report_path);
 }
 
+CLOVE_TEST(DefaultReportWithOptT) {
+    const char* cmd = RES_PRJ01_EXEC_PATH" -t";
+    int cmd_code = exec_cmd(cmd, &cmd_out);
+    CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_OK, cmd_code);
+    CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "Suite / Tests found: 2 / 3"));
+    CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "Total: 3, Passed: 2, Failed: 1, Skipped: 0"));
+}
+
+CLOVE_TEST(DefaultReportWithOptRunTests) {
+    const char* cmd = RES_PRJ01_EXEC_PATH" --run-tests";
+    int cmd_code = exec_cmd(cmd, &cmd_out);
+    CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_OK, cmd_code);
+    CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "Suite / Tests found: 2 / 3"));
+    CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "Total: 3, Passed: 2, Failed: 1, Skipped: 0"));
+}

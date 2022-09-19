@@ -106,8 +106,8 @@ CLOVE_TEST(HasOneOpt) {
 }
 
 CLOVE_TEST(GetOneOptValue) {
-    #define argc 7
-    const char* argv[argc] = {"exec", "-o", "value1", "--output", "value2", "-a", "value3"};
+    const char* argv[7] = {"exec", "-o", "value1", "--output", "value2", "-a", "value3"};
+    int argc = 7;
     __clove_cmdline_t cmd;
     __clove_cmdline_init(&cmd, argv, argc);
 
@@ -116,6 +116,20 @@ CLOVE_TEST(GetOneOptValue) {
     CLOVE_STRING_EQ("value3", __clove_cmdline_get_one_opt_value(&cmd, "a", "unexistent"));
     CLOVE_STRING_EQ("value3", __clove_cmdline_get_one_opt_value(&cmd, "unexistent", "a"));
     CLOVE_NULL( __clove_cmdline_get_one_opt_value(&cmd, "unexistent", "unexistent"));
+
+    __clove_cmdline_free(&cmd);
+}
+
+CLOVE_TEST(InitWithTwoOptWithoutValue) {
+    const char* argv[3] = {"exec", "-r", "-i"};
+    int argc = 3;
+    __clove_cmdline_t cmd;
+    __clove_cmdline_init(&cmd, argv, argc);
+
+    CLOVE_IS_TRUE(__clove_cmdline_has_opt(&cmd, "r"));
+    CLOVE_NULL(__clove_cmdline_get_opt_value(&cmd, "r"));
+    CLOVE_IS_TRUE(__clove_cmdline_has_opt(&cmd, "i"));
+    CLOVE_NULL(__clove_cmdline_get_opt_value(&cmd, "i"));
 
     __clove_cmdline_free(&cmd);
 }
