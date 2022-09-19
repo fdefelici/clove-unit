@@ -6,7 +6,7 @@ CLOVE_TEST(SameLengthFirstCharDiff) {
     char act[] = "h123456789012345111111111111111111111111";
     char exp_short[16];
     char act_short[16];
-    __clove_report_console_string_ellipse(exp, sizeof(exp), act, sizeof(act), exp_short, act_short, 16);
+    __clove_report_pretty_string_ellipse(exp, sizeof(exp), act, sizeof(act), exp_short, act_short, 16);
 
     CLOVE_STRING_EQ("H12345678901...", exp_short);
     CLOVE_STRING_EQ("h12345678901...", act_short);
@@ -18,7 +18,7 @@ CLOVE_TEST(ActShortThanExpFirstCharDiff) {
     char act[] = "h123456";
     char exp_short[16];
     char act_short[16];
-    __clove_report_console_string_ellipse(exp, sizeof(exp), act, sizeof(act), exp_short, act_short, 16);
+    __clove_report_pretty_string_ellipse(exp, sizeof(exp), act, sizeof(act), exp_short, act_short, 16);
 
     CLOVE_STRING_EQ("H12345678901...", exp_short);
     CLOVE_STRING_EQ("h123456", act_short);
@@ -29,7 +29,7 @@ CLOVE_TEST(ActShortThanExpSecondCharDiff) {
     char act[] = "0h23456";
     char exp_short[16];
     char act_short[16];
-    __clove_report_console_string_ellipse(exp, sizeof(exp), act, sizeof(act), exp_short, act_short, 16);
+    __clove_report_pretty_string_ellipse(exp, sizeof(exp), act, sizeof(act), exp_short, act_short, 16);
    
     CLOVE_STRING_EQ("0H2345678901...", exp_short);
     CLOVE_STRING_EQ("0h23456", act_short);
@@ -41,7 +41,7 @@ CLOVE_TEST(ActShortThanExpForthCharDiff) {
     char act[] = "012h456";
     char exp_short[16];
     char act_short[16];
-    __clove_report_console_string_ellipse(exp, sizeof(exp), act, sizeof(act), exp_short, act_short, 16);
+    __clove_report_pretty_string_ellipse(exp, sizeof(exp), act, sizeof(act), exp_short, act_short, 16);
    
     CLOVE_STRING_EQ("012H45678901...", exp_short);
     CLOVE_STRING_EQ("012h456", act_short);
@@ -53,7 +53,7 @@ CLOVE_TEST(ActShortThanExpLeftRightEllipsing) {
     char act[] = "0123h56";
     char exp_short[16];
     char act_short[16];
-    __clove_report_console_string_ellipse(exp, sizeof(exp), act, sizeof(act), exp_short, act_short, 16);
+    __clove_report_pretty_string_ellipse(exp, sizeof(exp), act, sizeof(act), exp_short, act_short, 16);
    
     CLOVE_STRING_EQ("...123H56789...", exp_short);
     CLOVE_STRING_EQ("0123h56", act_short);
@@ -64,7 +64,7 @@ CLOVE_TEST(ActEmpty) {
     char act[] = "";
     char exp_short[16];
     char act_short[16];
-    __clove_report_console_string_ellipse(exp, sizeof(exp), act, sizeof(act), exp_short, act_short, 16);
+    __clove_report_pretty_string_ellipse(exp, sizeof(exp), act, sizeof(act), exp_short, act_short, 16);
    
     CLOVE_STRING_EQ("H12345678901...", exp_short);
     CLOVE_STRING_EQ("", act_short);

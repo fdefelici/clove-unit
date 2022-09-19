@@ -71,20 +71,20 @@ CLOVE_TEST(JsonReportWithOptReportOnStdoutDefault) {
     CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "\"test_count\" : 3"));
 }
 
-CLOVE_TEST(ConsoleReportWithOptXTest) {
-    const char* cmd = RES_PRJ01_EXEC_PATH" -r console -x"; //x enable exec error in case of test failure
+CLOVE_TEST(PrettyReportWithOptXTest) {
+    const char* cmd = RES_PRJ01_EXEC_PATH" -r pretty -x"; //x enable exec error in case of test failure
     int cmd_code = exec_cmd(cmd, &cmd_out);
     CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_GENERIC, cmd_code); //project contains 1 test with failure
 }
 
-CLOVE_TEST(ConsoleReportWithOptErrorOnTestFailTest) {
-    const char* cmd = RES_PRJ01_EXEC_PATH" -r console --error-on-test-fail"; //x enable exec error in case of test failure
+CLOVE_TEST(PrettyReportWithOptErrorOnTestFailTest) {
+    const char* cmd = RES_PRJ01_EXEC_PATH" -r pretty --error-on-test-fail"; //x enable exec error in case of test failure
     int cmd_code = exec_cmd(cmd, &cmd_out);
     CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_GENERIC, cmd_code); //project contains 1 test with failure
 }
 
-CLOVE_TEST(ConsoleReportIncludeOneTest) {
-    const char* cmd = RES_PRJ01_EXEC_PATH" -r console -i Prj01Suite01.Test01";
+CLOVE_TEST(PrettyReportIncludeOneTest) {
+    const char* cmd = RES_PRJ01_EXEC_PATH" -r pretty -i Prj01Suite01.Test01";
     int cmd_code = exec_cmd(cmd, &cmd_out);
     CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_OK, cmd_code);
     CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "Suite / Tests found: 1 / 1"));
@@ -92,8 +92,8 @@ CLOVE_TEST(ConsoleReportIncludeOneTest) {
     CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "Total: 1, Passed: 1, Failed: 0, Skipped: 0"));
 }
 
-CLOVE_TEST(ConsoleReportIncludeTwoTest) {
-    const char* cmd = RES_PRJ01_EXEC_PATH" -r console -i Prj01Suite01.Test01 -i Prj01Suite02.Test21";
+CLOVE_TEST(PrettyReportIncludeTwoTest) {
+    const char* cmd = RES_PRJ01_EXEC_PATH" -r pretty -i Prj01Suite01.Test01 -i Prj01Suite02.Test21";
     int cmd_code = exec_cmd(cmd, &cmd_out);
     CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_OK, cmd_code);
     CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "Suite / Tests found: 2 / 2"));
@@ -102,8 +102,8 @@ CLOVE_TEST(ConsoleReportIncludeTwoTest) {
     CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "Total: 2, Passed: 2, Failed: 0, Skipped: 0"));
 }
 
-CLOVE_TEST(ConsoleReportWithOptReport) {
-    const char* cmd = RES_PRJ01_EXEC_PATH" --report console";
+CLOVE_TEST(PrettyReportWithOptReport) {
+    const char* cmd = RES_PRJ01_EXEC_PATH" --report pretty";
     int cmd_code = exec_cmd(cmd, &cmd_out);
     CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_OK, cmd_code);
 }

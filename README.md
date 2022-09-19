@@ -11,10 +11,11 @@ The aim of this library is to reduce at the minimum the boilder-plate for C deve
 Here a list of features provided by `CLove-Unit`:
 * Single Header
 * Tests Autodiscovery (reducing at minimum developer boiler-plate on writing tests)
-* Console Report in ANSI format (if supported by the shell)
+* Test Report with different format (pretty print ansi format, json) and output (console or file)
 * Tests / Run duration
 * Tests / Run failure pointing to the file/line where the assertions are unsatisfied
 * Selective test execution (opportunity to include/exclude tests from the execution)
+* Usefull command-line api to interact with test binary
 
 # IDE Extension
 For the one, who prefer UI oriented test executor, `CLove-Unit` is supported on the following IDEs:
@@ -160,8 +161,8 @@ A binary built with `CLove-Unit` library supports a set of commandline options:
 | -h, --help | Display usage information |
 | -i, --include \<expr\> | Include tests to be run/listed<br /> (can be repeated more than once)<br /> [[read here for more details](#test-inclusionexclusion)]|
 | -l, --list-tests | List all/matching test cases in CSV format: <SuiteName,TestName,SourcePath,TestLine><br />Accepts inclusion/exclusion expression|
-| -o, --output \<stream\> | Specify output stream for a report. Possible choise: `stdout` (default) or `<file path>` |
-| -r, --report \<format\> | Specify report format when running tests. Possible choise: `console`, `json` |
+| -o, --output \<stream\> | Specify output stream for a report. Possible choises: `stdout` (default) or `<file path>` |
+| -r, --report \<format\> | Specify report format when running tests. Possible choises: `pretty`, `json` |
 | -v, --version | Show CLove-Unit version |
 | -x, --error-on-test-fail | Test run process will end with error in case of test failure. Default is to end the process succesfully |
 

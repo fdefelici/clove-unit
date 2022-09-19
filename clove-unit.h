@@ -534,7 +534,7 @@ __CLOVE_EXTERN_C bool __clove_test_expr_validate(__clove_test_expr_t* expr, cons
 
 #pragma region PRIVATE - Report Console Decl
 #include <stdbool.h>
-typedef struct __clove_report_console_t {
+typedef struct __clove_report_pretty_t {
     __clove_report_t base;
     __clove_stream_t* stream;
     __clove_time_t start_time;
@@ -546,14 +546,14 @@ typedef struct __clove_report_console_t {
         const char* skip;
         const char* fail;
     } labels;
-} __clove_report_console_t;
-__clove_report_console_t* __clove_report_console_new(__clove_stream_t* stream);
-__CLOVE_EXTERN_C void __clove_report_console_free(__clove_report_t* report);
-__CLOVE_EXTERN_C void __clove_report_console_start(__clove_report_t* _this, size_t suite_count, size_t test_count);
-__CLOVE_EXTERN_C void __clove_report_console_test_executed(__clove_report_t* _this, __clove_suite_t* suite, __clove_test_t* test, size_t test_number);
-__CLOVE_EXTERN_C void __clove_report_console_end(__clove_report_t* _this, size_t test_count, size_t passed, size_t skipped, size_t failed);
-__CLOVE_EXTERN_C void __clove_report_console_string_ellipse(const char* exp, size_t exp_size, const char* act, size_t act_size, char* exp_short, char* act_short, size_t short_len);
-__CLOVE_EXTERN_C void __clove_report_console_pad_right(char* result, char* strToPad);
+} __clove_report_pretty_t;
+__clove_report_pretty_t* __clove_report_pretty_new(__clove_stream_t* stream);
+__CLOVE_EXTERN_C void __clove_report_pretty_free(__clove_report_t* report);
+__CLOVE_EXTERN_C void __clove_report_pretty_start(__clove_report_t* _this, size_t suite_count, size_t test_count);
+__CLOVE_EXTERN_C void __clove_report_pretty_test_executed(__clove_report_t* _this, __clove_suite_t* suite, __clove_test_t* test, size_t test_number);
+__CLOVE_EXTERN_C void __clove_report_pretty_end(__clove_report_t* _this, size_t test_count, size_t passed, size_t skipped, size_t failed);
+__CLOVE_EXTERN_C void __clove_report_pretty_string_ellipse(const char* exp, size_t exp_size, const char* act, size_t act_size, char* exp_short, char* act_short, size_t short_len);
+__CLOVE_EXTERN_C void __clove_report_pretty_pad_right(char* result, char* strToPad);
 #define __CLOVE_STRING_LENGTH 256
 #define __CLOVE_TEST_ENTRY_LENGTH 60
 #pragma endregion
@@ -1752,7 +1752,7 @@ __clove_cmdline_errno_t __clove_cmdline_handle_help(__clove_cmdline_t* cmd) {
     printf("%*s%-*s%*s%s\n", 3," ", 30,"-i, --include <expr>",     5," ", "Suite/Test expression to be included. Works when running/listing tests.");
     printf("%*s%-*s%*s%s\n", 3," ", 30,"-l, --list-tests",         5," ", "List all/matching test cases in CSV format: <SuiteName,TestName,SourcePath,TestLine>.");
     printf("%*s%-*s%*s%s\n", 3," ", 30,"-o, --output <stream>",    5," ", "Specify output stream for a report: 'stdout' (default) or file path.");
-    printf("%*s%-*s%*s%s\n", 3," ", 30,"-r, --report <format>",    5," ", "Specify report format when running tests: 'console', 'json'. ");
+    printf("%*s%-*s%*s%s\n", 3," ", 30,"-r, --report <format>",    5," ", "Specify report format when running tests: 'pretty', 'json'. ");
     printf("%*s%-*s%*s%s\n", 3," ", 30,"-v, --version",            5," ", "Show CLove-Unit version.");
     printf("%*s%-*s%*s%s\n", 3," ", 30,"-x, --error-on-test-fail", 5," ", "Test run process will end with error in case of test failure. Default is to end the process succesfully.");
     printf("\n");
@@ -1795,8 +1795,8 @@ __clove_cmdline_errno_t __clove_cmdline_handle_report(__clove_cmdline_t* cmd) {
     __clove_report_t* report;
     if (__clove_string_equal("json", r_type)) {
         report = (__clove_report_t*)__clove_report_json_new(stream, __CLOVE_VERSION);
-    } else if (__clove_string_equal("console", r_type)) {
-        report = (__clove_report_t*)__clove_report_console_new(stream);
+    } else if (__clove_string_equal("pretty", r_type)) {
+        report = (__clove_report_t*)__clove_report_pretty_new(stream);
     } else {
         return __CLOVE_CMD_ERRNO_INVALID_PARAM;
     }
@@ -1822,7 +1822,7 @@ __clove_cmdline_errno_t __clove_cmdline_handle_report(__clove_cmdline_t* cmd) {
 }
 
 __clove_cmdline_errno_t __clove_cmdline_handle_default(__clove_cmdline_t* cmd) {
-    __clove_cmdline_add_opt(cmd, "r", "console");
+    __clove_cmdline_add_opt(cmd, "r", "pretty");
     return __clove_cmdline_handle_report(cmd);
 }
 
@@ -2093,22 +2093,22 @@ bool __clove_test_expr_validate(__clove_test_expr_t* expr, const __clove_string_
 
 #pragma region PRIVATE - Report Console Impl
 #include <stdio.h>
-__clove_report_console_t* __clove_report_console_new(__clove_stream_t* stream) {
-    __clove_report_console_t* result = __CLOVE_MEMORY_MALLOC_TYPE(__clove_report_console_t);
-    result->base.start = __clove_report_console_start;
-    result->base.end = __clove_report_console_end;
-    result->base.test_executed = __clove_report_console_test_executed;
-    result->base.free = __clove_report_console_free;
+__clove_report_pretty_t* __clove_report_pretty_new(__clove_stream_t* stream) {
+    __clove_report_pretty_t* result = __CLOVE_MEMORY_MALLOC_TYPE(__clove_report_pretty_t);
+    result->base.start = __clove_report_pretty_start;
+    result->base.end = __clove_report_pretty_end;
+    result->base.test_executed = __clove_report_pretty_test_executed;
+    result->base.free = __clove_report_pretty_free;
     result->stream = stream;
     return result;
 }
 
-void __clove_report_console_free(__clove_report_t* report) {
+void __clove_report_pretty_free(__clove_report_t* report) {
     free(report);
 }
 
-void __clove_report_console_start(__clove_report_t* _this, size_t suite_count, size_t test_count) {
-    __clove_report_console_t* report = (__clove_report_console_t*)_this;
+void __clove_report_pretty_start(__clove_report_t* _this, size_t suite_count, size_t test_count) {
+    __clove_report_pretty_t* report = (__clove_report_pretty_t*)_this;
     report->start_time = __clove_time_now();
 
     bool activated = report->stream->has_ansi_support(report->stream);
@@ -2134,8 +2134,8 @@ void __clove_report_console_start(__clove_report_t* _this, size_t suite_count, s
     report->stream->writef(report->stream, "%s Suite / Tests found: %zu / %zu \n", report->labels.info, suite_count, test_count);
 }
 
-void __clove_report_console_end(__clove_report_t* _this, size_t test_count, size_t passed, size_t skipped, size_t failed) {
-    __clove_report_console_t* report = (__clove_report_console_t*)_this;
+void __clove_report_pretty_end(__clove_report_t* _this, size_t test_count, size_t passed, size_t skipped, size_t failed) {
+    __clove_report_pretty_t* report = (__clove_report_pretty_t*)_this;
     __clove_time_t end_time = __clove_time_now();
     __clove_time_t diff = __clove_time_sub(&end_time, &(report->start_time));
     unsigned long long millis = __clove_time_to_millis(&diff);
@@ -2149,11 +2149,11 @@ void __clove_report_console_end(__clove_report_t* _this, size_t test_count, size
      report->stream->close(report->stream);
 }
 
-void __clove_report_console_test_executed(__clove_report_t* _this, __clove_suite_t* suite, __clove_test_t* test, size_t test_number) {
-    __clove_report_console_t* report = (__clove_report_console_t*)_this;
+void __clove_report_pretty_test_executed(__clove_report_t* _this, __clove_suite_t* suite, __clove_test_t* test, size_t test_number) {
+    __clove_report_pretty_t* report = (__clove_report_pretty_t*)_this;
     char result[__CLOVE_STRING_LENGTH], strToPad[__CLOVE_TEST_ENTRY_LENGTH];
     snprintf(strToPad, __CLOVE_TEST_ENTRY_LENGTH, "%zu) %s.%s", test_number, suite->name, test->name);
-    __clove_report_console_pad_right(result, strToPad);
+    __clove_report_pretty_pad_right(result, strToPad);
 
     if (test->result == __CLOVE_TEST_RESULT_PASSED) {
         float millis = (float)(__clove_time_to_nanos(&(test->duration))) / (float)__CLOVE_TIME_TRASL_NANOS_PER_MILLIS;
@@ -2246,7 +2246,7 @@ void __clove_report_console_test_executed(__clove_report_t* _this, __clove_suite
                     else {
                         char exp_short[16];
                         char act_short[16];
-                        __clove_report_console_string_ellipse(exp, exp_len, act, act_len, exp_short, act_short, 16);
+                        __clove_report_pretty_string_ellipse(exp, exp_len, act, act_len, exp_short, act_short, 16);
 
                         char* exp_escaped = __clove_string_escape(exp_short);
                         char* act_escaped = __clove_string_escape(act_short);
@@ -2270,7 +2270,7 @@ void __clove_report_console_test_executed(__clove_report_t* _this, __clove_suite
     }
 }
 
-void __clove_report_console_string_ellipse(
+void __clove_report_pretty_string_ellipse(
     const char* exp, size_t exp_size,
     const char* act, size_t act_size,
     char* exp_short, char* act_short, size_t short_len)
@@ -2291,7 +2291,7 @@ void __clove_report_console_string_ellipse(
     }
 }
 
-void __clove_report_console_pad_right(char* result, char* strToPad) {
+void __clove_report_pretty_pad_right(char* result, char* strToPad) {
     int targetStrLen = __CLOVE_TEST_ENTRY_LENGTH;           // Target output length  
     const char* padding = "...................................................................................";
 
@@ -2334,7 +2334,7 @@ void __clove_report_json_start(__clove_report_t* _this, size_t suite_count, size
 
     instance->stream->writef(instance->stream, "{\n");
     instance->stream->writef(instance->stream, "\t\"clove_version\" : \"%s\",\n", instance->clove_version);
-    instance->stream->writef(instance->stream, "\t\"api_version\" : %u,\n", instance->api_version);
+    instance->stream->writef(instance->stream, "\t\"api_version\" : %u,\n", instance->api_version); //TODO: delete or update api_version
     instance->stream->writef(instance->stream, "\t\"result\" : {\n");
     instance->stream->writef(instance->stream, "\t\t\"suite_count\" : %zu,\n", suite_count);
     instance->stream->writef(instance->stream, "\t\t\"test_count\" : %zu,\n", test_count);
@@ -2948,22 +2948,9 @@ int __clove_runner_auto(int argc, char* argv[]) {
     __clove_exec_path = argv[0];
     __clove_exec_base_path = __clove_path_basepath(argv[0]);
 
-    /* Supported Commands
-       > <exe>                                  Run with console report
-       > <exe> -r console                       Run with console report (to implement: -m verbose or brief)
-       > <exe> -r json [-f <report-path.json>]  Run with json mode
-       > <exe> -v                               Print CLove-Unit version
-       
-       > <exe> --list-tests
-       > <exe> -r plain -o stdout
-       > <exe> -r plain -o prova.txt
-       > <exe> -r json  -o prova.json
-    */
     //argc = 3;
-    //char* argv2[] = {"exec", "-r", "console", "-i", "StringViewTest.Length"};
     //const char* argv2[] = {"exec", "-e", "String*"};
     //const char* argv2[] = {"exec", "-i", "*.ReportOneSuiteWithTwoTests"};
-    //argc = 3;
 
     __clove_vector_t cmd_handlers;
     __CLOVE_VECTOR_INIT(&cmd_handlers, __clove_cmdline_handler_f);
