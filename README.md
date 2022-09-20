@@ -156,14 +156,14 @@ A binary built with `CLove-Unit` library supports a set of commandline options:
 
 | Option | Description |
 | ------------- | ------------- |
-| \<no-option\>  | Running executable with no args will execute tests producing a verbose console report (default) |
+| \<no-option\>  | Running executable with no args will execute tests producing a report in `pretty` format (default) |
 | -e, --exclude \<expr\> | Exclude tests to be run/listed<br /> (can be repeated more than once)<br /> [[read here for more details](#test-inclusionexclusion)] |
 | -h, --help | Display usage information |
 | -i, --include \<expr\> | Include tests to be run/listed<br /> (can be repeated more than once)<br /> [[read here for more details](#test-inclusionexclusion)]|
-| -l, --list-tests | List all/matching test cases in CSV format: <SuiteName,TestName,SourcePath,TestLine><br />Accepts inclusion/exclusion expression|
+| -l, --list-tests | List all/matching test cases in `pretty` format (default).<br />Accepts inclusion/exclusion expression |
 | -o, --output \<stream\> | Specify output stream for a report. Possible choises: `stdout` (default) or `<file path>` |
-| -r, --report \<format\> | Specify report format when running tests. Possible choises: `pretty`, `json` |
-| -t, --run-tests | Execute all/matching test cases (same as \<no-option\> scenario)
+| -r, --report \<format\> | Specify report format when running tests. Possible choises: `pretty`, `csv`, `json` |
+| -t, --run-tests | Execute all/matching test cases (same as \<no-option\> scenario).<br />Accepts inclusion/exclusion expression |
 | -v, --version | Show CLove-Unit version |
 | -x, --error-on-test-fail | Test run process will end with error in case of test failure. Default is to end the process succesfully |
 

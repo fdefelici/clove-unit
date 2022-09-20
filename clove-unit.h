@@ -584,7 +584,26 @@ typedef struct __clove_report_list_tests_t {
     void (*end_test)(struct __clove_report_list_tests_t* _this, __clove_test_t* test, size_t index);
     void (*end_suite)(struct __clove_report_list_tests_t* _this, __clove_suite_t* suite, size_t index);
     void (*end)(struct __clove_report_list_tests_t* _this);
+    void (*free)(struct __clove_report_list_tests_t* _this);
 } __clove_report_list_tests_t;
+
+typedef struct __clove_report_list_tests_pretty_t {
+   __clove_report_list_tests_t base;
+   __clove_stream_t* stream;
+   const char* suite_format;
+   const char* test_format;
+   bool is_suite_first_test;
+   __clove_suite_t* current_suite;
+} __clove_report_list_tests_pretty_t;
+
+__clove_report_list_tests_pretty_t* __clove_report_list_tests_pretty_new(__clove_stream_t* stream);
+void __clove_report_list_tests_pretty_free(__clove_report_list_tests_t* _this);
+void __clove_report_list_tests_pretty_begin(__clove_report_list_tests_t* _this, size_t suite_count, size_t test_count);
+void __clove_report_list_tests_pretty_begin_suite(__clove_report_list_tests_t* _this,  __clove_suite_t* suite, size_t index);
+void __clove_report_list_tests_pretty_end_suite(__clove_report_list_tests_t* _this,  __clove_suite_t* suite, size_t index);
+void __clove_report_list_tests_pretty_begin_test(__clove_report_list_tests_t* _this,  __clove_test_t* test, size_t index);
+void __clove_report_list_tests_pretty_end_test(__clove_report_list_tests_t* _this,  __clove_test_t* test, size_t index);
+void __clove_report_list_tests_pretty_end(__clove_report_list_tests_t* _this);
 
 typedef struct __clove_report_list_tests_csv_t {
    __clove_report_list_tests_t base;
@@ -600,6 +619,23 @@ void __clove_report_list_tests_csv_end_suite(__clove_report_list_tests_t* _this,
 void __clove_report_list_tests_csv_begin_test(__clove_report_list_tests_t* _this,  __clove_test_t* test, size_t index);
 void __clove_report_list_tests_csv_end_test(__clove_report_list_tests_t* _this,  __clove_test_t* test, size_t index);
 void __clove_report_list_tests_csv_end(__clove_report_list_tests_t* _this);
+
+typedef struct __clove_report_list_tests_json_t {
+   __clove_report_list_tests_t base;
+   __clove_stream_t* stream;
+   __clove_suite_t* current_suite;
+   size_t suite_count;
+   bool is_suite_first_test;
+} __clove_report_list_tests_json_t;
+
+__clove_report_list_tests_json_t* __clove_report_list_tests_json_new(__clove_stream_t* stream);
+void __clove_report_list_tests_json_free(__clove_report_list_tests_t* _this);
+void __clove_report_list_tests_json_begin(__clove_report_list_tests_t* _this, size_t suite_count, size_t test_count);
+void __clove_report_list_tests_json_begin_suite(__clove_report_list_tests_t* _this,  __clove_suite_t* suite, size_t index);
+void __clove_report_list_tests_json_end_suite(__clove_report_list_tests_t* _this,  __clove_suite_t* suite, size_t index);
+void __clove_report_list_tests_json_begin_test(__clove_report_list_tests_t* _this,  __clove_test_t* test, size_t index);
+void __clove_report_list_tests_json_end_test(__clove_report_list_tests_t* _this,  __clove_test_t* test, size_t index);
+void __clove_report_list_tests_json_end(__clove_report_list_tests_t* _this);
 
 int __clove_cmd_list_test_execute(__clove_suite_t* suites, size_t suite_count, size_t test_count, __clove_report_list_tests_t* report);
 #pragma endregion
@@ -1837,10 +1873,9 @@ __clove_cmdline_errno_t __clove_cmdline_handle_default(__clove_cmdline_t* cmd) {
 __clove_cmdline_errno_t __clove_cmdline_handle_list_tests(__clove_cmdline_t* cmd) {
     if (!__clove_cmdline_has_one_opt(cmd, "l", "list-tests")) return __CLOVE_CMD_ERRNO_UNMANAGED;
     
-    //TODO: verificare che nel run test questo parametro non sia obbligatorio?!?
     const char* r_type = __clove_cmdline_get_one_opt_value(cmd, "r", "report");
     if (!r_type) { 
-        r_type = "csv"; 
+        r_type = "pretty"; 
     }
 
     //Select Output Type
@@ -1865,9 +1900,9 @@ __clove_cmdline_errno_t __clove_cmdline_handle_list_tests(__clove_cmdline_t* cmd
     //Select Report Format
     __clove_report_list_tests_t* report;
     if (__clove_string_equal("json", r_type)) {
-        //report = (__clove_report_t*)__clove_report_json_new(stream, __CLOVE_VERSION);
+        report = (__clove_report_list_tests_t*)__clove_report_list_tests_json_new(stream);
     } else if (__clove_string_equal("pretty", r_type)) {
-        //report = (__clove_report_t*)__clove_report_pretty_new(stream);
+        report = (__clove_report_list_tests_t*)__clove_report_list_tests_pretty_new(stream);
     } else if (__clove_string_equal("csv", r_type)) {
         report = (__clove_report_list_tests_t*)__clove_report_list_tests_csv_new(stream);
     } else {
@@ -1901,6 +1936,9 @@ __clove_cmdline_errno_t __clove_cmdline_handle_list_tests(__clove_cmdline_t* cmd
     else {
         run_result = 1;
     }
+    report->free(report);
+    stream->free(stream);
+
     __clove_vector_free(&context.suites);
     __clove_vector_free((__clove_vector_t*)context.includes);
     __clove_vector_free((__clove_vector_t*)context.excludes);
@@ -2497,6 +2535,64 @@ void __clove_report_json_test_executed(__clove_report_t* _this, __clove_suite_t*
 #pragma endregion // Report Json Impl
 
 #pragma region PRIVATE - Report List Test Impl
+__clove_report_list_tests_pretty_t* __clove_report_list_tests_pretty_new(__clove_stream_t* stream) {
+    __clove_report_list_tests_pretty_t* _this = __CLOVE_MEMORY_MALLOC_TYPE(__clove_report_list_tests_pretty_t);
+    _this->base.begin = __clove_report_list_tests_pretty_begin;
+    _this->base.begin_suite = __clove_report_list_tests_pretty_begin_suite;
+    _this->base.begin_test = __clove_report_list_tests_pretty_begin_test;
+    _this->base.end_test = __clove_report_list_tests_pretty_end_test;
+    _this->base.end_suite = __clove_report_list_tests_pretty_end_suite;
+    _this->base.end = __clove_report_list_tests_pretty_end;
+    _this->base.free = __clove_report_list_tests_pretty_free;
+    _this->stream = stream;
+    _this->suite_format = NULL;
+    _this->test_format = NULL;
+    _this->is_suite_first_test = false;
+    _this->current_suite = NULL;
+    return _this;
+}
+void __clove_report_list_tests_pretty_free(__clove_report_list_tests_t* _this) {
+    free((__clove_report_list_tests_pretty_t*)_this);
+}
+void __clove_report_list_tests_pretty_begin(__clove_report_list_tests_t* _this, size_t suite_count, size_t test_count) {
+    __clove_report_list_tests_pretty_t* pretty = (__clove_report_list_tests_pretty_t*)_this;
+    pretty->stream->open(pretty->stream);
+
+    bool activated = pretty->stream->has_ansi_support(pretty->stream);
+    if (activated) {
+        pretty->suite_format = "\x1b[1;34m%s\x1b[0m (file: %s)\n";
+        pretty->test_format = "- \x1b[1;32m%s\x1b[0m [line: %zu]\n";
+        pretty->stream->writef(pretty->stream, "\nListing \x1b[1;32m%zu\x1b[0m Test(s) in \x1b[1;34m%zu\x1b[0m Suite(s):\n\n", test_count, suite_count);
+    } else {
+        pretty->suite_format = "%s (file: %s)\n";
+        pretty->test_format = "- %s [line: %zu]\n";
+        pretty->stream->writef(pretty->stream, "\nListing %zu Test(s) in %zu Suite(s):\n\n", test_count, suite_count);
+    }
+}
+void __clove_report_list_tests_pretty_begin_suite(__clove_report_list_tests_t* _this,  __clove_suite_t* suite, size_t index) {
+    __clove_report_list_tests_pretty_t* pretty = (__clove_report_list_tests_pretty_t*)_this;
+    pretty->is_suite_first_test = true;
+    pretty->current_suite = suite;
+}
+void __clove_report_list_tests_pretty_end_suite(__clove_report_list_tests_t* _this,  __clove_suite_t* suite, size_t index) {
+    //nothing todo
+}
+void __clove_report_list_tests_pretty_begin_test(__clove_report_list_tests_t* _this,  __clove_test_t* test, size_t index) {
+    //nothing todo
+}
+void __clove_report_list_tests_pretty_end_test(__clove_report_list_tests_t* _this,  __clove_test_t* test, size_t index) {
+    __clove_report_list_tests_pretty_t* pretty = (__clove_report_list_tests_pretty_t*)_this;
+    if (pretty->is_suite_first_test) {
+        pretty->stream->writef(pretty->stream, pretty->suite_format, pretty->current_suite->name, test->file_name); 
+        pretty->is_suite_first_test = false;  
+    }
+    pretty->stream->writef(pretty->stream, pretty->test_format, test->name, test->funct_line);
+}
+void __clove_report_list_tests_pretty_end(__clove_report_list_tests_t* _this) {
+    __clove_report_list_tests_pretty_t* pretty = (__clove_report_list_tests_pretty_t*)_this;
+    pretty->stream->close(pretty->stream);
+}
+
 __clove_report_list_tests_csv_t* __clove_report_list_tests_csv_new(__clove_stream_t* stream) {
     __clove_report_list_tests_csv_t* _this = __CLOVE_MEMORY_MALLOC_TYPE(__clove_report_list_tests_csv_t);
     _this->base.begin = __clove_report_list_tests_csv_begin;
@@ -2505,6 +2601,7 @@ __clove_report_list_tests_csv_t* __clove_report_list_tests_csv_new(__clove_strea
     _this->base.end_test = __clove_report_list_tests_csv_end_test;
     _this->base.end_suite = __clove_report_list_tests_csv_end_suite;
     _this->base.end = __clove_report_list_tests_csv_end;
+    _this->base.free = __clove_report_list_tests_csv_free;
     _this->stream = stream;
     _this->current_suite = NULL;
     return _this;
@@ -2515,6 +2612,9 @@ void __clove_report_list_tests_csv_free(__clove_report_list_tests_t* _this) {
 void __clove_report_list_tests_csv_begin(__clove_report_list_tests_t* _this, size_t suite_count, size_t test_count) {
     __clove_report_list_tests_csv_t* csv = (__clove_report_list_tests_csv_t*)_this;
     csv->stream->open(csv->stream);
+    if (suite_count > 0) {
+         csv->stream->writef(csv->stream, "%s,%s,%s,%s\n", "Suite", "Test", "File", "Line");
+    }
 }
 void __clove_report_list_tests_csv_begin_suite(__clove_report_list_tests_t* _this,  __clove_suite_t* suite, size_t index) {
     __clove_report_list_tests_csv_t* csv = (__clove_report_list_tests_csv_t*)_this;
@@ -2536,6 +2636,87 @@ void __clove_report_list_tests_csv_end(__clove_report_list_tests_t* _this) {
     csv->stream->close(csv->stream);
 }
 
+__clove_report_list_tests_json_t* __clove_report_list_tests_json_new(__clove_stream_t* stream) {
+    __clove_report_list_tests_json_t* _this = __CLOVE_MEMORY_MALLOC_TYPE(__clove_report_list_tests_json_t);
+    _this->base.begin = __clove_report_list_tests_json_begin;
+    _this->base.begin_suite = __clove_report_list_tests_json_begin_suite;
+    _this->base.begin_test = __clove_report_list_tests_json_begin_test;
+    _this->base.end_test = __clove_report_list_tests_json_end_test;
+    _this->base.end_suite = __clove_report_list_tests_json_end_suite;
+    _this->base.end = __clove_report_list_tests_json_end;
+    _this->base.free = __clove_report_list_tests_json_free;
+    _this->stream = stream;
+    _this->suite_count = 0;
+    _this->is_suite_first_test = false;
+    _this->current_suite = NULL;
+    return _this;
+}
+void __clove_report_list_tests_json_free(__clove_report_list_tests_t* _this) {
+    free((__clove_report_list_tests_json_t*)_this);
+}
+
+void __clove_report_list_tests_json_begin(__clove_report_list_tests_t* _this, size_t suite_count, size_t test_count) {
+    __clove_report_list_tests_json_t* json = (__clove_report_list_tests_json_t*)_this;
+    json->suite_count = suite_count;
+    
+    json->stream->open(json->stream);
+
+    json->stream->writef(json->stream, "{\n");
+    json->stream->writef(json->stream, "\t\"suite_count\" : %zu,\n", suite_count);
+    json->stream->writef(json->stream, "\t\"test_count\" : %zu,\n", test_count);
+    json->stream->writef(json->stream, "\t\"suites\" : [\n");
+    
+}
+void __clove_report_list_tests_json_begin_suite(__clove_report_list_tests_t* _this,  __clove_suite_t* suite, size_t index) {
+    __clove_report_list_tests_json_t* json = (__clove_report_list_tests_json_t*)_this;
+    json->current_suite = suite;
+    json->is_suite_first_test = true;
+}
+void __clove_report_list_tests_json_end_suite(__clove_report_list_tests_t* _this,  __clove_suite_t* suite, size_t index) {
+    __clove_report_list_tests_json_t* json = (__clove_report_list_tests_json_t*)_this;
+    json->current_suite = NULL;
+
+    const char* comma = "";
+    if (index < json->suite_count-1) {
+        comma = ",";
+    }
+    json->stream->writef(json->stream, "\t\t\t]\n");
+    json->stream->writef(json->stream, "\t\t}%s\n", comma);
+}
+void __clove_report_list_tests_json_begin_test(__clove_report_list_tests_t* _this,  __clove_test_t* test, size_t index) {
+    //nothing todo
+}
+void __clove_report_list_tests_json_end_test(__clove_report_list_tests_t* _this,  __clove_test_t* test, size_t index) {
+    __clove_report_list_tests_json_t* json = (__clove_report_list_tests_json_t*)_this;
+    if (json->is_suite_first_test) {
+        char* escaped_file = __clove_string_strdup(test->file_name);
+        __clove_string_replace_char(escaped_file, '\\', '/');
+
+        json->stream->writef(json->stream, "\t\t{\n");
+        json->stream->writef(json->stream, "\t\t\t\"name\" : \"%s\",\n", json->current_suite->name);
+        json->stream->writef(json->stream, "\t\t\t\"file\" : \"%s\",\n", escaped_file);
+        json->stream->writef(json->stream, "\t\t\t\"tests\" : [\n");
+
+        free(escaped_file);
+        json->is_suite_first_test = false;  
+    }
+    json->stream->writef(json->stream, "\t\t\t\t{\n");
+    json->stream->writef(json->stream, "\t\t\t\t\t\"name\" : \"%s\",\n", test->name);
+    json->stream->writef(json->stream, "\t\t\t\t\t\"line\" : %zu\n", test->funct_line);
+    const char* comma = "";
+    if (index < json->current_suite->test_count-1) {
+        comma = ",";
+    }
+    json->stream->writef(json->stream, "\t\t\t\t}%s\n", comma);
+}
+void __clove_report_list_tests_json_end(__clove_report_list_tests_t* _this) {
+    __clove_report_list_tests_json_t* json = (__clove_report_list_tests_json_t*)_this;
+
+    json->stream->writef(json->stream, "\t]\n"); //end suites
+    json->stream->writef(json->stream, "}\n");
+    json->stream->close(json->stream);
+}
+
 //TODO: Add unit tests
 int __clove_cmd_list_test_execute(__clove_suite_t* suites, size_t suite_count, size_t test_count, __clove_report_list_tests_t* report) {
     report->begin(report, suite_count, test_count);
@@ -2551,6 +2732,7 @@ int __clove_cmd_list_test_execute(__clove_suite_t* suites, size_t suite_count, s
         }
         report->end_suite(report, each_suite, i);
     }
+    report->end(report);
     return 0;
 }
 #pragma endregion
