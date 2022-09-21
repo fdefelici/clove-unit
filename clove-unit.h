@@ -939,9 +939,13 @@ bool __clove_stream_console_has_ansi_support(__clove_stream_t* stream) {
 }
 #else
 #include <stdbool.h>
+#include <unistd.h>
 bool __clove_stream_console_has_ansi_support(__clove_stream_t* stream) {
-    /* Nothing to do at the moment for other OS. Ansi enabled by default. */
-    return true;
+    if (isatty(STDOUT_FILENO)) {
+        // standard output is a tty
+        return true;
+    }
+    return false;
 }
 #endif //_WIN32
 
