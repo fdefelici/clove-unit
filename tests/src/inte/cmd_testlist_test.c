@@ -106,13 +106,6 @@ CLOVE_TEST(ListTestsWithtDefaultReport) {
                                "- Test02 [line: 8]\n"
                                "Prj01Suite02 (file: src"_SEP_"prj01_test2.c)\n"
                                "- Test21 [line: 4]\n";
-     /* Cannot use it because of Ansi encoding 
-    CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "Prj01Suite01"));
-    CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "Test01"));
-    CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "Test02"));
-    CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "Prj01Suite02"));
-    CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "Test21"));
-    */
    CLOVE_STRING_EQ(out_expected, cmd_out);
 }
 
@@ -127,52 +120,48 @@ CLOVE_TEST(ListTestsWithOptRpretty) {
                                "- Test02 [line: 8]\n"
                                "Prj01Suite02 (file: src"_SEP_"prj01_test2.c)\n"
                                "- Test21 [line: 4]\n";
-    /* Cannot use it because of Ansi encoding 
-    CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "Prj01Suite01"));
-    CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "Test01"));
-    CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "Test02"));
-    CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "Prj01Suite02"));
-    CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "Test21"));
-
-    */
     CLOVE_STRING_EQ(out_expected, cmd_out);
 }
 
 CLOVE_TEST(ListTestWithOptRjson) {
     const char* cmd = RES_PRJ01_EXEC_PATH" -l -r json";
     int cmd_code = exec_cmd(cmd, &cmd_out);
-    CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_OK, cmd_code);
+    //CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_OK, cmd_code);
     
     const char* out_expected = 
     "{\n"
-    "\t\"suite_count\" : 2,\n"
-    "\t\"test_count\" : 3,\n"
-    "\t\"suites\" : [\n"
-    "\t\t{\n"
-    "\t\t\t\"name\" : \"Prj01Suite01\",\n"
-    "\t\t\t\"file\" : \"src/prj01_test1.c\",\n"
-    "\t\t\t\"tests\" : [\n"
-    "\t\t\t\t{\n"
-    "\t\t\t\t\t\"name\" : \"Test01\",\n"
-    "\t\t\t\t\t\"line\" : 4\n"
-    "\t\t\t\t},\n"
-    "\t\t\t\t{\n"
-    "\t\t\t\t\t\"name\" : \"Test02\",\n"
-    "\t\t\t\t\t\"line\" : 8\n"
-    "\t\t\t\t}\n"
-    "\t\t\t]\n"
-    "\t\t},\n"
-     "\t\t{\n"
-    "\t\t\t\"name\" : \"Prj01Suite02\",\n"
-    "\t\t\t\"file\" : \"src/prj01_test2.c\",\n"
-    "\t\t\t\"tests\" : [\n"
-    "\t\t\t\t{\n"
-    "\t\t\t\t\t\"name\" : \"Test21\",\n"
-    "\t\t\t\t\t\"line\" : 4\n"
-    "\t\t\t\t}\n"
-    "\t\t\t]\n"
-    "\t\t}\n"
-    "\t]\n"
+    "\t\"clove_version\" : \""__CLOVE_VERSION"\",\n"
+    "\t\"json_schema\" : \"1.0\",\n"
+    "\t\"result\" : {\n"
+    "\t\t\"suite_count\" : 2,\n"
+    "\t\t\"test_count\" : 3,\n"
+    "\t\t\"suites\" : [\n"
+    "\t\t\t{\n"
+    "\t\t\t\t\"name\" : \"Prj01Suite01\",\n"
+    "\t\t\t\t\"file\" : \"src/prj01_test1.c\",\n"
+    "\t\t\t\t\"tests\" : [\n"
+    "\t\t\t\t\t{\n"
+    "\t\t\t\t\t\t\"name\" : \"Test01\",\n"
+    "\t\t\t\t\t\t\"line\" : 4\n"
+    "\t\t\t\t\t},\n"
+    "\t\t\t\t\t{\n"
+    "\t\t\t\t\t\t\"name\" : \"Test02\",\n"
+    "\t\t\t\t\t\t\"line\" : 8\n"
+    "\t\t\t\t\t}\n"
+    "\t\t\t\t]\n"
+    "\t\t\t},\n"
+    "\t\t\t{\n"
+    "\t\t\t\t\"name\" : \"Prj01Suite02\",\n"
+    "\t\t\t\t\"file\" : \"src/prj01_test2.c\",\n"
+    "\t\t\t\t\"tests\" : [\n"
+    "\t\t\t\t\t{\n"
+    "\t\t\t\t\t\t\"name\" : \"Test21\",\n"
+    "\t\t\t\t\t\t\"line\" : 4\n"
+    "\t\t\t\t\t}\n"
+    "\t\t\t\t]\n"
+    "\t\t\t}\n"
+    "\t\t]\n"
+    "\t}\n"
     "}\n";
     CLOVE_STRING_EQ(out_expected, cmd_out);
 }

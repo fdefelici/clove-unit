@@ -156,7 +156,7 @@ __CLOVE_EXTERN_C size_t __clove_string_length(const char* str);
 __CLOVE_EXTERN_C const char* __clove_string_strstr(const char* str1, const char* str2);
 __CLOVE_EXTERN_C bool __clove_string_contains(const char* string, const char* contained);
 __CLOVE_EXTERN_C char* __clove_string_escape(const char* string);
-__CLOVE_EXTERN_C void __clove_string_ellipse(const char* string, size_t str_len, size_t pos, char* out, size_t out_len);
+__CLOVE_EXTERN_C void __clove_string_ellipse(const char* string, size_t str_len, size_t pos, char* out, size_t out_size);
 __CLOVE_EXTERN_C void __clove_string_replace_char(char* path, char find, char replace);
 #pragma endregion // String Decl
 
@@ -518,6 +518,8 @@ __CLOVE_EXTERN_C void __clove_assert_string(__clove_assert_check_e check_mode, c
 typedef struct __clove_report_t {
     void (*start)(struct __clove_report_t* _this, size_t suite_count, size_t test_count);
     void (*end)(struct __clove_report_t* _this, size_t test_count, size_t passed, size_t skipped, size_t failed);
+    void (*begin_suite)(struct __clove_report_t* _this, __clove_suite_t* suite, size_t index);
+    void (*end_suite)(struct __clove_report_t* _this, __clove_suite_t* suite, size_t index);
     void (*test_executed)(struct __clove_report_t* _this, __clove_suite_t* suite, __clove_test_t* test, size_t test_number);
     void (*free)(struct __clove_report_t* _this);
 } __clove_report_t;
@@ -550,9 +552,11 @@ typedef struct __clove_report_pretty_t {
 __clove_report_pretty_t* __clove_report_pretty_new(__clove_stream_t* stream);
 __CLOVE_EXTERN_C void __clove_report_pretty_free(__clove_report_t* report);
 __CLOVE_EXTERN_C void __clove_report_pretty_start(__clove_report_t* _this, size_t suite_count, size_t test_count);
+__CLOVE_EXTERN_C void __clove_report_pretty_begin_suite(__clove_report_t* _this, __clove_suite_t* suite, size_t index);
+__CLOVE_EXTERN_C void __clove_report_pretty_end_suite(__clove_report_t* _this, __clove_suite_t* suite, size_t index);
 __CLOVE_EXTERN_C void __clove_report_pretty_test_executed(__clove_report_t* _this, __clove_suite_t* suite, __clove_test_t* test, size_t test_number);
 __CLOVE_EXTERN_C void __clove_report_pretty_end(__clove_report_t* _this, size_t test_count, size_t passed, size_t skipped, size_t failed);
-__CLOVE_EXTERN_C void __clove_report_pretty_string_ellipse(const char* exp, size_t exp_size, const char* act, size_t act_size, char* exp_short, char* act_short, size_t short_len);
+__CLOVE_EXTERN_C void __clove_report_pretty_string_ellipse(const char* exp, size_t exp_len, const char* act, size_t act_len, char* exp_short, char* act_short, size_t short_size);
 __CLOVE_EXTERN_C void __clove_report_pretty_pad_right(char* result, char* strToPad);
 #define __CLOVE_STRING_LENGTH 256
 #define __CLOVE_TEST_ENTRY_LENGTH 60
@@ -563,14 +567,18 @@ typedef struct __clove_report_json_t {
     __clove_report_t base;
     __clove_stream_t* stream;
     const char* clove_version;
-    unsigned int api_version;
+    const char* json_schema;
     __clove_suite_t* current_suite;
+    bool is_first_suite_test;
     size_t test_count;
+    size_t suite_count;
 } __clove_report_json_t;
 
-__CLOVE_EXTERN_C __clove_report_json_t* __clove_report_json_new(__clove_stream_t* stream, const char* clove_version);
+__CLOVE_EXTERN_C __clove_report_json_t* __clove_report_json_new(__clove_stream_t* stream);
 __CLOVE_EXTERN_C void __clove_report_json_free(__clove_report_t* report);
 __CLOVE_EXTERN_C void __clove_report_json_start(__clove_report_t* _this, size_t suite_count, size_t test_count);
+__CLOVE_EXTERN_C void __clove_report_json_begin_suite(__clove_report_t* _this, __clove_suite_t* suite, size_t index);
+__CLOVE_EXTERN_C void __clove_report_json_end_suite(__clove_report_t* _this, __clove_suite_t* suite, size_t index);
 __CLOVE_EXTERN_C void __clove_report_json_end(__clove_report_t* _this, size_t test_count, size_t passed, size_t skipped, size_t failed);
 __CLOVE_EXTERN_C void __clove_report_json_test_executed(__clove_report_t* _this, __clove_suite_t* suite, __clove_test_t* test, size_t test_number);
 __CLOVE_EXTERN_C void __clove_report_json_print_data(__clove_report_json_t* _this, __clove_test_t* test, __clove_generic_u* data);
@@ -624,6 +632,8 @@ typedef struct __clove_report_list_tests_json_t {
    __clove_report_list_tests_t base;
    __clove_stream_t* stream;
    __clove_suite_t* current_suite;
+   const char* clove_version;
+   const char* json_schema;
    size_t suite_count;
    bool is_suite_first_test;
 } __clove_report_list_tests_json_t;
@@ -1133,13 +1143,13 @@ char* __clove_string_escape(const char* string) {
     return escaped;
 }
 
-void __clove_string_ellipse(const char* string, size_t str_len, size_t pos, char* out, size_t out_len) {
+void __clove_string_ellipse(const char* string, size_t str_len, size_t pos, char* out, size_t out_size) {
     if (str_len == 1) {
         out[0] = '\0';
         return;
     }
-    if (str_len <= out_len) {
-        __clove_string_strcpy(out, out_len, string);
+    if (str_len <= out_size-1) {
+        __clove_string_strcpy(out, out_size, string);
         return;
     }
 
@@ -1149,18 +1159,17 @@ void __clove_string_ellipse(const char* string, size_t str_len, size_t pos, char
         left_ellipse = true;
     }
 
-    if (str_len - pos >= 4) {
+    if (str_len-1 - pos >= 4) {
         right_ellipse = true;
     }
 
-
     size_t out_start = 0;
     size_t start_index = 0;
-    size_t out_end = out_len - 1;
+    size_t out_end = out_size - 1;
 
     if (left_ellipse) {
         out_start = 3;
-        start_index = right_ellipse ? pos - 3 : str_len - 1 - 12;
+        start_index = right_ellipse ? pos - 3 : str_len - 12;
         out[0] = '.'; out[1] = '.'; out[2] = '.';
     }
 
@@ -1168,8 +1177,7 @@ void __clove_string_ellipse(const char* string, size_t str_len, size_t pos, char
         out_end -= 3;
         out[out_end] = '.'; out[out_end + 1] = '.'; out[out_end + 2] = '.';
     }
-    out[out_len - 1] = '\0';
-
+    out[out_size - 1] = '\0';
 
     size_t to_copy = out_end - out_start;
 
@@ -1842,7 +1850,7 @@ __clove_cmdline_errno_t __clove_cmdline_handle_run_tests(__clove_cmdline_t* cmd)
     //Select Report Format
     __clove_report_t* report;
     if (__clove_string_equal("json", r_type)) {
-        report = (__clove_report_t*)__clove_report_json_new(stream, __CLOVE_VERSION);
+        report = (__clove_report_t*)__clove_report_json_new(stream);
     } else if (__clove_string_equal("pretty", r_type)) {
         report = (__clove_report_t*)__clove_report_pretty_new(stream);
     } else {
@@ -2183,6 +2191,8 @@ bool __clove_test_expr_validate(__clove_test_expr_t* expr, const __clove_string_
 __clove_report_pretty_t* __clove_report_pretty_new(__clove_stream_t* stream) {
     __clove_report_pretty_t* result = __CLOVE_MEMORY_MALLOC_TYPE(__clove_report_pretty_t);
     result->base.start = __clove_report_pretty_start;
+    result->base.begin_suite = __clove_report_pretty_begin_suite;
+    result->base.end_suite = __clove_report_pretty_end_suite;
     result->base.end = __clove_report_pretty_end;
     result->base.test_executed = __clove_report_pretty_test_executed;
     result->base.free = __clove_report_pretty_free;
@@ -2220,7 +2230,12 @@ void __clove_report_pretty_start(__clove_report_t* _this, size_t suite_count, si
     report->stream->writef(report->stream, "%s Executing Test Runner in 'Verbose' mode\n", report->labels.info);
     report->stream->writef(report->stream, "%s Suite / Tests found: %zu / %zu \n", report->labels.info, suite_count, test_count);
 }
-
+void __clove_report_pretty_begin_suite(__clove_report_t* _this, __clove_suite_t* suite, size_t index) {
+    //nothing todo
+}
+void __clove_report_pretty_end_suite(__clove_report_t* _this, __clove_suite_t* suite, size_t index) {
+    //nothing todo
+}
 void __clove_report_pretty_end(__clove_report_t* _this, size_t test_count, size_t passed, size_t skipped, size_t failed) {
     __clove_report_pretty_t* report = (__clove_report_pretty_t*)_this;
     __clove_time_t end_time = __clove_time_now();
@@ -2358,24 +2373,28 @@ void __clove_report_pretty_test_executed(__clove_report_t* _this, __clove_suite_
 }
 
 void __clove_report_pretty_string_ellipse(
-    const char* exp, size_t exp_size,
-    const char* act, size_t act_size,
-    char* exp_short, char* act_short, size_t short_len)
+    const char* exp, size_t exp_len,
+    const char* act, size_t act_len,
+    char* exp_short, char* act_short, size_t short_size)
 {
-    size_t iter_len = exp_size < act_size ? exp_size : act_size;
+    size_t iter_len = exp_len < act_len ? exp_len : act_len;
     if (iter_len == 0) {
-        __clove_string_ellipse(exp, exp_size, 0, exp_short, short_len);
-        __clove_string_ellipse(act, act_size, 0, act_short, short_len);
+        __clove_string_ellipse(exp, exp_len, 0, exp_short, short_size);
+        __clove_string_ellipse(act, act_len, 0, act_short, short_size);
         return;
     }
 
     for (size_t i = 0; i < iter_len; ++i) {
         if (exp[i] != act[i]) {
-            __clove_string_ellipse(exp, exp_size, i, exp_short, short_len);
-            __clove_string_ellipse(act, act_size, i, act_short, short_len);
+            __clove_string_ellipse(exp, exp_len, i, exp_short, short_size);
+            __clove_string_ellipse(act, act_len, i, act_short, short_size);
             return;
         }
     }
+
+    //Scenario where the shortest one is the like the "prefix" of the longest one 
+    __clove_string_ellipse(exp, exp_len, iter_len-1, exp_short, short_size);
+    __clove_string_ellipse(act, act_len, iter_len-1, act_short, short_size);
 }
 
 void __clove_report_pretty_pad_right(char* result, char* strToPad) {
@@ -2395,17 +2414,21 @@ void __clove_report_pretty_pad_right(char* result, char* strToPad) {
 #pragma region PRIVATE - Report Json Impl
 #include <stdio.h>
 #include <stdlib.h>
-__clove_report_json_t* __clove_report_json_new(__clove_stream_t* stream, const char* clove_version) {
+__clove_report_json_t* __clove_report_json_new(__clove_stream_t* stream) {
     __clove_report_json_t* result = __CLOVE_MEMORY_MALLOC_TYPE(__clove_report_json_t);
     result->base.start = __clove_report_json_start;
+    result->base.begin_suite = __clove_report_json_begin_suite;
+    result->base.end_suite = __clove_report_json_end_suite;
     result->base.end = __clove_report_json_end;
     result->base.test_executed = __clove_report_json_test_executed;
     result->base.free = __clove_report_json_free;
     result->stream = stream;
-    result->clove_version = clove_version;
-    result->api_version = 1;
+    result->clove_version = __CLOVE_VERSION;
+    result->json_schema = "1.0";
     result->current_suite = NULL;
     result->test_count = 0;
+    result->suite_count = 0;
+    result->is_first_suite_test = false;
     return result;
 }
 
@@ -2416,17 +2439,20 @@ void __clove_report_json_free(__clove_report_t* report) {
 void __clove_report_json_start(__clove_report_t* _this, size_t suite_count, size_t test_count) {
     __clove_report_json_t* instance = (__clove_report_json_t*)_this;
 
+    instance->suite_count = suite_count;
+
     bool opened = instance->stream->open(instance->stream);
     if (!opened) { __clove_console_printf("ERROR OPENING STREAM\n"); } //TODO: ToString stream
 
     instance->stream->writef(instance->stream, "{\n");
     instance->stream->writef(instance->stream, "\t\"clove_version\" : \"%s\",\n", instance->clove_version);
-    instance->stream->writef(instance->stream, "\t\"api_version\" : %u,\n", instance->api_version); //TODO: delete or update api_version
+    instance->stream->writef(instance->stream, "\t\"json_schema\" : \"%s\",\n", instance->json_schema);
     instance->stream->writef(instance->stream, "\t\"result\" : {\n");
     instance->stream->writef(instance->stream, "\t\t\"suite_count\" : %zu,\n", suite_count);
     instance->stream->writef(instance->stream, "\t\t\"test_count\" : %zu,\n", test_count);
     instance->stream->writef(instance->stream, "\t\t\"suites\" : {\n");
 }
+
 
 void __clove_report_json_end(__clove_report_t* _this, size_t test_count, size_t passed, size_t skipped, size_t failed) {
     __clove_report_json_t* instance = (__clove_report_json_t*)_this;
@@ -2483,15 +2509,36 @@ void __clove_report_json_print_data(__clove_report_json_t* instance, __clove_tes
     }
 }
 
+void __clove_report_json_begin_suite(__clove_report_t* _this, __clove_suite_t* suite, size_t index) {
+    __clove_report_json_t* instance = (__clove_report_json_t*)_this;
+   instance->is_first_suite_test = true;
+   instance->current_suite = suite;
+}
+
+void __clove_report_json_end_suite(__clove_report_t* _this, __clove_suite_t* suite, size_t index) {
+    __clove_report_json_t* instance = (__clove_report_json_t*)_this;
+    
+    const char* comma = "";
+    if (index < instance->suite_count-1) {
+        comma = ",";
+    }
+    instance->stream->writef(instance->stream, "\t\t\t}%s\n", comma); //close suite    
+
+    instance->current_suite = NULL;
+}
+
 void __clove_report_json_test_executed(__clove_report_t* _this, __clove_suite_t* suite, __clove_test_t* test, size_t test_number) {
     __clove_report_json_t* instance = (__clove_report_json_t*)_this;
     //case for suites > 1
+    /*
     if (instance->current_suite != NULL && instance->current_suite != suite) {
         //TODO: try to avoid to seek within stream (to make it work easily with console)
         instance->stream->seek(instance->stream, -1L, SEEK_CUR); //replacing "\n" with ",\n"
         instance->stream->writef(instance->stream, ",\n");
     }
+    */
 
+   /*
     if (instance->current_suite == NULL || instance->current_suite != suite) {
         char* escaped_file = __clove_string_strdup(test->file_name);
         __clove_string_replace_char(escaped_file, '\\', '/');
@@ -2505,27 +2552,41 @@ void __clove_report_json_test_executed(__clove_report_t* _this, __clove_suite_t*
 
         free(escaped_file);
     }
+    */
+
+    if (instance->is_first_suite_test) {
+        char* escaped_file = __clove_string_strdup(test->file_name);
+        __clove_string_replace_char(escaped_file, '\\', '/');
+
+        instance->stream->writef(instance->stream, "\t\t\t\"%s\" : {\n", instance->current_suite->name);
+        instance->stream->writef(instance->stream, "\t\t\t\t\"file\" : \"%s\",\n", escaped_file);
+        instance->stream->writef(instance->stream, "\t\t\t\t\"tests\" : {\n");
+        instance->test_count = 0;
+
+        free(escaped_file);
+        instance->is_first_suite_test = false;
+    }
 
     instance->test_count++;
-    instance->stream->writef(instance->stream, "\t\t\t\t\"%s\" : {\n", test->name);
-    instance->stream->writef(instance->stream, "\t\t\t\t\t\"status\" : \"%s\",\n", test->result);
-    instance->stream->writef(instance->stream, "\t\t\t\t\t\"duration\" : %llu", __clove_time_to_nanos(&(test->duration)));
+    instance->stream->writef(instance->stream, "\t\t\t\t\t\"%s\" : {\n", test->name);
+    instance->stream->writef(instance->stream, "\t\t\t\t\t\t\"status\" : \"%s\",\n", test->result);
+    instance->stream->writef(instance->stream, "\t\t\t\t\t\t\"duration\" : %llu", __clove_time_to_nanos(&(test->duration)));
     if (test->result == __CLOVE_TEST_RESULT_FAILED) {
         instance->stream->writef(instance->stream, ",\n");
-        instance->stream->writef(instance->stream, "\t\t\t\t\t\"line\" : %u,\n", test->issue.line);
-        instance->stream->writef(instance->stream, "\t\t\t\t\t\"assert\" : \"%s\",\n", test->issue.assert);
-        instance->stream->writef(instance->stream, "\t\t\t\t\t\"type\" : \"%s\",\n", test->issue.data_type);
-        instance->stream->writef(instance->stream, "\t\t\t\t\t\"expected\" : \"");
+        instance->stream->writef(instance->stream, "\t\t\t\t\t\t\"line\" : %u,\n", test->issue.line);
+        instance->stream->writef(instance->stream, "\t\t\t\t\t\t\"assert\" : \"%s\",\n", test->issue.assert);
+        instance->stream->writef(instance->stream, "\t\t\t\t\t\t\"type\" : \"%s\",\n", test->issue.data_type);
+        instance->stream->writef(instance->stream, "\t\t\t\t\t\t\"expected\" : \"");
         __clove_report_json_print_data(instance, test, &(test->issue.expected));
         instance->stream->writef(instance->stream, "\",\n");
-        instance->stream->writef(instance->stream, "\t\t\t\t\t\"actual\" : \"");
+        instance->stream->writef(instance->stream, "\t\t\t\t\t\t\"actual\" : \"");
         __clove_report_json_print_data(instance, test, &(test->issue.actual));
         instance->stream->writef(instance->stream, "\"\n");
     }
     else {
         instance->stream->writef(instance->stream, "\n");
     }
-    instance->stream->writef(instance->stream, "\t\t\t\t}");
+    instance->stream->writef(instance->stream, "\t\t\t\t\t}");
 
 
     if (instance->test_count < suite->test_count) {
@@ -2533,7 +2594,7 @@ void __clove_report_json_test_executed(__clove_report_t* _this, __clove_suite_t*
     }
     else {
         instance->stream->writef(instance->stream, "\n");
-        instance->stream->writef(instance->stream, "\t\t\t}\n"); //close suite
+        instance->stream->writef(instance->stream, "\t\t\t\t}\n"); //close "tests"
     }
 }
 #pragma endregion // Report Json Impl
@@ -2650,6 +2711,8 @@ __clove_report_list_tests_json_t* __clove_report_list_tests_json_new(__clove_str
     _this->base.end = __clove_report_list_tests_json_end;
     _this->base.free = __clove_report_list_tests_json_free;
     _this->stream = stream;
+    _this->clove_version = __CLOVE_VERSION;
+    _this->json_schema = "1.0";
     _this->suite_count = 0;
     _this->is_suite_first_test = false;
     _this->current_suite = NULL;
@@ -2666,9 +2729,12 @@ void __clove_report_list_tests_json_begin(__clove_report_list_tests_t* _this, si
     json->stream->open(json->stream);
 
     json->stream->writef(json->stream, "{\n");
-    json->stream->writef(json->stream, "\t\"suite_count\" : %zu,\n", suite_count);
-    json->stream->writef(json->stream, "\t\"test_count\" : %zu,\n", test_count);
-    json->stream->writef(json->stream, "\t\"suites\" : [\n");
+    json->stream->writef(json->stream, "\t\"clove_version\" : \"%s\",\n", json->clove_version);
+    json->stream->writef(json->stream, "\t\"json_schema\" : \"%s\",\n", json->json_schema);
+    json->stream->writef(json->stream, "\t\"result\" : {\n");
+    json->stream->writef(json->stream, "\t\t\"suite_count\" : %zu,\n", suite_count);
+    json->stream->writef(json->stream, "\t\t\"test_count\" : %zu,\n", test_count);
+    json->stream->writef(json->stream, "\t\t\"suites\" : [\n");
     
 }
 void __clove_report_list_tests_json_begin_suite(__clove_report_list_tests_t* _this,  __clove_suite_t* suite, size_t index) {
@@ -2684,8 +2750,8 @@ void __clove_report_list_tests_json_end_suite(__clove_report_list_tests_t* _this
     if (index < json->suite_count-1) {
         comma = ",";
     }
-    json->stream->writef(json->stream, "\t\t\t]\n");
-    json->stream->writef(json->stream, "\t\t}%s\n", comma);
+    json->stream->writef(json->stream, "\t\t\t\t]\n");
+    json->stream->writef(json->stream, "\t\t\t}%s\n", comma);
 }
 void __clove_report_list_tests_json_begin_test(__clove_report_list_tests_t* _this,  __clove_test_t* test, size_t index) {
     //nothing todo
@@ -2696,27 +2762,28 @@ void __clove_report_list_tests_json_end_test(__clove_report_list_tests_t* _this,
         char* escaped_file = __clove_string_strdup(test->file_name);
         __clove_string_replace_char(escaped_file, '\\', '/');
 
-        json->stream->writef(json->stream, "\t\t{\n");
-        json->stream->writef(json->stream, "\t\t\t\"name\" : \"%s\",\n", json->current_suite->name);
-        json->stream->writef(json->stream, "\t\t\t\"file\" : \"%s\",\n", escaped_file);
-        json->stream->writef(json->stream, "\t\t\t\"tests\" : [\n");
+        json->stream->writef(json->stream, "\t\t\t{\n");
+        json->stream->writef(json->stream, "\t\t\t\t\"name\" : \"%s\",\n", json->current_suite->name);
+        json->stream->writef(json->stream, "\t\t\t\t\"file\" : \"%s\",\n", escaped_file);
+        json->stream->writef(json->stream, "\t\t\t\t\"tests\" : [\n");
 
         free(escaped_file);
         json->is_suite_first_test = false;  
     }
-    json->stream->writef(json->stream, "\t\t\t\t{\n");
-    json->stream->writef(json->stream, "\t\t\t\t\t\"name\" : \"%s\",\n", test->name);
-    json->stream->writef(json->stream, "\t\t\t\t\t\"line\" : %zu\n", test->funct_line);
+    json->stream->writef(json->stream, "\t\t\t\t\t{\n");
+    json->stream->writef(json->stream, "\t\t\t\t\t\t\"name\" : \"%s\",\n", test->name);
+    json->stream->writef(json->stream, "\t\t\t\t\t\t\"line\" : %zu\n", test->funct_line);
     const char* comma = "";
     if (index < json->current_suite->test_count-1) {
         comma = ",";
     }
-    json->stream->writef(json->stream, "\t\t\t\t}%s\n", comma);
+    json->stream->writef(json->stream, "\t\t\t\t\t}%s\n", comma);
 }
 void __clove_report_list_tests_json_end(__clove_report_list_tests_t* _this) {
     __clove_report_list_tests_json_t* json = (__clove_report_list_tests_json_t*)_this;
 
-    json->stream->writef(json->stream, "\t]\n"); //end suites
+    json->stream->writef(json->stream, "\t\t]\n"); //end suites
+    json->stream->writef(json->stream, "\t}\n"); //end result
     json->stream->writef(json->stream, "}\n");
     json->stream->close(json->stream);
 }
@@ -3222,8 +3289,8 @@ int __clove_runner_auto(int argc, char* argv[]) {
     __clove_exec_path = argv[0];
     __clove_exec_base_path = __clove_path_basepath(argv[0]);
 
-    //argc = 4;
-    //const char* argv2[] = {"exec", "-i", "*.ListTestWithOptRcsv"};
+    //argc = 5;
+    //const char* argv2[] = {"exec", "-i", "*.ActShortThanExpForthCharDiff", "-r", "pretty"};
     //const char* argv2[] = {"exec", "-l", "-r", "csv"};
 
     __clove_vector_t cmd_handlers;
@@ -3295,7 +3362,9 @@ int __clove_exec_suites(__clove_suite_t* suites, size_t suite_count, size_t test
     size_t test_start_counter = 1;
     for (size_t i = 0; i < suite_count; ++i) {
         __clove_suite_t* each_suite = &suites[i];
+        report->begin_suite(report, each_suite, i);
         __clove_exec_suite(each_suite, test_start_counter, &passed, &failed, &skipped, report);
+        report->end_suite(report, each_suite, i);
         test_start_counter += each_suite->test_count;
     }
     report->end(report, test_count, passed, skipped, failed);
