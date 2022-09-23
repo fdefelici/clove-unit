@@ -17,7 +17,7 @@ Here a list of features provided by `CLove-Unit`:
 * Tests / Run duration
 * Tests / Run failure pointing to the file/line where the assertions are unsatisfied
 * Selective test execution (opportunity to include/exclude tests from the execution)
-* Command-line api to interact with test binary, useful for creating IDE Plugins and Automations
+* Command-line api to interact with the test binary, useful for creating IDE Plugins and Automations
 
 # IDE Extension
 For the one, who prefer UI oriented test executor, `CLove-Unit` is supported on the following IDEs:
@@ -31,7 +31,7 @@ Have a look and enjoy ;-)
 
 # How it works
 `CLove-Unit` is implemented around the following concepts:
-- **Test**: a test is basically a fuction where you can stimulate your code and validate it using assertion
+- **Test**: a test is basically a fuction where you can stimulate your code and validate it using assertions
 - **Suite**: a suite is a set of Tests to be run. A Suite allow to execute setup/teardown behaviour for each Test execution (or once for all the Tests).
 - **Runner**: a runner allow execution of a set of Suites and provide results
 
@@ -149,7 +149,7 @@ Helper apis to support test implementation
 | Api | Description |
 | ------------- | ------------- |
 | CLOVE_EXEC_PATH()  | Macro to easily retrive executable path as a char* |
-| CLOVE_EXEC_BASE_PATH() | Macro to easily retrive executable base path a char* |
+| CLOVE_EXEC_BASE_PATH() | Macro to easily retrive executable base path as a char* |
 
 # Command-Line Api
 A binary built with `CLove-Unit` library supports a set of commandline options:
