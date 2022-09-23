@@ -44,3 +44,9 @@ CLOVE_TEST(StringStartsWith) {
     result = __clove_string_startswith(str3, prefix);
     CLOVE_IS_FALSE(result);
 }
+
+CLOVE_TEST(StringCsvEscape) {
+    CLOVE_STRING_EQ("\"Hello,World\"", __clove_string_csv_escape("Hello,World"));
+    CLOVE_STRING_EQ("\"\"", __clove_string_csv_escape("\""));
+    CLOVE_STRING_EQ("\\n\\t", __clove_string_csv_escape("\n\t"));
+}

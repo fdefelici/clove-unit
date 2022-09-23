@@ -2,7 +2,7 @@
 #include "clove-unit.h"
 
 CLOVE_TEST(InitWithNoArgs) {
-    char* argv[1] = {"exec"};
+    const char* argv[1] = {"exec"};
     int argc = 1;
     __clove_cmdline_t cmd;
     __clove_cmdline_init(&cmd, argv, argc);
@@ -12,7 +12,7 @@ CLOVE_TEST(InitWithNoArgs) {
 } 
 
 CLOVE_TEST(InitWithOneOptNoValue) {
-    char* argv[2] = {"exec", "-o"};
+    const char* argv[2] = {"exec", "-o"};
     int argc = 2;
     __clove_cmdline_t cmd;
     __clove_cmdline_init(&cmd, argv, argc);
@@ -22,7 +22,7 @@ CLOVE_TEST(InitWithOneOptNoValue) {
 } 
 
 CLOVE_TEST(InitWithMultipleOpt) {
-    char* argv[7] = {"exec", "-r", "json", "-i", "one", "-i", "two"};
+    const char* argv[7] = {"exec", "-r", "json", "-i", "one", "-i", "two"};
     int argc = 7;
     __clove_cmdline_t cmd;
     __clove_cmdline_init(&cmd, argv, argc);
@@ -40,7 +40,7 @@ CLOVE_TEST(InitWithMultipleOpt) {
 } 
 
 CLOVE_TEST(InitAndAdd) {
-    char* argv[3] = {"exec", "-i", "one"};
+    const char* argv[3] = {"exec", "-i", "one"};
     int argc = 3;
     __clove_cmdline_t cmd;
     __clove_cmdline_init(&cmd, argv, argc);
@@ -53,17 +53,17 @@ CLOVE_TEST(InitAndAdd) {
 }
 
 CLOVE_TEST(OptDashWithTwoLetter) {
-    char* argv[2] = {"exec", "-ii"};
+    const char* argv[2] = {"exec", "-ii"}; //single dash option accept only 1 char option name
     int argc = 2;
     __clove_cmdline_t cmd;
     __clove_cmdline_init(&cmd, argv, argc);
 
-    CLOVE_IS_TRUE(__clove_cmdline_has_opt(&cmd, "ii"));
+    CLOVE_IS_FALSE(__clove_cmdline_has_opt(&cmd, "ii"));
     __clove_cmdline_free(&cmd);
 }
 
 CLOVE_TEST(OptDoubleDash) {
-    char* argv[2] = {"exec", "--ii"};
+    const char* argv[2] = {"exec", "--ii"};
     int argc = 2;
     __clove_cmdline_t cmd;
     __clove_cmdline_init(&cmd, argv, argc);
@@ -73,7 +73,7 @@ CLOVE_TEST(OptDoubleDash) {
 }
 
 CLOVE_TEST(OptDoubleDashSeparatedByDash) {
-    char* argv[2] = {"exec", "--list-tests"};
+    const char* argv[2] = {"exec", "--list-tests"};
     int argc = 2;
     __clove_cmdline_t cmd;
     __clove_cmdline_init(&cmd, argv, argc);
@@ -83,7 +83,7 @@ CLOVE_TEST(OptDoubleDashSeparatedByDash) {
 }
 
 CLOVE_TEST(InvalidOptJustDash) {
-    char* argv[2] = {"exec", "-"};
+    const char* argv[2] = {"exec", "-"};
     int argc = 2;
     __clove_cmdline_t cmd;
     __clove_cmdline_init(&cmd, argv, argc);
@@ -92,4 +92,44 @@ CLOVE_TEST(InvalidOptJustDash) {
     __clove_cmdline_free(&cmd);
 }
 
+CLOVE_TEST(HasOneOpt) {
+    const char* argv[4] = {"exec", "-o", "--output", "-a"};
+    int argc = 4;
+    __clove_cmdline_t cmd;
+    __clove_cmdline_init(&cmd, argv, argc);
 
+    CLOVE_IS_TRUE(__clove_cmdline_has_one_opt(&cmd, "o", "output"));
+    CLOVE_IS_TRUE(__clove_cmdline_has_one_opt(&cmd, "a", "unexistent"));
+    CLOVE_IS_FALSE(__clove_cmdline_has_one_opt(&cmd, "unexistent", "unexistent"));
+
+    __clove_cmdline_free(&cmd);
+}
+
+CLOVE_TEST(GetOneOptValue) {
+    const char* argv[7] = {"exec", "-o", "value1", "--output", "value2", "-a", "value3"};
+    int argc = 7;
+    __clove_cmdline_t cmd;
+    __clove_cmdline_init(&cmd, argv, argc);
+
+    CLOVE_STRING_EQ("value1", __clove_cmdline_get_one_opt_value(&cmd, "o", "output"));
+    CLOVE_STRING_EQ("value2", __clove_cmdline_get_one_opt_value(&cmd, "output", "o"));
+    CLOVE_STRING_EQ("value3", __clove_cmdline_get_one_opt_value(&cmd, "a", "unexistent"));
+    CLOVE_STRING_EQ("value3", __clove_cmdline_get_one_opt_value(&cmd, "unexistent", "a"));
+    CLOVE_NULL( __clove_cmdline_get_one_opt_value(&cmd, "unexistent", "unexistent"));
+
+    __clove_cmdline_free(&cmd);
+}
+
+CLOVE_TEST(InitWithTwoOptWithoutValue) {
+    const char* argv[3] = {"exec", "-r", "-i"};
+    int argc = 3;
+    __clove_cmdline_t cmd;
+    __clove_cmdline_init(&cmd, argv, argc);
+
+    CLOVE_IS_TRUE(__clove_cmdline_has_opt(&cmd, "r"));
+    CLOVE_NULL(__clove_cmdline_get_opt_value(&cmd, "r"));
+    CLOVE_IS_TRUE(__clove_cmdline_has_opt(&cmd, "i"));
+    CLOVE_NULL(__clove_cmdline_get_opt_value(&cmd, "i"));
+
+    __clove_cmdline_free(&cmd);
+}

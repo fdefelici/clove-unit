@@ -3,7 +3,9 @@
 
 The aim of this library is to reduce at the minimum the boilder-plate for C developers and just focus on unit test development (such as avoiding to register manually the tests to an execution list).
 
-`CLove-Unit` is able to discover and run your tests, gathering information about positives and failures (file, line, reason), with a colored syntax (if ANSI is supported by your shell).
+`CLove-Unit` is able to discover and run your tests, gathering information about positives and failures (file, line, reason), with possibility to show the result in different output formats (configurable by a powerful command-line api).
+
+Here an example of the default report format (pretty printing on console with ansi support)
 
 ![Clove test run result](./examples/result.png)
 
@@ -11,10 +13,11 @@ The aim of this library is to reduce at the minimum the boilder-plate for C deve
 Here a list of features provided by `CLove-Unit`:
 * Single Header
 * Tests Autodiscovery (reducing at minimum developer boiler-plate on writing tests)
-* Console Report in ANSI format (if supported by the shell)
+* Test Report with different format (pretty print ansi, csv, json) and output (console or file)
 * Tests / Run duration
 * Tests / Run failure pointing to the file/line where the assertions are unsatisfied
 * Selective test execution (opportunity to include/exclude tests from the execution)
+* Command-line api to interact with the test binary, useful for creating IDE Plugins and Automations
 
 # IDE Extension
 For the one, who prefer UI oriented test executor, `CLove-Unit` is supported on the following IDEs:
@@ -28,7 +31,7 @@ Have a look and enjoy ;-)
 
 # How it works
 `CLove-Unit` is implemented around the following concepts:
-- **Test**: a test is basically a fuction where you can stimulate your code and validate it using assertion
+- **Test**: a test is basically a fuction where you can stimulate your code and validate it using assertions
 - **Suite**: a suite is a set of Tests to be run. A Suite allow to execute setup/teardown behaviour for each Test execution (or once for all the Tests).
 - **Runner**: a runner allow execution of a set of Suites and provide results
 
@@ -146,7 +149,7 @@ Helper apis to support test implementation
 | Api | Description |
 | ------------- | ------------- |
 | CLOVE_EXEC_PATH()  | Macro to easily retrive executable path as a char* |
-| CLOVE_EXEC_BASE_PATH() | Macro to easily retrive executable base path a char* |
+| CLOVE_EXEC_BASE_PATH() | Macro to easily retrive executable base path as a char* |
 
 # Command-Line Api
 A binary built with `CLove-Unit` library supports a set of commandline options:
@@ -155,19 +158,23 @@ A binary built with `CLove-Unit` library supports a set of commandline options:
 
 | Option | Description |
 | ------------- | ------------- |
-| \<no-option\>  | Running executable with no args will produce a verbose console report (default) |
-| -e, --exclude `SELECT_PATTERN` | Exclude tests to be run/listed<br /> (can be repeated more than once)<br /> [[read here for more details](#test-inclusionexclusion)] |
+| \<no-option\>  | Running executable with no args will execute tests producing a report in `pretty` format (default) |
+| -e, --exclude \<expr\> | Exclude tests to be run/listed<br /> (can be repeated more than once)<br /> [[read here for more details](#test-inclusionexclusion)] |
 | -h, --help | Display usage information |
-| -i, --include `SELECT_PATTERN` | Include tests to be run/listed<br /> (can be repeated more than once)<br /> [[read here for more details](#test-inclusionexclusion)]|
-| -l, --list-tests | List all/matching test cases in CSV format: <SuiteName,TestName,SourcePath,TestLine><br />Accepts inclusion/exclusion expression|
-| -v, --version | Show CLove-Unit version|
+| -i, --include \<expr\> | Include tests to be run/listed<br /> (can be repeated more than once)<br /> [[read here for more details](#test-inclusionexclusion)]|
+| -l, --list-tests | List all/matching test cases in `pretty` format (default).<br />Accepts inclusion/exclusion expression |
+| -o, --output \<stream\> | Specify output stream for a report. Possible choises: `stdout` (default) or `<file path>` |
+| -r, --report \<format\> | Specify report format when running/listing tests. Possible choises: `pretty`, `csv`, `json` |
+| -t, --run-tests | Execute all/matching test cases (same as \<no-option\> scenario).<br />Accepts inclusion/exclusion expression |
+| -v, --version | Show CLove-Unit version |
 | -x, --error-on-test-fail | Test run process will end with error in case of test failure. Default is to end the process succesfully |
 
 ## Test Inclusion/Exclusion
 Inclusion/Exclusion options are useful to collect a specific subset of Suite/Tests and can be repeated more the once in the commandline.
+
 > NOTE: If both inclusion and exclusion options are provided, the inclusion pattern always wins over the exclusion one.
 
-The `SELECT_PATTERN` works as follow:
+These options allow to specify an expression that works as follow:
 * Basic: `SuiteName.TestName`
 * Wildcard: Only `*` is supported, and can be used to implement pattern such as "start with", "end with", "contains", "all", for both the SuiteName and TestName
 
