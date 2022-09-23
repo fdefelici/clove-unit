@@ -3,7 +3,9 @@
 
 The aim of this library is to reduce at the minimum the boilder-plate for C developers and just focus on unit test development (such as avoiding to register manually the tests to an execution list).
 
-`CLove-Unit` is able to discover and run your tests, gathering information about positives and failures (file, line, reason), with a colored syntax (if ANSI is supported by your shell).
+`CLove-Unit` is able to discover and run your tests, gathering information about positives and failures (file, line, reason), with possibility to show the result in different output formats (configurable by a powerful command-line api).
+
+Here an example of the default report format (pretty printing on console with ansi support)
 
 ![Clove test run result](./examples/result.png)
 
@@ -11,11 +13,11 @@ The aim of this library is to reduce at the minimum the boilder-plate for C deve
 Here a list of features provided by `CLove-Unit`:
 * Single Header
 * Tests Autodiscovery (reducing at minimum developer boiler-plate on writing tests)
-* Test Report with different format (pretty print ansi format, json) and output (console or file)
+* Test Report with different format (pretty print ansi, csv, json) and output (console or file)
 * Tests / Run duration
 * Tests / Run failure pointing to the file/line where the assertions are unsatisfied
 * Selective test execution (opportunity to include/exclude tests from the execution)
-* Usefull command-line api to interact with test binary
+* Command-line api to interact with test binary, useful for creating IDE Plugins and Automations
 
 # IDE Extension
 For the one, who prefer UI oriented test executor, `CLove-Unit` is supported on the following IDEs:
@@ -162,7 +164,7 @@ A binary built with `CLove-Unit` library supports a set of commandline options:
 | -i, --include \<expr\> | Include tests to be run/listed<br /> (can be repeated more than once)<br /> [[read here for more details](#test-inclusionexclusion)]|
 | -l, --list-tests | List all/matching test cases in `pretty` format (default).<br />Accepts inclusion/exclusion expression |
 | -o, --output \<stream\> | Specify output stream for a report. Possible choises: `stdout` (default) or `<file path>` |
-| -r, --report \<format\> | Specify report format when running tests. Possible choises: `pretty`, `csv`, `json` |
+| -r, --report \<format\> | Specify report format when running/listing tests. Possible choises: `pretty`, `csv`, `json` |
 | -t, --run-tests | Execute all/matching test cases (same as \<no-option\> scenario).<br />Accepts inclusion/exclusion expression |
 | -v, --version | Show CLove-Unit version |
 | -x, --error-on-test-fail | Test run process will end with error in case of test failure. Default is to end the process succesfully |
