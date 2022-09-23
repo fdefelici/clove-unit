@@ -2,6 +2,8 @@
 #include <clove-unit.h>
 #include "utils/utils.h"
 
+#define _SEP_ __CLOVE_PATH_SEPARATOR_STR
+
 char* cmd_out;
 
 CLOVE_SUITE_SETUP() {
@@ -166,4 +168,36 @@ CLOVE_TEST(DefaultReportWithOptRunTests) {
     CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_OK, cmd_code);
     CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "Suite / Tests found: 2 / 3"));
     CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "Total: 3, Passed: 2, Failed: 1, Skipped: 0"));
+}
+
+
+CLOVE_TEST(ReportWithOptRcsvWithFailure) {
+    const char* cmd = RES_PRJ01_EXEC_PATH" -r csv";
+    int cmd_code = exec_cmd(cmd, &cmd_out);
+    CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_OK, cmd_code);
+
+    __clove_vector_t lines;
+    str_split(cmd_out, '\n', &lines);
+
+    CLOVE_ULLONG_EQ(4, __clove_vector_count(&lines));
+
+    const char* line1 = *(char**)__clove_vector_get(&lines, 0);
+    const char* line2 = *(char**)__clove_vector_get(&lines, 1);
+    const char* line3 = *(char**)__clove_vector_get(&lines, 2);
+    const char* line4 = *(char**)__clove_vector_get(&lines, 3);
+
+    //line1
+    CLOVE_STRING_EQ("Suite,Test,Status,Duration,File,Line,Assert,Type,Expected,Actual", line1);
+    //line2
+    CLOVE_IS_TRUE(__clove_string_startswith(line2, "Prj01Suite01,Test01,PASS,"));
+    //line3
+    CLOVE_STRING_EQ("Prj01Suite01,Test02,FAIL,,src"_SEP_"prj01_test1.c,9,FAIL,,,", line3);
+    //line4
+    CLOVE_IS_TRUE(__clove_string_startswith(line4, "Prj01Suite02,Test21,PASS,"));
+
+
+    //CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "Suite,Test,Status,Duration,File,Line,Expected,Actual"));
+    //CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "Prj01Suite01,Test01,PASS"));
+
+    puts(cmd_out);
 }

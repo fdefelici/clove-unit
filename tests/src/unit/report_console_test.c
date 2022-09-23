@@ -242,8 +242,6 @@ CLOVE_TEST(StringEllipseAtPos21) {
     char out[16];
     size_t out_size = sizeof(out);
     __clove_string_ellipse(string, str_len, pos, out, out_size);
-
-    printf("%c\n", string[pos]);
     CLOVE_STRING_EQ("...012345111112", out);
 }
 
