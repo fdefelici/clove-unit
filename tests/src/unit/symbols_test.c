@@ -1,4 +1,4 @@
-#define CLOVE_SUITE_NAME SymbolsTest
+#define CLOVE_SUITE_NAME UNIT_SymbolsTest
 #include <clove-unit.h>
 
 CLOVE_TEST(ValidateEqualityRule) {

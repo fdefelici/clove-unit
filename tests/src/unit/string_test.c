@@ -1,4 +1,4 @@
-#define CLOVE_SUITE_NAME StringAssertsTest
+#define CLOVE_SUITE_NAME UNIT_StringAssertsTest
 #include "clove-unit.h"
 #include <stdlib.h>
 
@@ -35,4 +35,18 @@ CLOVE_TEST(StringStartsWith) {
     const char* prefix = "-";
     bool result = __clove_string_startswith(str1, prefix);
     CLOVE_IS_TRUE(result);
+
+    const char* str2 = "";
+    result = __clove_string_startswith(str2, prefix);
+    CLOVE_IS_FALSE(result);
+
+    const char* str3 = NULL;
+    result = __clove_string_startswith(str3, prefix);
+    CLOVE_IS_FALSE(result);
+}
+
+CLOVE_TEST(StringCsvEscape) {
+    CLOVE_STRING_EQ("\"Hello,World\"", __clove_string_csv_escape("Hello,World"));
+    CLOVE_STRING_EQ("\"\"", __clove_string_csv_escape("\""));
+    CLOVE_STRING_EQ("\\n\\t", __clove_string_csv_escape("\n\t"));
 }
