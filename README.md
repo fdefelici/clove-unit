@@ -152,9 +152,9 @@ Helper apis to support test implementation
 | CLOVE_EXEC_BASE_PATH() | Macro to easily retrive executable base path as a char* |
 
 # Command-Line Api
-A binary built with `CLove-Unit` library supports a set of commandline options:
+A binary built with `CLove-Unit` library supports a set of command-line options when lanched like this:
 
-```<executable> [options] ```
+> ```<executable> [options] ```
 
 | Option | Description |
 | ------------- | ------------- |
