@@ -21,7 +21,8 @@ Here a list of features provided by `CLove-Unit`:
 
 # IDE Extension
 For the one, who prefer UI oriented test executor, `CLove-Unit` is supported on the following IDEs:
-* `Visual Studio Code`:  Extension is available from the [VSCode Market Place](https://marketplace.visualstudio.com/items?itemName=fdefelici.vscode-clove-unit). 
+* `Visual Studio`: available from [VS Market Place](https://marketplace.visualstudio.com/items?itemName=fdefelici.vs-clove-unit)
+* `Visual Studio Code`:  available from the [VSCode Market Place](https://marketplace.visualstudio.com/items?itemName=fdefelici.vscode-clove-unit). 
 
 Have a look and enjoy ;-)
 
