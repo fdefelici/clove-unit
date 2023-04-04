@@ -1,4 +1,4 @@
-# CLove-Unit  &middot; [![version](https://img.shields.io/github/v/release/fdefelici/clove-unit?label=latest&sort=semver)](./clove-unit.h) [![workflow](https://img.shields.io/github/workflow/status/fdefelici/clove-unit/CI%20Action)](https://github.com/fdefelici/clove-unit/actions/workflows/ci_action.yml) [![conan](https://img.shields.io/badge/conan-available-blueviolet)](https://conan.io/center/clove-unit)
+# CLove-Unit  &middot; [![version](https://img.shields.io/github/v/release/fdefelici/clove-unit?label=latest&sort=semver)](./clove-unit.h) [![workflow](https://img.shields.io/github/actions/workflow/status/fdefelici/clove-unit/ci_action.yml)](https://github.com/fdefelici/clove-unit/actions/workflows/ci_action.yml) [![conan](https://img.shields.io/badge/conan-available-blueviolet)](https://conan.io/center/clove-unit)
 `CLove-Unit` is a unit testing single-header library for C (mainly, but could also work with C++), with test autodiscovery feature.
 
 The aim of this library is to reduce at the minimum the boilder-plate for C developers and just focus on unit test development (such as avoiding to register manually the tests to an execution list).
