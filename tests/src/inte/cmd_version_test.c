@@ -2,7 +2,7 @@
 #include <clove-unit.h>
 #include "utils/utils.h"
 
-char* cmd_out;
+static char* cmd_out;
 
 CLOVE_SUITE_SETUP() {
     cmd_out = NULL;
