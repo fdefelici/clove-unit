@@ -2,8 +2,8 @@
 #include "clove-unit.h"
 #include "utils/utils.h"
 
-__clove_report_run_tests_csv_t* report;
-__clove_stream_file_t* stream;
+static __clove_report_run_tests_csv_t* report;
+static __clove_stream_file_t* stream;
 
 CLOVE_SUITE_SETUP() {
     char* file_path = __clove_path_rel_to_abs_exec_path("clove_report.csv");

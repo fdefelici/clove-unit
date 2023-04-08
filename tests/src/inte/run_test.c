@@ -4,7 +4,7 @@
 
 #define _SEP_ __CLOVE_PATH_SEPARATOR_STR
 
-char* cmd_out;
+static char* cmd_out;
 
 CLOVE_SUITE_SETUP() {
     cmd_out = NULL;
