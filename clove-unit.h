@@ -578,6 +578,15 @@ __CLOVE_EXTERN_C void __clove_report_pretty_string_ellipse(const char* exp, size
 __CLOVE_EXTERN_C void __clove_report_pretty_pad_right(char* result, char* strToPad);
 #define __CLOVE_STRING_LENGTH 256
 #define __CLOVE_TEST_ENTRY_LENGTH 60
+#define __PRETTY_PRINT_FAIL_ASSERT_MSG(buffer, buffer_size, assert, exp, act, print_type) \
+{ \
+    if (assert == __CLOVE_ASSERT_EQ)      __clove_string_sprintf(buffer, buffer_size, "expected ["print_type"] but was ["print_type"]", exp, act); \
+    else if(assert == __CLOVE_ASSERT_NE)  __clove_string_sprintf(buffer, buffer_size, "not expected ["print_type"] but was ["print_type"]", exp, act); \
+    else if(assert == __CLOVE_ASSERT_GT)  __clove_string_sprintf(buffer, buffer_size, "expected ["print_type" > "print_type"] but wasn't", exp, act); \
+    else if(assert == __CLOVE_ASSERT_GTE) __clove_string_sprintf(buffer, buffer_size, "expected ["print_type" >= "print_type"] but wasn't", exp, act); \
+    else if(assert == __CLOVE_ASSERT_LT) __clove_string_sprintf(buffer, buffer_size, "expected ["print_type" < "print_type"] but wasn't", exp, act); \
+    else if(assert == __CLOVE_ASSERT_LTE) __clove_string_sprintf(buffer, buffer_size, "expected ["print_type" <= "print_type"] but wasn't", exp, act); \
+}
 #pragma endregion
 
 #pragma region PRIVATE - RunTests Report CSV Decl
@@ -2383,61 +2392,78 @@ void __clove_report_pretty_end_test(__clove_report_t* _this, __clove_suite_t* su
                 __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_BOOL) {
                     const char* exp = test->issue.expected._bool ? "true" : "false";
                     const char* act = test->issue.actual._bool ? "true" : "false";
-                    __clove_string_sprintf(msg, sizeof(msg), "expected [%s] but was [%s]", exp, act);
+                    //__clove_string_sprintf(msg, sizeof(msg), "expected [%s] but was [%s]", exp, act);
+                    __PRETTY_PRINT_FAIL_ASSERT_MSG(msg, sizeof(msg), test->issue.assert, exp, act, "%s");
                 }
                 __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_CHAR) {
-                    const char* non = test->issue.assert == __CLOVE_ASSERT_EQ ? "" : "not ";
+                    //const char* non = test->issue.assert == __CLOVE_ASSERT_EQ ? "" : "not ";
                     const char exp = test->issue.expected._char;
                     const char act = test->issue.actual._char;
-                    __clove_string_sprintf(msg, sizeof(msg), "%sexpected [%c] but was [%c]", non, exp, act);
+                    //__clove_string_sprintf(msg, sizeof(msg), "%sexpected [%c] but was [%c]", non, exp, act);
+                    __PRETTY_PRINT_FAIL_ASSERT_MSG(msg, sizeof(msg), test->issue.assert, exp, act, "%c");
                 }
                 __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_INT) {
-                    const char* non = test->issue.assert == __CLOVE_ASSERT_EQ ? "" : "not ";
+                    //const char* non = test->issue.assert == __CLOVE_ASSERT_EQ ? "" : "not ";
                     const int exp = test->issue.expected._int;
                     const int act = test->issue.actual._int;
-                    __clove_string_sprintf(msg, sizeof(msg), "%sexpected [%d] but was [%d]", non, exp, act);
+                    //__clove_string_sprintf(msg, sizeof(msg), "%sexpected [%d] but was [%d]", non, exp, act);
+                    __PRETTY_PRINT_FAIL_ASSERT_MSG(msg, sizeof(msg), test->issue.assert, exp, act, "%d");
                 }
                 __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_UINT) {
-                    const char* non = test->issue.assert == __CLOVE_ASSERT_EQ ? "" : "not ";
+                    //const char* non = test->issue.assert == __CLOVE_ASSERT_EQ ? "" : "not ";
                     const unsigned int exp = test->issue.expected._uint;
                     const unsigned int act = test->issue.actual._uint;
-                    __clove_string_sprintf(msg, sizeof(msg), "%sexpected [%u] but was [%u]", non, exp, act);
+                    //__clove_string_sprintf(msg, sizeof(msg), "%sexpected [%u] but was [%u]", non, exp, act);
+                    __PRETTY_PRINT_FAIL_ASSERT_MSG(msg, sizeof(msg), test->issue.assert, exp, act, "%u");
                 }
                 __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_LONG) {
-                    const char* non = test->issue.assert == __CLOVE_ASSERT_EQ ? "" : "not ";
+                    //const char* non = test->issue.assert == __CLOVE_ASSERT_EQ ? "" : "not ";
                     const long exp = test->issue.expected._long;
                     const long act = test->issue.actual._long;
-                    __clove_string_sprintf(msg, sizeof(msg), "%sexpected [%ld] but was [%ld]", non, exp, act);
+                    //__clove_string_sprintf(msg, sizeof(msg), "%sexpected [%ld] but was [%ld]", non, exp, act);
+                    __PRETTY_PRINT_FAIL_ASSERT_MSG(msg, sizeof(msg), test->issue.assert, exp, act, "%ld");
                 }
                 __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_ULONG) {
-                    const char* non = test->issue.assert == __CLOVE_ASSERT_EQ ? "" : "not ";
+                    //const char* non = test->issue.assert == __CLOVE_ASSERT_EQ ? "" : "not ";
                     const unsigned long exp = test->issue.expected._ulong;
                     const unsigned long act = test->issue.actual._ulong;
-                    __clove_string_sprintf(msg, sizeof(msg), "%sexpected [%lu] but was [%lu]", non, exp, act);
+                    //__clove_string_sprintf(msg, sizeof(msg), "%sexpected [%lu] but was [%lu]", non, exp, act);
+                    __PRETTY_PRINT_FAIL_ASSERT_MSG(msg, sizeof(msg), test->issue.assert, exp, act, "%lu");
                 }
                 __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_LLONG) {
-                    const char* non = test->issue.assert == __CLOVE_ASSERT_EQ ? "" : "not ";
+                    //const char* non = test->issue.assert == __CLOVE_ASSERT_EQ ? "" : "not ";
                     const long long exp = test->issue.expected._llong;
                     const long long act = test->issue.actual._llong;
-                    __clove_string_sprintf(msg, sizeof(msg), "%sexpected [%lld] but was [%lld]", non, exp, act);
+                    //__clove_string_sprintf(msg, sizeof(msg), "%sexpected [%lld] but was [%lld]", non, exp, act);
+                    __PRETTY_PRINT_FAIL_ASSERT_MSG(msg, sizeof(msg), test->issue.assert, exp, act, "%lld");
                 }
                 __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_ULLONG) {
-                    const char* non = test->issue.assert == __CLOVE_ASSERT_EQ ? "" : "not ";
+                    //const char* non = test->issue.assert == __CLOVE_ASSERT_EQ ? "" : "not ";
                     const unsigned long long exp = test->issue.expected._ullong;
                     const unsigned long long act = test->issue.actual._ullong;
-                    __clove_string_sprintf(msg, sizeof(msg), "%sexpected [%llu] but was [%llu]", non, exp, act);
+                    //__clove_string_sprintf(msg, sizeof(msg), "%sexpected [%llu] but was [%llu]", non, exp, act);
+                    __PRETTY_PRINT_FAIL_ASSERT_MSG(msg, sizeof(msg), test->issue.assert, exp, act, "%llu");
+                }
+                __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_SIZET) {
+                    //const char* non = test->issue.assert == __CLOVE_ASSERT_EQ ? "" : "not ";
+                    const size_t exp = test->issue.expected._sizet;
+                    const size_t act = test->issue.actual._sizet;
+                    //__clove_string_sprintf(msg, sizeof(msg), "%sexpected [%zu] but was [%zu]", non, exp, act);
+                    __PRETTY_PRINT_FAIL_ASSERT_MSG(msg, sizeof(msg), test->issue.assert, exp, act, "%zu");
                 }
                 __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_FLOAT) {
-                    const char* non = test->issue.assert == __CLOVE_ASSERT_EQ ? "" : "not ";
+                    //const char* non = test->issue.assert == __CLOVE_ASSERT_EQ ? "" : "not ";
                     const float exp = test->issue.expected._float;
                     const float act = test->issue.actual._float;
-                    __clove_string_sprintf(msg, sizeof(msg), "%sexpected [%f] but was [%f]", non, exp, act);
+                    //__clove_string_sprintf(msg, sizeof(msg), "%sexpected [%f] but was [%f]", non, exp, act);
+                    __PRETTY_PRINT_FAIL_ASSERT_MSG(msg, sizeof(msg), test->issue.assert, exp, act, "%f");
                 }
                 __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_DOUBLE) {
                     const char* non = test->issue.assert == __CLOVE_ASSERT_EQ ? "" : "not ";
                     const double exp = test->issue.expected._double;
                     const double act = test->issue.actual._double;
-                    __clove_string_sprintf(msg, sizeof(msg), "%sexpected [%f] but was [%f]", non, exp, act);
+                    //__clove_string_sprintf(msg, sizeof(msg), "%sexpected [%f] but was [%f]", non, exp, act);
+                    __PRETTY_PRINT_FAIL_ASSERT_MSG(msg, sizeof(msg), test->issue.assert, exp, act, "%f");
                 }
                 __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_STRING) {
                     const char* non = test->issue.assert == __CLOVE_ASSERT_EQ ? "" : "not ";
@@ -2468,10 +2494,11 @@ void __clove_report_pretty_end_test(__clove_report_t* _this, __clove_suite_t* su
                     }
                 }
                 __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_PTR) {
-                    const char* non = test->issue.assert == __CLOVE_ASSERT_EQ ? "" : "not ";
+                    //const char* non = test->issue.assert == __CLOVE_ASSERT_EQ ? "" : "not ";
                     const void* exp = test->issue.expected._ptr;
                     const void* act = test->issue.actual._ptr;
-                    __clove_string_sprintf(msg, sizeof(msg), "%sexpected [%p] but was [%p]", non, exp, act);
+                    //__clove_string_sprintf(msg, sizeof(msg), "%sexpected [%p] but was [%p]", non, exp, act);
+                    __PRETTY_PRINT_FAIL_ASSERT_MSG(msg, sizeof(msg), test->issue.assert, exp, act, "%p");
                 }
             __CLOVE_SWITCH_END()
         }
@@ -2598,6 +2625,8 @@ void __clove_report_run_tests_csv_print_data(__clove_report_run_tests_csv_t* ins
                 instance->stream->writef(instance->stream, "%lld", data->_llong);
             __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_ULLONG)
                 instance->stream->writef(instance->stream, "%llu", data->_ullong);
+            __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_SIZET)
+                instance->stream->writef(instance->stream, "%zu", data->_sizet);
             __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_FLOAT)
                 instance->stream->writef(instance->stream, "%f", data->_float);
             __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_DOUBLE)
@@ -2699,6 +2728,8 @@ void __clove_report_json_print_data(__clove_report_json_t* instance, __clove_tes
                 instance->stream->writef(instance->stream, "%lld", data->_llong);
             __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_ULLONG)
                 instance->stream->writef(instance->stream, "%llu", data->_ullong);
+            __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_SIZET)
+                instance->stream->writef(instance->stream, "%zu", data->_sizet);
             __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_FLOAT)
                 instance->stream->writef(instance->stream, "%f", data->_float);
             __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_DOUBLE)

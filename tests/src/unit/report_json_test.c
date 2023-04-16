@@ -287,3 +287,62 @@ CLOVE_TEST(ReportOneSuiteWithOneFailAssertTest) {
     "}";
     CLOVE_STRING_EQ(expected, actual);
 }
+
+CLOVE_TEST(ReportOneSuiteWithOneFailSizetAssertTest) {
+    __clove_suite_t suite;
+    suite.name = "Suite1";
+    suite.test_count = 1;
+
+    __clove_test_t test11;
+    test11.name = "Test11";
+    test11.file_name = "test-file.c";
+    test11.result = __CLOVE_TEST_RESULT_FAILED;
+    test11.issue.line = 8;
+    test11.issue.assert = __CLOVE_ASSERT_EQ;
+    test11.issue.data_type = __CLOVE_GENERIC_SIZET;
+    test11.issue.expected._sizet = 1;
+    test11.issue.actual._sizet = 2;
+    test11.duration.seconds = 0;
+    test11.duration.nanos_after_seconds = 100;
+   
+    __clove_report_t* base = (__clove_report_t*)report;
+    base->start(base, 1, 1);
+    base->begin_suite(base, &suite, 0);
+    base->end_test(base, &suite, &test11, 1);
+    base->end_suite(base, &suite, 0);
+    base->end(base, 1, 0, 0, 1);
+
+    const char* file_path = stream->file_path;
+    const char* actual = read_file(file_path);
+
+    const char* expected =
+    "{\n"
+    "\t\"clove_version\" : \""__CLOVE_VERSION"\",\n"
+    "\t\"json_schema\" : \"1.0\",\n"
+    "\t\"result\" : {\n"
+    "\t\t\"suite_count\" : 1,\n"
+    "\t\t\"test_count\" : 1,\n"
+    "\t\t\"suites\" : {\n"
+    "\t\t\t\"Suite1\" : {\n"
+    "\t\t\t\t\"file\" : \"test-file.c\",\n"
+    "\t\t\t\t\"tests\" : {\n"
+    "\t\t\t\t\t\"Test11\" : {\n"
+    "\t\t\t\t\t\t\"status\" : \"FAIL\",\n"
+    "\t\t\t\t\t\t\"duration\" : 100,\n"
+    "\t\t\t\t\t\t\"line\" : 8,\n"
+    "\t\t\t\t\t\t\"assert\" : \"EQ\",\n"
+    "\t\t\t\t\t\t\"type\" : \"SIZET\",\n"
+    "\t\t\t\t\t\t\"expected\" : \"1\",\n"
+    "\t\t\t\t\t\t\"actual\" : \"2\"\n"
+    "\t\t\t\t\t}\n"
+    "\t\t\t\t}\n"
+    "\t\t\t}\n"
+    "\t\t},\n"
+    "\t\t\"test_passed\" : 0,\n"
+    "\t\t\"test_skipped\" : 0,\n"
+    "\t\t\"test_failed\" : 1,\n"
+    "\t\t\"status\" : \"FAIL\"\n"
+    "\t}\n"
+    "}";
+    CLOVE_STRING_EQ(expected, actual);
+}
