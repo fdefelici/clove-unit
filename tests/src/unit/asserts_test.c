@@ -110,14 +110,17 @@ CLOVE_TEST(FloatComparison) {
     CLOVE_FLOAT_LTE(1.2, 1.2);
 }
 
-CLOVE_TEST(DoubleEq) {
-    CLOVE_DOUBLE_EQ(1, 1);
-    //CLOVE_DOUBLE_EQ(1, 2);
-}
+CLOVE_TEST(DoubleComparison) {
+    CLOVE_DOUBLE_EQ(1.1, 1.1);
+    CLOVE_DOUBLE_NE(1.1, 1.2);
 
-CLOVE_TEST(DoubleNe) {
-    CLOVE_DOUBLE_NE(1, 2);
-    //CLOVE_DOUBLE_NE(1, 1);
+    CLOVE_DOUBLE_GT(1.2, 1.1);
+    CLOVE_DOUBLE_GTE(1.2, 1.1);
+    CLOVE_DOUBLE_GTE(1.2, 1.2);
+    
+    CLOVE_DOUBLE_LT(1.1, 1.2);
+    CLOVE_DOUBLE_LTE(1.1, 1.2);
+    CLOVE_DOUBLE_LTE(1.2, 1.2);
 }
 
 CLOVE_TEST(StringEq) {
