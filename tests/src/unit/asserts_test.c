@@ -31,6 +31,13 @@ CLOVE_TEST(CharNe) {
     //CLOVE_CHAR_NE('a', 'a');
 }
 
+CLOVE_TEST(CharComparison) {
+    CLOVE_CHAR_GT('b', 'a');
+    CLOVE_CHAR_GTE('a', 'a');
+    CLOVE_CHAR_LT('a', 'b');
+    CLOVE_CHAR_LTE('a', 'b');
+}
+
 CLOVE_TEST(UIntEq) {
     CLOVE_UINT_EQ(1, 1);
     //CLOVE_UINT_EQ(1, 2);

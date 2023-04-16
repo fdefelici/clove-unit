@@ -419,10 +419,18 @@ extern const char* __CLOVE_GENERIC_PTR;
 typedef const char*  __clove_assert_check_e;
 extern const char* __CLOVE_ASSERT_EQ;
 extern const char* __CLOVE_ASSERT_NE;
+extern const char* __CLOVE_ASSERT_LT;
+extern const char* __CLOVE_ASSERT_LTE;
+extern const char* __CLOVE_ASSERT_GT;
+extern const char* __CLOVE_ASSERT_GTE;
 extern const char* __CLOVE_ASSERT_FAIL;
 #define __CLOVE_ASSERT_CHECK_E_DECL() \
     const char* __CLOVE_ASSERT_EQ   = "EQ";\
     const char* __CLOVE_ASSERT_NE   = "NE";\
+    const char* __CLOVE_ASSERT_GT   = "GT";\
+    const char* __CLOVE_ASSERT_GTE  = "GTE";\
+    const char* __CLOVE_ASSERT_LT   = "LT";\
+    const char* __CLOVE_ASSERT_LTE  = "LTE";\
     const char* __CLOVE_ASSERT_FAIL = "FAIL";
 
 /* Custom String Enum for Test Result */
@@ -488,8 +496,12 @@ __CLOVE_EXTERN_C void __clove_vector_suite_dtor(void* suite_ptr);
 
 #define __CLOVE_ASSERT_CHECK(mode, exp, act, type, field, test) \
     bool pass_scenario = false;\
-    if (check_mode == __CLOVE_ASSERT_EQ) { pass_scenario = exp == act; }\
-    else if (check_mode == __CLOVE_ASSERT_NE) { pass_scenario = exp != act; }\
+    if (check_mode == __CLOVE_ASSERT_EQ)       { pass_scenario = exp == act; }\
+    else if (check_mode == __CLOVE_ASSERT_NE)  { pass_scenario = exp != act; }\
+    else if (check_mode == __CLOVE_ASSERT_GT)  { pass_scenario = exp >  act; }\
+    else if (check_mode == __CLOVE_ASSERT_GTE) { pass_scenario = exp >= act; }\
+    else if (check_mode == __CLOVE_ASSERT_LT)  { pass_scenario = exp <  act; }\
+    else if (check_mode == __CLOVE_ASSERT_LTE) { pass_scenario = exp <= act; }\
     if (pass_scenario) _this->result =  __CLOVE_TEST_RESULT_PASSED;\
     else { \
         _this->result =  __CLOVE_TEST_RESULT_FAILED;\
@@ -3575,10 +3587,17 @@ void __clove_exec_suite(__clove_suite_t* suite, size_t test_counter, size_t* pas
 #pragma region PUBLIC - ASSERTS
 #define CLOVE_PASS() __CLOVE_ASSERT_GUARD __clove_assert_pass(_this);
 #define CLOVE_FAIL() __CLOVE_ASSERT_GUARD __clove_assert_fail(_this);
+
 #define CLOVE_IS_TRUE(res) __CLOVE_ASSERT_GUARD __clove_assert_bool(__CLOVE_ASSERT_EQ, true, res, _this);
 #define CLOVE_IS_FALSE(res) __CLOVE_ASSERT_GUARD __clove_assert_bool(__CLOVE_ASSERT_EQ, false, res, _this);
-#define CLOVE_CHAR_EQ(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_char(__CLOVE_ASSERT_EQ, exp, res, _this);
-#define CLOVE_CHAR_NE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_char(__CLOVE_ASSERT_NE, exp, res, _this);
+
+#define CLOVE_CHAR_EQ(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_char(__CLOVE_ASSERT_EQ, exp, res, _this);
+#define CLOVE_CHAR_NE(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_char(__CLOVE_ASSERT_NE, exp, res, _this);
+#define CLOVE_CHAR_GT(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_char(__CLOVE_ASSERT_GT, exp, res, _this);
+#define CLOVE_CHAR_GTE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_char(__CLOVE_ASSERT_GTE, exp, res, _this);
+#define CLOVE_CHAR_LT(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_char(__CLOVE_ASSERT_LT, exp, res, _this);
+#define CLOVE_CHAR_LTE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_char(__CLOVE_ASSERT_LTE, exp, res, _this);
+
 #define CLOVE_INT_EQ(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_int(__CLOVE_ASSERT_EQ, exp, res, _this);
 #define CLOVE_INT_NE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_int(__CLOVE_ASSERT_NE, exp, res, _this);
 #define CLOVE_UINT_EQ(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_uint(__CLOVE_ASSERT_EQ, exp, res, _this);

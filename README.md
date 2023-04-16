@@ -117,10 +117,14 @@ Assertions that can be used within a ```CLOVE_TEST``` definition.
 | ------------- | ------------- |
 | CLOVE_PASS()  | Assertion that always make the test pass |
 | CLOVE_FAIL()  | Assertion that always make the test fail |
-| CLOVE_IS_TRUE(result)  | Check if int is not 0 |
-| CLOVE_IS_FALSE(result)  | Check if int is 0 |
-| CLOVE_CHAR_EQ(expected, result)  | Check equality between char |
-| CLOVE_CHAR_NE(expected, result)  | Check inequality between char |
+| CLOVE_IS_TRUE(actual)  | Check if int is not 0 |
+| CLOVE_IS_FALSE(actual)  | Check if int is 0 |
+| CLOVE_CHAR_EQ(expected, actual)  | Check expected char to be equal to actual |
+| CLOVE_CHAR_NE(expected, actual)  | Check expected char to be not equal to actual |
+| CLOVE_CHAR_GT(expected, actual)  | Check expected char to be greather than actual |
+| CLOVE_CHAR_GTE(expected, result) | Check expected char to be greather than or equal to actual |
+| CLOVE_CHAR_LT(expected, actual)  | Check expected char to be lesser than actual |
+| CLOVE_CHAR_LTE(expected, result) | Check expected char to be lesser than or equal to actual |
 | CLOVE_INT_EQ(expected, result)  | Check equality between int |
 | CLOVE_INT_NE(expected, result)  | Check inequality between int |
 | CLOVE_UINT_EQ(expected, result)  | Check equality between unsigned int |
