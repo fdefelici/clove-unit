@@ -137,8 +137,12 @@ Assertions that can be used within a ```CLOVE_TEST``` definition.
 | CLOVE_UINT_GTE(expected, result) | Check expected unsigned int to be greather than or equal to actual |
 | CLOVE_UINT_LT(expected, result)  | Check expected unsigned int to be lesser than actual |
 | CLOVE_UINT_LTE(expected, result) | Check expected unsigned int to be lesser than or equal to actual |
-| CLOVE_LONG_EQ(expected, result)  | Check equality between long |
-| CLOVE_LONG_NE(expected, result)  | Check inequality between long |
+| CLOVE_LONG_EQ(expected, result)  | Check expected long to be equal to actual |
+| CLOVE_LONG_NE(expected, result)  | Check expected long to be not equal to actual |
+| CLOVE_LONG_GT(expected, result)  | Check expected long to be greather than  actual |
+| CLOVE_LONG_GTE(expected, result) | Check expected long to be greather than or equal to actual |
+| CLOVE_LONG_LT(expected, result)  | Check expected long to be lesser than actual |
+| CLOVE_LONG_LTE(expected, result) | Check expected long to be lesser than or equal to actual |
 | CLOVE_ULONG_EQ(expected, result)  | Check equality between unsigned long |
 | CLOVE_ULONG_NE(expected, result)  | Check inequality between unsigned long |
 | CLOVE_LLONG_EQ(expected, result)  | Check equality between long long |
