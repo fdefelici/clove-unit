@@ -133,18 +133,20 @@ CLOVE_TEST(StringNe) {
     //CLOVE_STRING_NE("a", "a");
 }
 
-CLOVE_TEST(PtrEq) {
-    const int v1 = 1;
-    const int v2 = 1;
-    CLOVE_PTR_EQ(&v1, &v1);
-    //CLOVE_PTR_EQ(&v1, &v2);
-}
+CLOVE_TEST(PtrComparison) {
+    const void* p1 = (void*)1;
+    const void* p2 = (void*)2;
 
-CLOVE_TEST(PtrNe) {
-    const int v1 = 1;
-    const int v2 = 1;
-    CLOVE_PTR_NE(&v1, &v2);
-    //CLOVE_PTR_NE(&v1, &v1);
+    CLOVE_PTR_EQ(p1, p1);
+    CLOVE_PTR_NE(p1, p2);
+    
+    CLOVE_PTR_GT(p2, p1);
+    CLOVE_PTR_GTE(p2, p1);
+    CLOVE_PTR_GTE(p2, p2);
+    
+    CLOVE_PTR_LT(p1, p2);
+    CLOVE_PTR_LTE(p1, p2);
+    CLOVE_PTR_LTE(p2, p2);
 }
 
 CLOVE_TEST(IsNull) {

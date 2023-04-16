@@ -3662,8 +3662,14 @@ void __clove_exec_suite(__clove_suite_t* suite, size_t test_counter, size_t* pas
 
 #define CLOVE_NULL(res) __CLOVE_ASSERT_GUARD __clove_assert_null(__CLOVE_ASSERT_EQ, NULL, (void*)res, _this);
 #define CLOVE_NOT_NULL(res) __CLOVE_ASSERT_GUARD __clove_assert_null(__CLOVE_ASSERT_NE, NULL, (void*)res, _this);
-#define CLOVE_PTR_EQ(p1, p2) __CLOVE_ASSERT_GUARD __clove_assert_ptr(__CLOVE_ASSERT_EQ, (void*)p1, (void*)p2, _this);
-#define CLOVE_PTR_NE(p1, p2) __CLOVE_ASSERT_GUARD __clove_assert_ptr(__CLOVE_ASSERT_NE, (void*)p1, (void*)p2, _this);
+
+#define CLOVE_PTR_EQ(p1, p2)  __CLOVE_ASSERT_GUARD __clove_assert_ptr(__CLOVE_ASSERT_EQ, (void*)p1, (void*)p2, _this);
+#define CLOVE_PTR_NE(p1, p2)  __CLOVE_ASSERT_GUARD __clove_assert_ptr(__CLOVE_ASSERT_NE, (void*)p1, (void*)p2, _this);
+#define CLOVE_PTR_GT(p1, p2)  __CLOVE_ASSERT_GUARD __clove_assert_ptr(__CLOVE_ASSERT_GT, (void*)p1, (void*)p2, _this);
+#define CLOVE_PTR_GTE(p1, p2) __CLOVE_ASSERT_GUARD __clove_assert_ptr(__CLOVE_ASSERT_GTE, (void*)p1, (void*)p2, _this);
+#define CLOVE_PTR_LT(p1, p2)  __CLOVE_ASSERT_GUARD __clove_assert_ptr(__CLOVE_ASSERT_LT, (void*)p1, (void*)p2, _this);
+#define CLOVE_PTR_LTE(p1, p2) __CLOVE_ASSERT_GUARD __clove_assert_ptr(__CLOVE_ASSERT_LTE, (void*)p1, (void*)p2, _this);
+
 #define CLOVE_STRING_EQ(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_string(__CLOVE_ASSERT_EQ, exp, res, _this);
 #define CLOVE_STRING_NE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_string(__CLOVE_ASSERT_NE, exp, res, _this);
 #pragma endregion //ASSERTS

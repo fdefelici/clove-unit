@@ -177,9 +177,12 @@ Assertions that can be used within a ```CLOVE_TEST``` definition.
 | CLOVE_STRING_NE(expected, actual)  | Check inequality between string (null terminated char pointer or array) |
 | CLOVE_NULL(actual)  | Check if actual is NULL |
 | CLOVE_NOT_NULL(actual)  | Check if actual is not NULL |
-| CLOVE_PTR_EQ(expected, actual)  | Check equality between pointers |
-| CLOVE_PTR_NE(expected, actual)  | Check inequality between pointers |
-
+| CLOVE_PTR_EQ(expected, actual)   | Check expected pointer to be equal to actual |
+| CLOVE_PTR_NE(expected, actual)   | Check expected pointer to be not equal to actual |
+| CLOVE_PTR_GT(expected, actual)   | Check expected pointer to be greather than actual |
+| CLOVE_PTR_GTE(expected, actual)  | Check expected pointer to be greather than or equal to actual |
+| CLOVE_PTR_LT(expected, actual)   | Check expected pointer to be lesser than actual |
+| CLOVE_PTR_LTE(expected, actual)  | Check expected pointer to be greather than or equal to actual |
 
 ## Test Helper
 Helper apis to support test implementation
