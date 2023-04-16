@@ -16,6 +16,13 @@ CLOVE_TEST(IntEq) {
     //CLOVE_INT_EQ(2, 1);
 }
 
+CLOVE_TEST(IntComparison) {
+    CLOVE_INT_GT(2, 1);
+    CLOVE_INT_GTE(1, 1);
+    CLOVE_INT_LT(1, 2);
+    CLOVE_INT_LTE(1, 1);
+}
+
 CLOVE_TEST(IntNe) {
     CLOVE_INT_NE(2, 1);
     //CLOVE_INT_NE(1, 1);

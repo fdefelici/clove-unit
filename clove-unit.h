@@ -3598,8 +3598,13 @@ void __clove_exec_suite(__clove_suite_t* suite, size_t test_counter, size_t* pas
 #define CLOVE_CHAR_LT(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_char(__CLOVE_ASSERT_LT, exp, res, _this);
 #define CLOVE_CHAR_LTE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_char(__CLOVE_ASSERT_LTE, exp, res, _this);
 
-#define CLOVE_INT_EQ(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_int(__CLOVE_ASSERT_EQ, exp, res, _this);
-#define CLOVE_INT_NE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_int(__CLOVE_ASSERT_NE, exp, res, _this);
+#define CLOVE_INT_EQ(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_int(__CLOVE_ASSERT_EQ, exp, res, _this);
+#define CLOVE_INT_NE(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_int(__CLOVE_ASSERT_NE, exp, res, _this);
+#define CLOVE_INT_GT(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_int(__CLOVE_ASSERT_GT, exp, res, _this);
+#define CLOVE_INT_GTE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_int(__CLOVE_ASSERT_GTE, exp, res, _this);
+#define CLOVE_INT_LT(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_int(__CLOVE_ASSERT_LT, exp, res, _this);
+#define CLOVE_INT_LTE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_int(__CLOVE_ASSERT_LTE, exp, res, _this);
+
 #define CLOVE_UINT_EQ(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_uint(__CLOVE_ASSERT_EQ, exp, res, _this);
 #define CLOVE_UINT_NE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_uint(__CLOVE_ASSERT_NE, exp, res, _this);
 #define CLOVE_LONG_EQ(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_long(__CLOVE_ASSERT_EQ, exp, res, _this);
