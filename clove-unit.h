@@ -2729,16 +2729,21 @@ void __clove_report_json_end_test(__clove_report_t* _this, __clove_suite_t* suit
     if (test->result == __CLOVE_TEST_RESULT_FAILED) {
         instance->stream->writef(instance->stream, ",\n");
         instance->stream->writef(instance->stream, "\t\t\t\t\t\t\"line\" : %u,\n", test->issue.line);
-        instance->stream->writef(instance->stream, "\t\t\t\t\t\t\"assert\" : \"%s\",\n", test->issue.assert);
-        instance->stream->writef(instance->stream, "\t\t\t\t\t\t\"type\" : \"%s\",\n", test->issue.data_type);
-        instance->stream->writef(instance->stream, "\t\t\t\t\t\t\"expected\" : \"");
-        __clove_report_json_print_data(instance, test, &(test->issue.expected));
-        instance->stream->writef(instance->stream, "\",\n");
-        instance->stream->writef(instance->stream, "\t\t\t\t\t\t\"actual\" : \"");
-        __clove_report_json_print_data(instance, test, &(test->issue.actual));
-        instance->stream->writef(instance->stream, "\"\n");
-    }
-    else {
+        instance->stream->writef(instance->stream, "\t\t\t\t\t\t\"assert\" : \"%s\"", test->issue.assert);        
+        if (test->issue.assert != __CLOVE_ASSERT_FAIL) {
+            instance->stream->writef(instance->stream, ",\n");
+            instance->stream->writef(instance->stream, "\t\t\t\t\t\t\"type\" : \"%s\",\n", test->issue.data_type);
+            instance->stream->writef(instance->stream, "\t\t\t\t\t\t\"expected\" : \"");
+            __clove_report_json_print_data(instance, test, &(test->issue.expected));
+            instance->stream->writef(instance->stream, "\",\n");
+            
+            instance->stream->writef(instance->stream, "\t\t\t\t\t\t\"actual\" : \"");
+            __clove_report_json_print_data(instance, test, &(test->issue.actual));
+            instance->stream->writef(instance->stream, "\"\n");
+        } else {
+            instance->stream->writef(instance->stream, "\n");
+        }
+    } else {
         instance->stream->writef(instance->stream, "\n");
     }
     instance->stream->writef(instance->stream, "\t\t\t\t\t}");
