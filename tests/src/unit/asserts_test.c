@@ -97,6 +97,19 @@ CLOVE_TEST(ULLongComparison) {
     CLOVE_ULLONG_LTE(2, 2);
 }
 
+CLOVE_TEST(SizetComparison) {
+    CLOVE_SIZET_EQ(1, 1);
+    CLOVE_SIZET_NE(2, 1);
+
+    CLOVE_SIZET_GT(2, 1);
+    CLOVE_SIZET_GTE(2, 1);
+    CLOVE_SIZET_GTE(1, 1);
+    
+    CLOVE_SIZET_LT(1, 2);
+    CLOVE_SIZET_LTE(1, 2);
+    CLOVE_SIZET_LTE(2, 2);
+}
+
 CLOVE_TEST(FloatComparison) {
     CLOVE_FLOAT_EQ(1.1, 1.1);
     CLOVE_FLOAT_NE(1.1, 1.2);
