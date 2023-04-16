@@ -117,33 +117,78 @@ Assertions that can be used within a ```CLOVE_TEST``` definition.
 | ------------- | ------------- |
 | CLOVE_PASS()  | Assertion that always make the test pass |
 | CLOVE_FAIL()  | Assertion that always make the test fail |
-| CLOVE_IS_TRUE(result)  | Check if int is not 0 |
-| CLOVE_IS_FALSE(result)  | Check if int is 0 |
-| CLOVE_CHAR_EQ(expected, result)  | Check equality between char |
-| CLOVE_CHAR_NE(expected, result)  | Check inequality between char |
-| CLOVE_INT_EQ(expected, result)  | Check equality between int |
-| CLOVE_INT_NE(expected, result)  | Check inequality between int |
-| CLOVE_UINT_EQ(expected, result)  | Check equality between unsigned int |
-| CLOVE_UINT_NE(expected, result)  | Check inequality between unsigned int |
-| CLOVE_LONG_EQ(expected, result)  | Check equality between long |
-| CLOVE_LONG_NE(expected, result)  | Check inequality between long |
-| CLOVE_ULONG_EQ(expected, result)  | Check equality between unsigned long |
-| CLOVE_ULONG_NE(expected, result)  | Check inequality between unsigned long |
-| CLOVE_LLONG_EQ(expected, result)  | Check equality between long long |
-| CLOVE_LLONG_NE(expected, result)  | Check inequality between long long |
-| CLOVE_ULLONG_EQ(expected, result)  | Check equality between unsigned long long |
-| CLOVE_ULLONG_NE(expected, result)  | Check inequality between unsigned long long |
-| CLOVE_FLOAT_EQ(expected, result)  | Check equality between float |
-| CLOVE_FLOAT_NE(expected, result)  | Check inequality between float |
-| CLOVE_DOUBLE_EQ(expected, result)  | Check equality between double |
-| CLOVE_DOUBLE_NE(expected, result)  | Check inequality between double |
-| CLOVE_STRING_EQ(expected, result)  | Check equality between string (null terminated char pointer or array) |
-| CLOVE_STRING_NE(expected, result)  | Check inequality between string (null terminated char pointer or array) |
-| CLOVE_NULL(result)  | Check if result is NULL |
-| CLOVE_NOT_NULL(result)  | Check if result is not NULL |
-| CLOVE_PTR_EQ(expected, result)  | Check equality between pointers |
-| CLOVE_PTR_NE(expected, result)  | Check inequality between pointers |
-
+| CLOVE_IS_TRUE(actual)  | Check if int is not 0 |
+| CLOVE_IS_FALSE(actual)  | Check if int is 0 |
+| CLOVE_CHAR_EQ(expected, actual)  | Check expected char to be equal to actual |
+| CLOVE_CHAR_NE(expected, actual)  | Check expected char to be not equal to actual |
+| CLOVE_CHAR_GT(expected, actual)  | Check expected char to be greather than actual |
+| CLOVE_CHAR_GTE(expected, actual) | Check expected char to be greather than or equal to actual |
+| CLOVE_CHAR_LT(expected, actual)  | Check expected char to be lesser than actual |
+| CLOVE_CHAR_LTE(expected, actual) | Check expected char to be lesser than or equal to actual |
+| CLOVE_INT_EQ(expected, actual)   | Check expected int to be equal to actual |
+| CLOVE_INT_NE(expected, actual)   | Check expected int to be not equal to actual |
+| CLOVE_INT_GT(expected, actual)   | Check expected int to be greather than actual |
+| CLOVE_INT_GTE(expected, actual)  | Check expected int to be greather than or equal to actual |
+| CLOVE_INT_LT(expected, actual)   | Check expected int to be lesser than actual |
+| CLOVE_INT_LTE(expected, actual)  | Check expected int to be greather than or equal to actual |
+| CLOVE_UINT_EQ(expected, actual)  | Check expected unsigned int to be equal to actual |
+| CLOVE_UINT_NE(expected, actual)  | Check expected unsigned int to be not equal to actual |
+| CLOVE_UINT_GT(expected, actual)  | Check expected unsigned int to be greather than  actual |
+| CLOVE_UINT_GTE(expected, actual) | Check expected unsigned int to be greather than or equal to actual |
+| CLOVE_UINT_LT(expected, actual)  | Check expected unsigned int to be lesser than actual |
+| CLOVE_UINT_LTE(expected, actual) | Check expected unsigned int to be lesser than or equal to actual |
+| CLOVE_LONG_EQ(expected, actual)  | Check expected long to be equal to actual |
+| CLOVE_LONG_NE(expected, actual)  | Check expected long to be not equal to actual |
+| CLOVE_LONG_GT(expected, actual)  | Check expected long to be greather than  actual |
+| CLOVE_LONG_GTE(expected, actual) | Check expected long to be greather than or equal to actual |
+| CLOVE_LONG_LT(expected, actual)  | Check expected long to be lesser than actual |
+| CLOVE_LONG_LTE(expected, actual) | Check expected long to be lesser than or equal to actual |
+| CLOVE_ULONG_EQ(expected, actual)  | Check expected unsigned long to be equal to actual |
+| CLOVE_ULONG_NE(expected, actual)  | Check expected unsigned long to be not equal to actual |
+| CLOVE_ULONG_GT(expected, actual)  | Check expected unsigned long to be greather than  actual |
+| CLOVE_ULONG_GTE(expected, actual) | Check expected unsigned long to be greather than or equal to actual |
+| CLOVE_ULONG_LT(expected, actual)  | Check expected unsigned long to be lesser than actual |
+| CLOVE_ULONG_LTE(expected, actual) | Check expected unsigned long to be lesser than or equal to actual |
+| CLOVE_LLONG_EQ(expected, actual)  | Check expected long long to be equal to actual |
+| CLOVE_LLONG_NE(expected, actual)  | Check expected long long to be not equal to actual |
+| CLOVE_LLONG_GT(expected, actual)  | Check expected long long to be greather than  actual |
+| CLOVE_LLONG_GTE(expected, actual) | Check expected long long to be greather than or equal to actual |
+| CLOVE_LLONG_LT(expected, actual)  | Check expected long long to be lesser than actual |
+| CLOVE_LLONG_LTE(expected, actual) | Check expected long long to be lesser than or equal to actual |
+| CLOVE_ULLONG_EQ(expected, actual)  | Check expected unsigned long long to be equal to actual |
+| CLOVE_ULLONG_NE(expected, actual)  | Check expected unsigned long long to be not equal to actual |
+| CLOVE_ULLONG_GT(expected, actual)  | Check expected unsigned long long to be greather than  actual |
+| CLOVE_ULLONG_GTE(expected, actual) | Check expected unsigned long long to be greather than or equal to actual |
+| CLOVE_ULLONG_LT(expected, actual)  | Check expected unsigned long long to be lesser than actual |
+| CLOVE_ULLONG_LTE(expected, actual) | Check expected unsigned long long to be lesser than or equal to actual |
+| CLOVE_SIZET_EQ(expected, actual)  | Check expected size_t to be equal to actual |
+| CLOVE_SIZET_NE(expected, actual)  | Check expected size_t to be not equal to actual |
+| CLOVE_SIZET_GT(expected, actual)  | Check expected size_t to be greather than  actual |
+| CLOVE_SIZET_GTE(expected, actual) | Check expected size_t to be greather than or equal to actual |
+| CLOVE_SIZET_LT(expected, actual)  | Check expected size_t to be lesser than actual |
+| CLOVE_SIZET_LTE(expected, actual) | Check expected size_t to be lesser than or equal to actual |
+| CLOVE_FLOAT_EQ(expected, actual)   | Check expected float to be equal to actual |
+| CLOVE_FLOAT_NE(expected, actual)   | Check expected float to be not equal to actual |
+| CLOVE_FLOAT_GT(expected, actual)   | Check expected float to be greather than actual |
+| CLOVE_FLOAT_GTE(expected, actual)  | Check expected float to be greather than or equal to actual |
+| CLOVE_FLOAT_LT(expected, actual)   | Check expected float to be lesser than actual |
+| CLOVE_FLOAT_LTE(expected, actual)  | Check expected float to be greather than or equal to actual |
+| CLOVE_DOUBLE_EQ(expected, actual)   | Check expected double to be equal to actual |
+| CLOVE_DOUBLE_NE(expected, actual)   | Check expected double to be not equal to actual |
+| CLOVE_DOUBLE_GT(expected, actual)   | Check expected double to be greather than actual |
+| CLOVE_DOUBLE_GTE(expected, actual)  | Check expected double to be greather than or equal to actual |
+| CLOVE_DOUBLE_LT(expected, actual)   | Check expected double to be lesser than actual |
+| CLOVE_DOUBLE_LTE(expected, actual)  | Check expected double to be greather than or equal to actual |
+| CLOVE_STRING_EQ(expected, actual)  | Check equality between string (null terminated char pointer or array) |
+| CLOVE_STRING_NE(expected, actual)  | Check inequality between string (null terminated char pointer or array) |
+| CLOVE_NULL(actual)  | Check if actual is NULL |
+| CLOVE_NOT_NULL(actual)  | Check if actual is not NULL |
+| CLOVE_PTR_EQ(expected, actual)   | Check expected pointer to be equal to actual |
+| CLOVE_PTR_NE(expected, actual)   | Check expected pointer to be not equal to actual |
+| CLOVE_PTR_GT(expected, actual)   | Check expected pointer to be greather than actual |
+| CLOVE_PTR_GTE(expected, actual)  | Check expected pointer to be greather than or equal to actual |
+| CLOVE_PTR_LT(expected, actual)   | Check expected pointer to be lesser than actual |
+| CLOVE_PTR_LTE(expected, actual)  | Check expected pointer to be greather than or equal to actual |
 
 ## Test Helper
 Helper apis to support test implementation

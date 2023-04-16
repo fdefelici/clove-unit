@@ -352,6 +352,7 @@ typedef union __clove_generic_u {
     unsigned long      _ulong;
     long long          _llong;
     unsigned long long _ullong;
+    size_t             _sizet;
     float              _float;
     double             _double;
     char* _string;
@@ -397,6 +398,7 @@ extern const char* __CLOVE_GENERIC_LONG;
 extern const char* __CLOVE_GENERIC_ULONG;
 extern const char* __CLOVE_GENERIC_LLONG;
 extern const char* __CLOVE_GENERIC_ULLONG;
+extern const char* __CLOVE_GENERIC_SIZET;
 extern const char* __CLOVE_GENERIC_FLOAT;
 extern const char* __CLOVE_GENERIC_DOUBLE;
 extern const char* __CLOVE_GENERIC_STRING;
@@ -410,6 +412,7 @@ extern const char* __CLOVE_GENERIC_PTR;
     const char* __CLOVE_GENERIC_ULONG  = "ULONG"; \
     const char* __CLOVE_GENERIC_LLONG  = "LLONG"; \
     const char* __CLOVE_GENERIC_ULLONG = "ULLONG"; \
+    const char* __CLOVE_GENERIC_SIZET  = "SIZET"; \
     const char* __CLOVE_GENERIC_FLOAT  = "FLOAT"; \
     const char* __CLOVE_GENERIC_DOUBLE = "DOUBLE"; \
     const char* __CLOVE_GENERIC_STRING = "STRING"; \
@@ -419,10 +422,18 @@ extern const char* __CLOVE_GENERIC_PTR;
 typedef const char*  __clove_assert_check_e;
 extern const char* __CLOVE_ASSERT_EQ;
 extern const char* __CLOVE_ASSERT_NE;
+extern const char* __CLOVE_ASSERT_LT;
+extern const char* __CLOVE_ASSERT_LTE;
+extern const char* __CLOVE_ASSERT_GT;
+extern const char* __CLOVE_ASSERT_GTE;
 extern const char* __CLOVE_ASSERT_FAIL;
 #define __CLOVE_ASSERT_CHECK_E_DECL() \
     const char* __CLOVE_ASSERT_EQ   = "EQ";\
     const char* __CLOVE_ASSERT_NE   = "NE";\
+    const char* __CLOVE_ASSERT_GT   = "GT";\
+    const char* __CLOVE_ASSERT_GTE  = "GTE";\
+    const char* __CLOVE_ASSERT_LT   = "LT";\
+    const char* __CLOVE_ASSERT_LTE  = "LTE";\
     const char* __CLOVE_ASSERT_FAIL = "FAIL";
 
 /* Custom String Enum for Test Result */
@@ -486,10 +497,14 @@ __CLOVE_EXTERN_C void __clove_vector_suite_dtor(void* suite_ptr);
     if (_this->file_name == NULL) _this->file_name = __clove_rel_src(__FILE__); \
     _this->issue.line=__LINE__;
 
-#define __CLOVE_ASSERT_CHECK(mode, exp, act, type, field, test) \
+#define __CLOVE_ASSERT_INTEGER_CHECK(mode, exp, act, type, field, test) \
     bool pass_scenario = false;\
-    if (check_mode == __CLOVE_ASSERT_EQ) { pass_scenario = exp == act; }\
-    else if (check_mode == __CLOVE_ASSERT_NE) { pass_scenario = exp != act; }\
+    if (check_mode == __CLOVE_ASSERT_EQ)       { pass_scenario = exp == act; }\
+    else if (check_mode == __CLOVE_ASSERT_NE)  { pass_scenario = exp != act; }\
+    else if (check_mode == __CLOVE_ASSERT_GT)  { pass_scenario = exp >  act; }\
+    else if (check_mode == __CLOVE_ASSERT_GTE) { pass_scenario = exp >= act; }\
+    else if (check_mode == __CLOVE_ASSERT_LT)  { pass_scenario = exp <  act; }\
+    else if (check_mode == __CLOVE_ASSERT_LTE) { pass_scenario = exp <= act; }\
     if (pass_scenario) _this->result =  __CLOVE_TEST_RESULT_PASSED;\
     else { \
         _this->result =  __CLOVE_TEST_RESULT_FAILED;\
@@ -507,6 +522,7 @@ __CLOVE_EXTERN_C void __clove_assert_long(__clove_assert_check_e check_mode, lon
 __CLOVE_EXTERN_C void __clove_assert_ulong(__clove_assert_check_e check_mode, unsigned long expected, unsigned long result, __clove_test_t* _this);
 __CLOVE_EXTERN_C void __clove_assert_llong(__clove_assert_check_e check_mode, long long expected, long long result, __clove_test_t* _this);
 __CLOVE_EXTERN_C void __clove_assert_ullong(__clove_assert_check_e check_mode, unsigned long long expected, unsigned long long result, __clove_test_t* _this);
+__CLOVE_EXTERN_C void __clove_assert_sizet(__clove_assert_check_e check_mode, size_t expected, size_t result, __clove_test_t* _this);
 __CLOVE_EXTERN_C void __clove_assert_char(__clove_assert_check_e check_mode, char expected, char result, __clove_test_t* _this);
 __CLOVE_EXTERN_C void __clove_assert_bool(__clove_assert_check_e check_mode, bool expected, bool result, __clove_test_t* _this);
 __CLOVE_EXTERN_C void __clove_assert_null(__clove_assert_check_e check_mode, void* expected, void* result, __clove_test_t* _this);
@@ -2131,50 +2147,57 @@ void __clove_assert_pass(__clove_test_t* _this) {
 }
 
 void __clove_assert_int(__clove_assert_check_e check_mode, int expected, int result, __clove_test_t* _this) {
-    __CLOVE_ASSERT_CHECK(check_mode, expected, result, __CLOVE_GENERIC_INT, _int, _this)
+    __CLOVE_ASSERT_INTEGER_CHECK(check_mode, expected, result, __CLOVE_GENERIC_INT, _int, _this)
 }
 
 void __clove_assert_uint(__clove_assert_check_e check_mode, unsigned int expected, unsigned int result, __clove_test_t* _this) {
-    __CLOVE_ASSERT_CHECK(check_mode, expected, result, __CLOVE_GENERIC_UINT, _uint, _this)
+    __CLOVE_ASSERT_INTEGER_CHECK(check_mode, expected, result, __CLOVE_GENERIC_UINT, _uint, _this)
 }
 
 void __clove_assert_long(__clove_assert_check_e check_mode, long expected, long result, __clove_test_t* _this) {
-    __CLOVE_ASSERT_CHECK(check_mode, expected, result, __CLOVE_GENERIC_LONG, _long, _this)
+    __CLOVE_ASSERT_INTEGER_CHECK(check_mode, expected, result, __CLOVE_GENERIC_LONG, _long, _this)
 }
 
 void __clove_assert_ulong(__clove_assert_check_e check_mode, unsigned long expected, unsigned long result, __clove_test_t* _this) {
-    __CLOVE_ASSERT_CHECK(check_mode, expected, result, __CLOVE_GENERIC_ULONG, _ulong, _this)
+    __CLOVE_ASSERT_INTEGER_CHECK(check_mode, expected, result, __CLOVE_GENERIC_ULONG, _ulong, _this)
 }
 
 void __clove_assert_llong(__clove_assert_check_e check_mode, long long expected, long long result, __clove_test_t* _this) {
-    __CLOVE_ASSERT_CHECK(check_mode, expected, result, __CLOVE_GENERIC_LLONG, _llong, _this)
+    __CLOVE_ASSERT_INTEGER_CHECK(check_mode, expected, result, __CLOVE_GENERIC_LLONG, _llong, _this)
 }
 
 void __clove_assert_ullong(__clove_assert_check_e check_mode, unsigned long long expected, unsigned long long result, __clove_test_t* _this) {
-    __CLOVE_ASSERT_CHECK(check_mode, expected, result, __CLOVE_GENERIC_ULLONG, _ullong, _this)
+    __CLOVE_ASSERT_INTEGER_CHECK(check_mode, expected, result, __CLOVE_GENERIC_ULLONG, _ullong, _this)
+}
+
+void __clove_assert_sizet(__clove_assert_check_e check_mode, size_t expected, size_t result, __clove_test_t* _this) {
+    __CLOVE_ASSERT_INTEGER_CHECK(check_mode, expected, result, __CLOVE_GENERIC_SIZET, _sizet, _this)
 }
 
 void __clove_assert_char(__clove_assert_check_e check_mode, char expected, char result, __clove_test_t* _this) {
-    __CLOVE_ASSERT_CHECK(check_mode, expected, result, __CLOVE_GENERIC_CHAR, _char, _this)
+    __CLOVE_ASSERT_INTEGER_CHECK(check_mode, expected, result, __CLOVE_GENERIC_CHAR, _char, _this)
 }
 
 void __clove_assert_bool(__clove_assert_check_e check_mode, bool expected, bool result, __clove_test_t* _this) {
-    __CLOVE_ASSERT_CHECK(check_mode, expected, result, __CLOVE_GENERIC_BOOL, _bool, _this)
+    __CLOVE_ASSERT_INTEGER_CHECK(check_mode, expected, result, __CLOVE_GENERIC_BOOL, _bool, _this)
 }
 
 void __clove_assert_null(__clove_assert_check_e check_mode, void* expected, void* result, __clove_test_t* _this) {
-    __CLOVE_ASSERT_CHECK(check_mode, expected, result, __CLOVE_GENERIC_PTR, _ptr, _this)
+    __CLOVE_ASSERT_INTEGER_CHECK(check_mode, expected, result, __CLOVE_GENERIC_PTR, _ptr, _this)
 }
 
 void __clove_assert_ptr(__clove_assert_check_e check_mode, void* expected, void* result, __clove_test_t* _this) {
-    __CLOVE_ASSERT_CHECK(check_mode, expected, result, __CLOVE_GENERIC_PTR, _ptr, _this)
+    __CLOVE_ASSERT_INTEGER_CHECK(check_mode, expected, result, __CLOVE_GENERIC_PTR, _ptr, _this)
 }
 
 void __clove_assert_float(__clove_assert_check_e check_mode, float expected, float result, __clove_test_t* _this) {
     bool pass_scenario = false;
-    if (check_mode == __CLOVE_ASSERT_EQ) { pass_scenario = (fabsf(expected - result) <= __CLOVE_FLOATING_PRECISION); }
-    else if (check_mode == __CLOVE_ASSERT_NE) { pass_scenario = (fabsf(expected - result) > __CLOVE_FLOATING_PRECISION); }
-
+    if (check_mode == __CLOVE_ASSERT_EQ) { pass_scenario = fabsf(expected - result) <= __CLOVE_FLOATING_PRECISION; }
+    else if (check_mode == __CLOVE_ASSERT_NE) { pass_scenario = fabsf(expected - result) > __CLOVE_FLOATING_PRECISION; }
+    else if (check_mode == __CLOVE_ASSERT_GT)  { pass_scenario = expected > result; }
+    else if (check_mode == __CLOVE_ASSERT_GTE) { pass_scenario = expected >= result; }
+    else if (check_mode == __CLOVE_ASSERT_LT)  { pass_scenario = expected < result; }
+    else if (check_mode == __CLOVE_ASSERT_LTE) { pass_scenario = expected <= result; }
     if (pass_scenario) {
         _this->result = __CLOVE_TEST_RESULT_PASSED;
     }
@@ -2191,7 +2214,10 @@ void __clove_assert_double(__clove_assert_check_e check_mode, double expected, d
     bool pass_scenario = false;
     if (check_mode == __CLOVE_ASSERT_EQ) { pass_scenario = ((float)fabs(expected - result) <= __CLOVE_FLOATING_PRECISION); }
     else if (check_mode == __CLOVE_ASSERT_NE) { pass_scenario = ((float)fabs(expected - result) > __CLOVE_FLOATING_PRECISION); }
-
+    else if (check_mode == __CLOVE_ASSERT_GT)  { pass_scenario = expected > result; }
+    else if (check_mode == __CLOVE_ASSERT_GTE) { pass_scenario = expected >= result; }
+    else if (check_mode == __CLOVE_ASSERT_LT)  { pass_scenario = expected < result; }
+    else if (check_mode == __CLOVE_ASSERT_LTE) { pass_scenario = expected <= result; }
     if (pass_scenario) {
         _this->result = __CLOVE_TEST_RESULT_PASSED;
     }
@@ -2729,16 +2755,21 @@ void __clove_report_json_end_test(__clove_report_t* _this, __clove_suite_t* suit
     if (test->result == __CLOVE_TEST_RESULT_FAILED) {
         instance->stream->writef(instance->stream, ",\n");
         instance->stream->writef(instance->stream, "\t\t\t\t\t\t\"line\" : %u,\n", test->issue.line);
-        instance->stream->writef(instance->stream, "\t\t\t\t\t\t\"assert\" : \"%s\",\n", test->issue.assert);
-        instance->stream->writef(instance->stream, "\t\t\t\t\t\t\"type\" : \"%s\",\n", test->issue.data_type);
-        instance->stream->writef(instance->stream, "\t\t\t\t\t\t\"expected\" : \"");
-        __clove_report_json_print_data(instance, test, &(test->issue.expected));
-        instance->stream->writef(instance->stream, "\",\n");
-        instance->stream->writef(instance->stream, "\t\t\t\t\t\t\"actual\" : \"");
-        __clove_report_json_print_data(instance, test, &(test->issue.actual));
-        instance->stream->writef(instance->stream, "\"\n");
-    }
-    else {
+        instance->stream->writef(instance->stream, "\t\t\t\t\t\t\"assert\" : \"%s\"", test->issue.assert);        
+        if (test->issue.assert != __CLOVE_ASSERT_FAIL) {
+            instance->stream->writef(instance->stream, ",\n");
+            instance->stream->writef(instance->stream, "\t\t\t\t\t\t\"type\" : \"%s\",\n", test->issue.data_type);
+            instance->stream->writef(instance->stream, "\t\t\t\t\t\t\"expected\" : \"");
+            __clove_report_json_print_data(instance, test, &(test->issue.expected));
+            instance->stream->writef(instance->stream, "\",\n");
+            
+            instance->stream->writef(instance->stream, "\t\t\t\t\t\t\"actual\" : \"");
+            __clove_report_json_print_data(instance, test, &(test->issue.actual));
+            instance->stream->writef(instance->stream, "\"\n");
+        } else {
+            instance->stream->writef(instance->stream, "\n");
+        }
+    } else {
         instance->stream->writef(instance->stream, "\n");
     }
     instance->stream->writef(instance->stream, "\t\t\t\t\t}");
@@ -3575,30 +3606,90 @@ void __clove_exec_suite(__clove_suite_t* suite, size_t test_counter, size_t* pas
 #pragma region PUBLIC - ASSERTS
 #define CLOVE_PASS() __CLOVE_ASSERT_GUARD __clove_assert_pass(_this);
 #define CLOVE_FAIL() __CLOVE_ASSERT_GUARD __clove_assert_fail(_this);
+
 #define CLOVE_IS_TRUE(res) __CLOVE_ASSERT_GUARD __clove_assert_bool(__CLOVE_ASSERT_EQ, true, res, _this);
 #define CLOVE_IS_FALSE(res) __CLOVE_ASSERT_GUARD __clove_assert_bool(__CLOVE_ASSERT_EQ, false, res, _this);
-#define CLOVE_CHAR_EQ(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_char(__CLOVE_ASSERT_EQ, exp, res, _this);
-#define CLOVE_CHAR_NE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_char(__CLOVE_ASSERT_NE, exp, res, _this);
-#define CLOVE_INT_EQ(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_int(__CLOVE_ASSERT_EQ, exp, res, _this);
-#define CLOVE_INT_NE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_int(__CLOVE_ASSERT_NE, exp, res, _this);
-#define CLOVE_UINT_EQ(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_uint(__CLOVE_ASSERT_EQ, exp, res, _this);
-#define CLOVE_UINT_NE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_uint(__CLOVE_ASSERT_NE, exp, res, _this);
-#define CLOVE_LONG_EQ(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_long(__CLOVE_ASSERT_EQ, exp, res, _this);
-#define CLOVE_LONG_NE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_long(__CLOVE_ASSERT_NE, exp, res, _this);
-#define CLOVE_LLONG_EQ(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_llong(__CLOVE_ASSERT_EQ, exp, res, _this);
-#define CLOVE_LLONG_NE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_llong(__CLOVE_ASSERT_NE, exp, res, _this);
-#define CLOVE_ULONG_EQ(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_ulong(__CLOVE_ASSERT_EQ, exp, res, _this);
-#define CLOVE_ULONG_NE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_ulong(__CLOVE_ASSERT_NE, exp, res, _this);
-#define CLOVE_ULLONG_EQ(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_ullong(__CLOVE_ASSERT_EQ, exp, res, _this);
-#define CLOVE_ULLONG_NE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_ullong(__CLOVE_ASSERT_NE, exp, res, _this);
-#define CLOVE_FLOAT_EQ(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_EQ, exp, res, _this);
-#define CLOVE_FLOAT_NE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_NE, exp, res, _this);
-#define CLOVE_DOUBLE_EQ(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_double(__CLOVE_ASSERT_EQ, exp, res, _this);
-#define CLOVE_DOUBLE_NE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_double(__CLOVE_ASSERT_NE, exp, res, _this);
+
+#define CLOVE_CHAR_EQ(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_char(__CLOVE_ASSERT_EQ, exp, res, _this);
+#define CLOVE_CHAR_NE(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_char(__CLOVE_ASSERT_NE, exp, res, _this);
+#define CLOVE_CHAR_GT(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_char(__CLOVE_ASSERT_GT, exp, res, _this);
+#define CLOVE_CHAR_GTE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_char(__CLOVE_ASSERT_GTE, exp, res, _this);
+#define CLOVE_CHAR_LT(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_char(__CLOVE_ASSERT_LT, exp, res, _this);
+#define CLOVE_CHAR_LTE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_char(__CLOVE_ASSERT_LTE, exp, res, _this);
+
+#define CLOVE_INT_EQ(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_int(__CLOVE_ASSERT_EQ, exp, res, _this);
+#define CLOVE_INT_NE(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_int(__CLOVE_ASSERT_NE, exp, res, _this);
+#define CLOVE_INT_GT(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_int(__CLOVE_ASSERT_GT, exp, res, _this);
+#define CLOVE_INT_GTE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_int(__CLOVE_ASSERT_GTE, exp, res, _this);
+#define CLOVE_INT_LT(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_int(__CLOVE_ASSERT_LT, exp, res, _this);
+#define CLOVE_INT_LTE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_int(__CLOVE_ASSERT_LTE, exp, res, _this);
+
+#define CLOVE_UINT_EQ(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_uint(__CLOVE_ASSERT_EQ, exp, res, _this);
+#define CLOVE_UINT_NE(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_uint(__CLOVE_ASSERT_NE, exp, res, _this);
+#define CLOVE_UINT_GT(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_uint(__CLOVE_ASSERT_GT, exp, res, _this);
+#define CLOVE_UINT_GTE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_uint(__CLOVE_ASSERT_GTE, exp, res, _this);
+#define CLOVE_UINT_LT(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_uint(__CLOVE_ASSERT_LT, exp, res, _this);
+#define CLOVE_UINT_LTE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_uint(__CLOVE_ASSERT_LTE, exp, res, _this);
+
+#define CLOVE_LONG_EQ(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_long(__CLOVE_ASSERT_EQ, exp, res, _this);
+#define CLOVE_LONG_NE(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_long(__CLOVE_ASSERT_NE, exp, res, _this);
+#define CLOVE_LONG_GT(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_long(__CLOVE_ASSERT_GT, exp, res, _this);
+#define CLOVE_LONG_GTE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_long(__CLOVE_ASSERT_GTE, exp, res, _this);
+#define CLOVE_LONG_LT(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_long(__CLOVE_ASSERT_LT, exp, res, _this);
+#define CLOVE_LONG_LTE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_long(__CLOVE_ASSERT_LTE, exp, res, _this);
+
+#define CLOVE_ULONG_EQ(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_ulong(__CLOVE_ASSERT_EQ, exp, res, _this);
+#define CLOVE_ULONG_NE(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_ulong(__CLOVE_ASSERT_NE, exp, res, _this);
+#define CLOVE_ULONG_GT(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_ulong(__CLOVE_ASSERT_GT, exp, res, _this);
+#define CLOVE_ULONG_GTE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_ulong(__CLOVE_ASSERT_GTE, exp, res, _this);
+#define CLOVE_ULONG_LT(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_ulong(__CLOVE_ASSERT_LT, exp, res, _this);
+#define CLOVE_ULONG_LTE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_ulong(__CLOVE_ASSERT_LTE, exp, res, _this);
+
+#define CLOVE_LLONG_EQ(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_llong(__CLOVE_ASSERT_EQ, exp, res, _this);
+#define CLOVE_LLONG_NE(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_llong(__CLOVE_ASSERT_NE, exp, res, _this);
+#define CLOVE_LLONG_GT(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_llong(__CLOVE_ASSERT_GT, exp, res, _this);
+#define CLOVE_LLONG_GTE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_llong(__CLOVE_ASSERT_GTE, exp, res, _this);
+#define CLOVE_LLONG_LT(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_llong(__CLOVE_ASSERT_LT, exp, res, _this);
+#define CLOVE_LLONG_LTE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_llong(__CLOVE_ASSERT_LTE, exp, res, _this);
+
+#define CLOVE_ULLONG_EQ(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_ullong(__CLOVE_ASSERT_EQ, exp, res, _this);
+#define CLOVE_ULLONG_NE(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_ullong(__CLOVE_ASSERT_NE, exp, res, _this);
+#define CLOVE_ULLONG_GT(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_ullong(__CLOVE_ASSERT_GT, exp, res, _this);
+#define CLOVE_ULLONG_GTE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_ullong(__CLOVE_ASSERT_GTE, exp, res, _this);
+#define CLOVE_ULLONG_LT(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_ullong(__CLOVE_ASSERT_LT, exp, res, _this);
+#define CLOVE_ULLONG_LTE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_ullong(__CLOVE_ASSERT_LTE, exp, res, _this);
+
+#define CLOVE_SIZET_EQ(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_sizet(__CLOVE_ASSERT_EQ, exp, res, _this);
+#define CLOVE_SIZET_NE(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_sizet(__CLOVE_ASSERT_NE, exp, res, _this);
+#define CLOVE_SIZET_GT(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_sizet(__CLOVE_ASSERT_GT, exp, res, _this);
+#define CLOVE_SIZET_GTE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_sizet(__CLOVE_ASSERT_GTE, exp, res, _this);
+#define CLOVE_SIZET_LT(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_sizet(__CLOVE_ASSERT_LT, exp, res, _this);
+#define CLOVE_SIZET_LTE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_sizet(__CLOVE_ASSERT_LTE, exp, res, _this);
+
+#define CLOVE_FLOAT_EQ(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_EQ, exp, res, _this);
+#define CLOVE_FLOAT_NE(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_NE, exp, res, _this);
+#define CLOVE_FLOAT_GT(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_GT, exp, res, _this);
+#define CLOVE_FLOAT_GTE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_GTE, exp, res, _this);
+#define CLOVE_FLOAT_LT(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_LT, exp, res, _this);
+#define CLOVE_FLOAT_LTE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_LTE, exp, res, _this);
+
+#define CLOVE_DOUBLE_EQ(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_double(__CLOVE_ASSERT_EQ, exp, res, _this);
+#define CLOVE_DOUBLE_NE(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_double(__CLOVE_ASSERT_NE, exp, res, _this);
+#define CLOVE_DOUBLE_GT(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_double(__CLOVE_ASSERT_GT, exp, res, _this);
+#define CLOVE_DOUBLE_GTE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_double(__CLOVE_ASSERT_GTE, exp, res, _this);
+#define CLOVE_DOUBLE_LT(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_double(__CLOVE_ASSERT_LT, exp, res, _this);
+#define CLOVE_DOUBLE_LTE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_double(__CLOVE_ASSERT_LTE, exp, res, _this);
+
 #define CLOVE_NULL(res) __CLOVE_ASSERT_GUARD __clove_assert_null(__CLOVE_ASSERT_EQ, NULL, (void*)res, _this);
 #define CLOVE_NOT_NULL(res) __CLOVE_ASSERT_GUARD __clove_assert_null(__CLOVE_ASSERT_NE, NULL, (void*)res, _this);
-#define CLOVE_PTR_EQ(p1, p2) __CLOVE_ASSERT_GUARD __clove_assert_ptr(__CLOVE_ASSERT_EQ, (void*)p1, (void*)p2, _this);
-#define CLOVE_PTR_NE(p1, p2) __CLOVE_ASSERT_GUARD __clove_assert_ptr(__CLOVE_ASSERT_NE, (void*)p1, (void*)p2, _this);
+
+#define CLOVE_PTR_EQ(p1, p2)  __CLOVE_ASSERT_GUARD __clove_assert_ptr(__CLOVE_ASSERT_EQ, (void*)p1, (void*)p2, _this);
+#define CLOVE_PTR_NE(p1, p2)  __CLOVE_ASSERT_GUARD __clove_assert_ptr(__CLOVE_ASSERT_NE, (void*)p1, (void*)p2, _this);
+#define CLOVE_PTR_GT(p1, p2)  __CLOVE_ASSERT_GUARD __clove_assert_ptr(__CLOVE_ASSERT_GT, (void*)p1, (void*)p2, _this);
+#define CLOVE_PTR_GTE(p1, p2) __CLOVE_ASSERT_GUARD __clove_assert_ptr(__CLOVE_ASSERT_GTE, (void*)p1, (void*)p2, _this);
+#define CLOVE_PTR_LT(p1, p2)  __CLOVE_ASSERT_GUARD __clove_assert_ptr(__CLOVE_ASSERT_LT, (void*)p1, (void*)p2, _this);
+#define CLOVE_PTR_LTE(p1, p2) __CLOVE_ASSERT_GUARD __clove_assert_ptr(__CLOVE_ASSERT_LTE, (void*)p1, (void*)p2, _this);
+
 #define CLOVE_STRING_EQ(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_string(__CLOVE_ASSERT_EQ, exp, res, _this);
 #define CLOVE_STRING_NE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_string(__CLOVE_ASSERT_NE, exp, res, _this);
 #pragma endregion //ASSERTS
