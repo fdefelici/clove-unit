@@ -97,14 +97,17 @@ CLOVE_TEST(ULLongComparison) {
     CLOVE_ULLONG_LTE(2, 2);
 }
 
-CLOVE_TEST(FloatEq) {
-    CLOVE_FLOAT_EQ(1, 1);
-    //CLOVE_FLOAT_EQ(1, 2);
-}
+CLOVE_TEST(FloatComparison) {
+    CLOVE_FLOAT_EQ(1.1, 1.1);
+    CLOVE_FLOAT_NE(1.1, 1.2);
 
-CLOVE_TEST(FloatNe) {
-    CLOVE_FLOAT_NE(1, 2);
-    //CLOVE_FLOAT_NE(1, 1);
+    CLOVE_FLOAT_GT(1.2, 1.1);
+    CLOVE_FLOAT_GTE(1.2, 1.1);
+    CLOVE_FLOAT_GTE(1.2, 1.2);
+    
+    CLOVE_FLOAT_LT(1.1, 1.2);
+    CLOVE_FLOAT_LTE(1.1, 1.2);
+    CLOVE_FLOAT_LTE(1.2, 1.2);
 }
 
 CLOVE_TEST(DoubleEq) {

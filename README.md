@@ -161,8 +161,12 @@ Assertions that can be used within a ```CLOVE_TEST``` definition.
 | CLOVE_ULLONG_GTE(expected, result) | Check expected unsigned long long to be greather than or equal to actual |
 | CLOVE_ULLONG_LT(expected, result)  | Check expected unsigned long long to be lesser than actual |
 | CLOVE_ULLONG_LTE(expected, result) | Check expected unsigned long long to be lesser than or equal to actual |
-| CLOVE_FLOAT_EQ(expected, result)  | Check equality between float |
-| CLOVE_FLOAT_NE(expected, result)  | Check inequality between float |
+| CLOVE_FLOAT_EQ(expected, result)   | Check expected float to be equal to actual |
+| CLOVE_FLOAT_NE(expected, result)   | Check expected float to be not equal to actual |
+| CLOVE_FLOAT_GT(expected, result)   | Check expected float to be greather than actual |
+| CLOVE_FLOAT_GTE(expected, result)  | Check expected float to be greather than or equal to actual |
+| CLOVE_FLOAT_LT(expected, result)   | Check expected float to be lesser than actual |
+| CLOVE_FLOAT_LTE(expected, result)  | Check expected float to be greather than or equal to actual |
 | CLOVE_DOUBLE_EQ(expected, result)  | Check equality between double |
 | CLOVE_DOUBLE_NE(expected, result)  | Check inequality between double |
 | CLOVE_STRING_EQ(expected, result)  | Check equality between string (null terminated char pointer or array) |

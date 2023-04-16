@@ -2184,9 +2184,12 @@ void __clove_assert_ptr(__clove_assert_check_e check_mode, void* expected, void*
 
 void __clove_assert_float(__clove_assert_check_e check_mode, float expected, float result, __clove_test_t* _this) {
     bool pass_scenario = false;
-    if (check_mode == __CLOVE_ASSERT_EQ) { pass_scenario = (fabsf(expected - result) <= __CLOVE_FLOATING_PRECISION); }
-    else if (check_mode == __CLOVE_ASSERT_NE) { pass_scenario = (fabsf(expected - result) > __CLOVE_FLOATING_PRECISION); }
-
+    if (check_mode == __CLOVE_ASSERT_EQ) { pass_scenario = fabsf(expected - result) <= __CLOVE_FLOATING_PRECISION; }
+    else if (check_mode == __CLOVE_ASSERT_NE) { pass_scenario = fabsf(expected - result) > __CLOVE_FLOATING_PRECISION; }
+    else if (check_mode == __CLOVE_ASSERT_GT)  { pass_scenario = expected > result; }
+    else if (check_mode == __CLOVE_ASSERT_GTE) { pass_scenario = expected >= result; }
+    else if (check_mode == __CLOVE_ASSERT_LT)  { pass_scenario = expected < result; }
+    else if (check_mode == __CLOVE_ASSERT_LTE) { pass_scenario = expected <= result; }
     if (pass_scenario) {
         _this->result = __CLOVE_TEST_RESULT_PASSED;
     }
@@ -3642,6 +3645,11 @@ void __clove_exec_suite(__clove_suite_t* suite, size_t test_counter, size_t* pas
 
 #define CLOVE_FLOAT_EQ(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_EQ, exp, res, _this);
 #define CLOVE_FLOAT_NE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_NE, exp, res, _this);
+#define CLOVE_FLOAT_GT(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_GT, exp, res, _this);
+#define CLOVE_FLOAT_GTE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_GTE, exp, res, _this);
+#define CLOVE_FLOAT_LT(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_LT, exp, res, _this);
+#define CLOVE_FLOAT_LTE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_LTE, exp, res, _this);
+
 #define CLOVE_DOUBLE_EQ(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_double(__CLOVE_ASSERT_EQ, exp, res, _this);
 #define CLOVE_DOUBLE_NE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_double(__CLOVE_ASSERT_NE, exp, res, _this);
 #define CLOVE_NULL(res) __CLOVE_ASSERT_GUARD __clove_assert_null(__CLOVE_ASSERT_EQ, NULL, (void*)res, _this);
