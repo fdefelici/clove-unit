@@ -32,7 +32,7 @@ CLOVE_TEST(IntComparison) {
     CLOVE_INT_LTE(2, 2);
 }
 
-CLOVE_TEST(UintComparison) {
+CLOVE_TEST(UIntComparison) {
     CLOVE_UINT_EQ(1, 1);
     CLOVE_UINT_NE(1, 2);
     
@@ -58,14 +58,17 @@ CLOVE_TEST(LongComparison) {
     CLOVE_LONG_LTE(2, 2);
 }
 
-CLOVE_TEST(ULongEq) {
+CLOVE_TEST(ULongComparison) {
     CLOVE_ULONG_EQ(1, 1);
-    //CLOVE_ULONG_EQ(1, 2);
-}
-
-CLOVE_TEST(ULongNe) {
     CLOVE_ULONG_NE(1, 2);
-    //CLOVE_ULONG_NE(1, 1);
+
+    CLOVE_ULONG_GT(2, 1);
+    CLOVE_ULONG_GTE(2, 1);
+    CLOVE_ULONG_GTE(1, 1);
+    
+    CLOVE_ULONG_LT(1, 2);
+    CLOVE_ULONG_LTE(1, 2);
+    CLOVE_ULONG_LTE(2, 2);
 }
 
 CLOVE_TEST(LLongEq) {
