@@ -352,6 +352,7 @@ typedef union __clove_generic_u {
     unsigned long      _ulong;
     long long          _llong;
     unsigned long long _ullong;
+    size_t             _sizet;
     float              _float;
     double             _double;
     char* _string;
@@ -397,6 +398,7 @@ extern const char* __CLOVE_GENERIC_LONG;
 extern const char* __CLOVE_GENERIC_ULONG;
 extern const char* __CLOVE_GENERIC_LLONG;
 extern const char* __CLOVE_GENERIC_ULLONG;
+extern const char* __CLOVE_GENERIC_SIZET;
 extern const char* __CLOVE_GENERIC_FLOAT;
 extern const char* __CLOVE_GENERIC_DOUBLE;
 extern const char* __CLOVE_GENERIC_STRING;
@@ -410,6 +412,7 @@ extern const char* __CLOVE_GENERIC_PTR;
     const char* __CLOVE_GENERIC_ULONG  = "ULONG"; \
     const char* __CLOVE_GENERIC_LLONG  = "LLONG"; \
     const char* __CLOVE_GENERIC_ULLONG = "ULLONG"; \
+    const char* __CLOVE_GENERIC_SIZET  = "SIZET"; \
     const char* __CLOVE_GENERIC_FLOAT  = "FLOAT"; \
     const char* __CLOVE_GENERIC_DOUBLE = "DOUBLE"; \
     const char* __CLOVE_GENERIC_STRING = "STRING"; \
@@ -507,6 +510,7 @@ __CLOVE_EXTERN_C void __clove_assert_long(__clove_assert_check_e check_mode, lon
 __CLOVE_EXTERN_C void __clove_assert_ulong(__clove_assert_check_e check_mode, unsigned long expected, unsigned long result, __clove_test_t* _this);
 __CLOVE_EXTERN_C void __clove_assert_llong(__clove_assert_check_e check_mode, long long expected, long long result, __clove_test_t* _this);
 __CLOVE_EXTERN_C void __clove_assert_ullong(__clove_assert_check_e check_mode, unsigned long long expected, unsigned long long result, __clove_test_t* _this);
+__CLOVE_EXTERN_C void __clove_assert_sizet(__clove_assert_check_e check_mode, size_t expected, size_t result, __clove_test_t* _this);
 __CLOVE_EXTERN_C void __clove_assert_char(__clove_assert_check_e check_mode, char expected, char result, __clove_test_t* _this);
 __CLOVE_EXTERN_C void __clove_assert_bool(__clove_assert_check_e check_mode, bool expected, bool result, __clove_test_t* _this);
 __CLOVE_EXTERN_C void __clove_assert_null(__clove_assert_check_e check_mode, void* expected, void* result, __clove_test_t* _this);
@@ -2154,6 +2158,10 @@ void __clove_assert_ullong(__clove_assert_check_e check_mode, unsigned long long
     __CLOVE_ASSERT_CHECK(check_mode, expected, result, __CLOVE_GENERIC_ULLONG, _ullong, _this)
 }
 
+void __clove_assert_sizet(__clove_assert_check_e check_mode, size_t expected, size_t result, __clove_test_t* _this) {
+    __CLOVE_ASSERT_CHECK(check_mode, expected, result, __CLOVE_GENERIC_SIZET, _sizet, _this)
+}
+
 void __clove_assert_char(__clove_assert_check_e check_mode, char expected, char result, __clove_test_t* _this) {
     __CLOVE_ASSERT_CHECK(check_mode, expected, result, __CLOVE_GENERIC_CHAR, _char, _this)
 }
@@ -3596,6 +3604,8 @@ void __clove_exec_suite(__clove_suite_t* suite, size_t test_counter, size_t* pas
 #define CLOVE_ULONG_NE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_ulong(__CLOVE_ASSERT_NE, exp, res, _this);
 #define CLOVE_ULLONG_EQ(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_ullong(__CLOVE_ASSERT_EQ, exp, res, _this);
 #define CLOVE_ULLONG_NE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_ullong(__CLOVE_ASSERT_NE, exp, res, _this);
+#define CLOVE_SIZET_EQ(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_sizet(__CLOVE_ASSERT_EQ, exp, res, _this);
+#define CLOVE_SIZET_NE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_sizet(__CLOVE_ASSERT_NE, exp, res, _this);
 #define CLOVE_FLOAT_EQ(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_EQ, exp, res, _this);
 #define CLOVE_FLOAT_NE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_NE, exp, res, _this);
 #define CLOVE_DOUBLE_EQ(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_double(__CLOVE_ASSERT_EQ, exp, res, _this);

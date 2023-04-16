@@ -81,6 +81,14 @@ CLOVE_TEST(ULLongNe) {
     //CLOVE_ULLONG_NE(1, 1);
 }
 
+CLOVE_TEST(SizetEq) {
+    CLOVE_SIZET_EQ(1, 1);
+}
+
+CLOVE_TEST(SizetNe) {
+    CLOVE_SIZET_NE(2, 1);
+}
+
 CLOVE_TEST(FloatEq) {
     CLOVE_FLOAT_EQ(1, 1);
     //CLOVE_FLOAT_EQ(1, 2);
