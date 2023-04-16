@@ -11,23 +11,6 @@ CLOVE_TEST(IsFalse) {
     //CLOVE_IS_FALSE(true);
 }
 
-CLOVE_TEST(IntEq) {
-    CLOVE_INT_EQ(1, 1);
-    //CLOVE_INT_EQ(2, 1);
-}
-
-CLOVE_TEST(IntComparison) {
-    CLOVE_INT_GT(2, 1);
-    CLOVE_INT_GTE(1, 1);
-    CLOVE_INT_LT(1, 2);
-    CLOVE_INT_LTE(1, 1);
-}
-
-CLOVE_TEST(IntNe) {
-    CLOVE_INT_NE(2, 1);
-    //CLOVE_INT_NE(1, 1);
-}
-
 CLOVE_TEST(CharEq) {
     CLOVE_CHAR_EQ('a', 'a');
     //CLOVE_CHAR_EQ('a', 'b');
@@ -45,6 +28,23 @@ CLOVE_TEST(CharComparison) {
     CLOVE_CHAR_LTE('a', 'b');
 }
 
+CLOVE_TEST(IntEq) {
+    CLOVE_INT_EQ(1, 1);
+    //CLOVE_INT_EQ(2, 1);
+}
+
+CLOVE_TEST(IntNe) {
+    CLOVE_INT_NE(2, 1);
+    //CLOVE_INT_NE(1, 1);
+}
+
+CLOVE_TEST(IntComparison) {
+    CLOVE_INT_GT(2, 1);
+    CLOVE_INT_GTE(1, 1);
+    CLOVE_INT_LT(1, 2);
+    CLOVE_INT_LTE(1, 1);
+}
+
 CLOVE_TEST(UIntEq) {
     CLOVE_UINT_EQ(1, 1);
     //CLOVE_UINT_EQ(1, 2);
@@ -53,6 +53,13 @@ CLOVE_TEST(UIntEq) {
 CLOVE_TEST(UintNe) {
     CLOVE_UINT_NE(1, 2);
     //CLOVE_UINT_NE(1, 1);
+}
+
+CLOVE_TEST(UintComparison) {
+    CLOVE_UINT_GT(2, 1);
+    CLOVE_UINT_GTE(1, 1);
+    CLOVE_UINT_LT(1, 2);
+    CLOVE_UINT_LTE(1, 1);
 }
 
 CLOVE_TEST(LongEq) {
