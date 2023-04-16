@@ -580,12 +580,12 @@ __CLOVE_EXTERN_C void __clove_report_pretty_pad_right(char* result, char* strToP
 #define __CLOVE_TEST_ENTRY_LENGTH 60
 #define __PRETTY_PRINT_FAIL_ASSERT_MSG(buffer, buffer_size, assert, exp, act, print_type) \
 { \
-    if (assert == __CLOVE_ASSERT_EQ)      __clove_string_sprintf(buffer, buffer_size, "expected ["print_type"] but was ["print_type"]", exp, act); \
-    else if(assert == __CLOVE_ASSERT_NE)  __clove_string_sprintf(buffer, buffer_size, "not expected ["print_type"] but was ["print_type"]", exp, act); \
-    else if(assert == __CLOVE_ASSERT_GT)  __clove_string_sprintf(buffer, buffer_size, "expected ["print_type" > "print_type"] but wasn't", exp, act); \
-    else if(assert == __CLOVE_ASSERT_GTE) __clove_string_sprintf(buffer, buffer_size, "expected ["print_type" >= "print_type"] but wasn't", exp, act); \
-    else if(assert == __CLOVE_ASSERT_LT) __clove_string_sprintf(buffer, buffer_size, "expected ["print_type" < "print_type"] but wasn't", exp, act); \
-    else if(assert == __CLOVE_ASSERT_LTE) __clove_string_sprintf(buffer, buffer_size, "expected ["print_type" <= "print_type"] but wasn't", exp, act); \
+    if (assert == __CLOVE_ASSERT_EQ)      __clove_string_sprintf(buffer, buffer_size, "expected [" print_type "] but was [" print_type "]", exp, act); \
+    else if(assert == __CLOVE_ASSERT_NE)  __clove_string_sprintf(buffer, buffer_size, "not expected [" print_type "] but was [" print_type "]", exp, act); \
+    else if(assert == __CLOVE_ASSERT_GT)  __clove_string_sprintf(buffer, buffer_size, "expected [" print_type " > " print_type "] but wasn't", exp, act); \
+    else if(assert == __CLOVE_ASSERT_GTE) __clove_string_sprintf(buffer, buffer_size, "expected [" print_type " >= " print_type "] but wasn't", exp, act); \
+    else if(assert == __CLOVE_ASSERT_LT) __clove_string_sprintf(buffer, buffer_size, "expected [" print_type " < " print_type "] but wasn't", exp, act); \
+    else if(assert == __CLOVE_ASSERT_LTE) __clove_string_sprintf(buffer, buffer_size, "expected [" print_type " <= " print_type "] but wasn't", exp, act); \
 }
 #pragma endregion
 
