@@ -133,6 +133,8 @@ Assertions that can be used within a ```CLOVE_TEST``` definition.
 | CLOVE_LLONG_NE(expected, result)  | Check inequality between long long |
 | CLOVE_ULLONG_EQ(expected, result)  | Check equality between unsigned long long |
 | CLOVE_ULLONG_NE(expected, result)  | Check inequality between unsigned long long |
+| CLOVE_SIZET_EQ(expected, result)  | Check equality between size_t |
+| CLOVE_SIZET_NE(expected, result)  | Check inequality between size_t |
 | CLOVE_FLOAT_EQ(expected, result)  | Check equality between float |
 | CLOVE_FLOAT_NE(expected, result)  | Check inequality between float |
 | CLOVE_DOUBLE_EQ(expected, result)  | Check equality between double |
