@@ -71,14 +71,17 @@ CLOVE_TEST(ULongComparison) {
     CLOVE_ULONG_LTE(2, 2);
 }
 
-CLOVE_TEST(LLongEq) {
+CLOVE_TEST(LLongComparison) {
     CLOVE_LLONG_EQ(1, 1);
-    //CLOVE_LLONG_EQ(1, 2);
-}
-
-CLOVE_TEST(LLongNe) {
     CLOVE_LLONG_NE(1, 2);
-    //CLOVE_LLONG_NE(1, 1);
+
+    CLOVE_LLONG_GT(2, 1);
+    CLOVE_LLONG_GTE(2, 1);
+    CLOVE_LLONG_GTE(1, 1);
+    
+    CLOVE_LLONG_LT(1, 2);
+    CLOVE_LLONG_LTE(1, 2);
+    CLOVE_LLONG_LTE(2, 2);    
 }
 
 CLOVE_TEST(ULLongEq) {
