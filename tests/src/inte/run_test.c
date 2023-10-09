@@ -129,6 +129,37 @@ CLOVE_TEST(DefaultReportExcludeOneTest) {
     CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "Total: 2, Passed: 2, Failed: 0, Skipped: 0"));
 }
 
+CLOVE_TEST(DefaultReportSingleTestDigitTest) {
+  const char* cmd = RES_PRJ01_EXEC_PATH;
+  int cmd_code = exec_cmd(cmd, &cmd_out);
+  CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_OK, cmd_code);
+  CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "Suite / Tests found: 2 / 3"));
+  CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "1)"));
+  CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "2)"));
+  CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "3)"));
+  CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "Total: 3, Passed: 2, Failed: 1, Skipped: 0"));
+}
+
+CLOVE_TEST(DefaultReportDoubleTestDigitTest) {
+  const char* cmd = RES_PRJ02_EXEC_PATH;
+  int cmd_code = exec_cmd(cmd, &cmd_out);
+  CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_OK, cmd_code);
+  CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "Suite / Tests found: 2 / 12"));
+  CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "01)"));
+  CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "02)"));
+  CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "03)"));
+  CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "04)"));
+  CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "05)"));
+  CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "06)"));
+  CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "07)"));
+  CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "08)"));
+  CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "09)"));
+  CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "10)"));
+  CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "11)"));
+  CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "12)"));
+  CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "Total: 12, Passed: 12, Failed: 0, Skipped: 0"));
+}
+
 CLOVE_TEST(DefaultReportIncludeOverExcludeOneTest) {
     const char* cmd = RES_PRJ01_EXEC_PATH" -i Prj01Suite01.Test01 -e Prj01Suite01.Test01";
     int cmd_code = exec_cmd(cmd, &cmd_out);
