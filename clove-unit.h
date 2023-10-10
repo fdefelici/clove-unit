@@ -454,7 +454,6 @@ typedef struct __clove_test_t {
     const char* file_name;
     bool dry_run;
     size_t funct_line;
-    size_t max_test_digits;
     struct {
         unsigned int line;
         __clove_assert_check_e assert;
@@ -559,6 +558,7 @@ typedef struct __clove_report_pretty_t {
     __clove_report_t base;
     __clove_stream_t* stream;
     __clove_time_t start_time;
+    unsigned int max_test_digits;
     struct {
         const char* info;
         const char* warn;
@@ -722,7 +722,7 @@ __CLOVE_EXTERN_C int __clove_symbols_for_each_function_by_prefix(__clove_symbols
 __CLOVE_EXTERN_C int __clove_runner_auto(int argc, char* argv[]);
 __CLOVE_EXTERN_C int __clove_run_tests_with_report(__clove_report_t* report, __clove_vector_t* includes, __clove_vector_t* excludes);
 __CLOVE_EXTERN_C int __clove_exec_suites(__clove_suite_t* suites, size_t suite_count, size_t test_count, __clove_report_t* report);
-__CLOVE_EXTERN_C void __clove_exec_suite(__clove_suite_t* suite, size_t test_counter, size_t* passed, size_t* failed, size_t* skipped, __clove_report_t* report, size_t test_count_digits);
+__CLOVE_EXTERN_C void __clove_exec_suite(__clove_suite_t* suite, size_t test_counter, size_t* passed, size_t* failed, size_t* skipped, __clove_report_t* report);
 #pragma endregion // Run Decl
 
 #pragma region PRIVATE - Api Decl
@@ -2327,6 +2327,7 @@ void __clove_report_pretty_free(__clove_report_t* report) {
 void __clove_report_pretty_start(__clove_report_t* _this, size_t suite_count, size_t test_count) {
     __clove_report_pretty_t* report = (__clove_report_pretty_t*)_this;
     report->start_time = __clove_time_now();
+    report->max_test_digits = (unsigned int)(log10((double)test_count) + 1U);
 
     bool activated = report->stream->has_ansi_support(report->stream);
     if (activated) {
@@ -2374,7 +2375,7 @@ void __clove_report_pretty_end(__clove_report_t* _this, size_t test_count, size_
 void __clove_report_pretty_end_test(__clove_report_t* _this, __clove_suite_t* suite, __clove_test_t* test, size_t test_number) {
     __clove_report_pretty_t* report = (__clove_report_pretty_t*)_this;
     char result[__CLOVE_STRING_LENGTH], strToPad[__CLOVE_TEST_ENTRY_LENGTH];
-    snprintf(strToPad, __CLOVE_TEST_ENTRY_LENGTH, "%0*zu) %s.%s", test->max_test_digits, test_number, suite->name, test->name);
+    snprintf(strToPad, __CLOVE_TEST_ENTRY_LENGTH, "%0*zu) %s.%s", report->max_test_digits, test_number, suite->name, test->name);
     __clove_report_pretty_pad_right(result, strToPad);
 
     if (test->result == __CLOVE_TEST_RESULT_PASSED) {
@@ -3577,12 +3578,11 @@ int __clove_exec_suites(__clove_suite_t* suites, size_t suite_count, size_t test
     size_t failed = 0;
     size_t skipped = 0;
 
-    size_t test_count_digits = snprintf(NULL, 0, "%zu", test_count);
     size_t test_start_counter = 1;
     for (size_t i = 0; i < suite_count; ++i) {
         __clove_suite_t* each_suite = &suites[i];
         report->begin_suite(report, each_suite, i);
-        __clove_exec_suite(each_suite, test_start_counter, &passed, &failed, &skipped, report, test_count_digits);
+        __clove_exec_suite(each_suite, test_start_counter, &passed, &failed, &skipped, report);
         report->end_suite(report, each_suite, i);
         test_start_counter += each_suite->test_count;
     }
@@ -3590,14 +3590,13 @@ int __clove_exec_suites(__clove_suite_t* suites, size_t suite_count, size_t test
     return failed == 0 ? 0 : 1;
 }
 
-void __clove_exec_suite(__clove_suite_t* suite, size_t test_counter, size_t* passed, size_t* failed, size_t* skipped, __clove_report_t* report, size_t test_count_digits) {
+void __clove_exec_suite(__clove_suite_t* suite, size_t test_counter, size_t* passed, size_t* failed, size_t* skipped, __clove_report_t* report) {
     __clove_time_t suite_start = __clove_time_now();
     suite->fixtures.setup_once();
 
     for (size_t i = 0; i < suite->test_count; i++) {
         __clove_test_t* each_test = (__clove_test_t*)__clove_vector_get(&suite->tests, i);
         each_test->result = __CLOVE_TEST_RESULT_SKIPPED;
-        each_test->max_test_digits = test_count_digits;
 
         __clove_time_t test_start = __clove_time_now();
         suite->fixtures.setup();
