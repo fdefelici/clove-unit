@@ -1,4 +1,4 @@
-#define CLOVE_SUITE_NAME Prj01Suite02
+#define CLOVE_SUITE_NAME Prj02Suite02
 #include "clove-unit.h"
 
 CLOVE_TEST(Test02) {
@@ -44,4 +44,3 @@ CLOVE_TEST(Test11) {
 CLOVE_TEST(Test12) {
     CLOVE_PASS();
 }
-
