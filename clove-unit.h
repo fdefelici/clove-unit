@@ -2327,7 +2327,7 @@ void __clove_report_pretty_free(__clove_report_t* report) {
 void __clove_report_pretty_start(__clove_report_t* _this, size_t suite_count, size_t test_count) {
     __clove_report_pretty_t* report = (__clove_report_pretty_t*)_this;
     report->start_time = __clove_time_now();
-    report->max_test_digits = (unsigned int)(log10((double)test_count) + 1U);
+    report->max_test_digits = (unsigned int)(log10((double)test_count) + 1.0);
 
     bool activated = report->stream->has_ansi_support(report->stream);
     if (activated) {
