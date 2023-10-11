@@ -1,6 +1,4 @@
 #define CLOVE_SUITE_NAME UNIT_AssertsTest
-#include <stdlib.h>
-#include <time.h>
 #include "clove-unit.h"
 
 CLOVE_TEST(BoolComparison) {
@@ -113,37 +111,29 @@ CLOVE_TEST(SizetComparison) {
 }
 
 CLOVE_TEST(FloatComparison) {
-    srand((unsigned)time(NULL) ^ (unsigned)clock());
-    volatile float v1 = ((float)rand() / RAND_MAX) * (2.0f - 1.1f) + 1.1f;
-    volatile float v2 = ((float)rand() / RAND_MAX) * (3.1f - 2.1f) + 2.1f;
+    CLOVE_FLOAT_EQ(1.1, 1.1);
+    CLOVE_FLOAT_NE(1.1, 1.2);
 
-    CLOVE_FLOAT_EQ(v1, v1);
-    CLOVE_FLOAT_NE(v1, v2);
-
-    CLOVE_FLOAT_GT(v2, v1);
-    CLOVE_FLOAT_GTE(v2, v1);
-    CLOVE_FLOAT_GTE(v2, v2);
-
-    CLOVE_FLOAT_LT(v1, v2);
-    CLOVE_FLOAT_LTE(v1, v2);
-    CLOVE_FLOAT_LTE(v2, v2);
+    CLOVE_FLOAT_GT(1.2, 1.1);
+    CLOVE_FLOAT_GTE(1.2, 1.1);
+    CLOVE_FLOAT_GTE(1.2, 1.2);
+    
+    CLOVE_FLOAT_LT(1.1, 1.2);
+    CLOVE_FLOAT_LTE(1.1, 1.2);
+    CLOVE_FLOAT_LTE(1.2, 1.2);
 }
 
 CLOVE_TEST(DoubleComparison) {
-    srand((unsigned)time(NULL) ^ (unsigned)clock());
-    volatile double v1 = ((double)rand() / RAND_MAX) * (2.0 - 1.1) + 1.1;
-    volatile double v2 = ((double)rand() / RAND_MAX) * (3.1 - 2.1) + 2.1;
+    CLOVE_DOUBLE_EQ(1.1, 1.1);
+    CLOVE_DOUBLE_NE(1.1, 1.2);
 
-    CLOVE_DOUBLE_EQ(v1, v1);
-    CLOVE_DOUBLE_NE(v1, v2);
-
-    CLOVE_DOUBLE_GT(v2, v1);
-    CLOVE_DOUBLE_GTE(v2, v1);
-    CLOVE_DOUBLE_GTE(v2, v2);
-
-    CLOVE_DOUBLE_LT(v1, v2);
-    CLOVE_DOUBLE_LTE(v1, v2);
-    CLOVE_DOUBLE_LTE(v2, v2);
+    CLOVE_DOUBLE_GT(1.2, 1.1);
+    CLOVE_DOUBLE_GTE(1.2, 1.1);
+    CLOVE_DOUBLE_GTE(1.2, 1.2);
+    
+    CLOVE_DOUBLE_LT(1.1, 1.2);
+    CLOVE_DOUBLE_LTE(1.1, 1.2);
+    CLOVE_DOUBLE_LTE(1.2, 1.2);
 }
 
 CLOVE_TEST(StringEq) {
