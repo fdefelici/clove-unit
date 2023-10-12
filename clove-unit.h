@@ -558,6 +558,7 @@ typedef struct __clove_report_pretty_t {
     __clove_report_t base;
     __clove_stream_t* stream;
     __clove_time_t start_time;
+    unsigned int max_test_digits;
     struct {
         const char* info;
         const char* warn;
@@ -2331,6 +2332,7 @@ void __clove_report_pretty_free(__clove_report_t* report) {
 void __clove_report_pretty_start(__clove_report_t* _this, size_t suite_count, size_t test_count) {
     __clove_report_pretty_t* report = (__clove_report_pretty_t*)_this;
     report->start_time = __clove_time_now();
+    report->max_test_digits = (unsigned int)snprintf(NULL, 0U, "%zu", test_count);
 
     bool activated = report->stream->has_ansi_support(report->stream);
     if (activated) {
@@ -2378,7 +2380,7 @@ void __clove_report_pretty_end(__clove_report_t* _this, size_t test_count, size_
 void __clove_report_pretty_end_test(__clove_report_t* _this, __clove_suite_t* suite, __clove_test_t* test, size_t test_number) {
     __clove_report_pretty_t* report = (__clove_report_pretty_t*)_this;
     char result[__CLOVE_STRING_LENGTH], strToPad[__CLOVE_TEST_ENTRY_LENGTH];
-    snprintf(strToPad, __CLOVE_TEST_ENTRY_LENGTH, "%zu) %s.%s", test_number, suite->name, test->name);
+    snprintf(strToPad, __CLOVE_TEST_ENTRY_LENGTH, "%0*zu) %s.%s", report->max_test_digits, test_number, suite->name, test->name);
     __clove_report_pretty_pad_right(result, strToPad);
 
     if (test->result == __CLOVE_TEST_RESULT_PASSED) {
