@@ -844,7 +844,6 @@ char* __clove_path_basepath(const char* a_path) {
     for (size_t i = 0; i < bytes_count; ++i) {
         base_path[i] = (char)((path_choosen[i] == '/' || path_choosen[i] == '\\') ? __CLOVE_PATH_SEPARATOR : path_choosen[i]);
     }
-    base_path[bytes_count] = '\0';
 
     return base_path;
 }
