@@ -815,31 +815,37 @@ bool __clove_path_is_relative(const char* path) {
 }
 
 char* __clove_path_basepath(const char* a_path) {
-    //TODO: Make use only of one allocation
-    char* path = __clove_string_strdup(a_path);
+    size_t path_length = strlen(a_path);
+    size_t last_separator_index = path_length;
 
-    //make sure path contains only separator specific for the OS
-    __clove_string_replace_char(path, '/', __CLOVE_PATH_SEPARATOR);
-    __clove_string_replace_char(path, '\\', __CLOVE_PATH_SEPARATOR);
+    for (size_t i = path_length; i > 0U; --i) {
+        size_t current_index = i - 1U;
+        char current_char = a_path[current_index];
+        if (current_char == '/' || current_char == '\\') {
+            last_separator_index = current_index;
+            break;
+        }
+    }
 
-    const char* last_addr = strrchr((const char*)path, __CLOVE_PATH_SEPARATOR);
-    int bytes_count;
-
-    char* path_choosen;
-    if (!last_addr) {
+    size_t bytes_count;
+    const char* path_choosen = a_path;
+    if (last_separator_index == path_length) {
         static char dot_path[3] = { '.', __CLOVE_PATH_SEPARATOR, '\0' };
-        bytes_count = sizeof(dot_path) - 1; //equivalent to strlen
+        bytes_count = sizeof(dot_path) - 1U; // Equivalent to strlen
         path_choosen = dot_path;
+    } else {
+        bytes_count = last_separator_index;
     }
-    else {
-        bytes_count = (int)(last_addr - path);
-        path_choosen = path;
-    }
-    int count = bytes_count + 1; // +1 take into account null terminator
 
-    char* base_path = __CLOVE_MEMORY_CALLOC_TYPE_N(char, count);
-    __clove_string_strncpy(base_path, count, path_choosen, bytes_count);
-    free(path);
+    // +1 takes the null terminator into account.
+    char* base_path = __CLOVE_MEMORY_CALLOC_TYPE_N(char, (bytes_count + 1U));
+
+    // Make sure base_path only contains the OS separator.
+    for (size_t i = 0; i < bytes_count; ++i) {
+        base_path[i] = (char)((path_choosen[i] == '/' || path_choosen[i] == '\\') ? __CLOVE_PATH_SEPARATOR : path_choosen[i]);
+    }
+    base_path[bytes_count] = '\0';
+
     return base_path;
 }
 #pragma endregion // Path Impl
