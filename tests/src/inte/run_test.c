@@ -129,6 +129,51 @@ CLOVE_TEST(DefaultReportExcludeOneTest) {
     CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "Total: 2, Passed: 2, Failed: 0, Skipped: 0"));
 }
 
+CLOVE_TEST(DefaultReportSingleDigitTest) {
+  const char* cmd = RES_PRJ01_EXEC_PATH;
+  int cmd_code = exec_cmd(cmd, &cmd_out);
+  CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_OK, cmd_code);
+  CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "1)"));
+  CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "2)"));
+  CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "3)"));
+}
+
+CLOVE_TEST(DefaultReportDoubleDigitTest) {
+  const char* cmd = RES_PRJ02_EXEC_PATH;
+  int cmd_code = exec_cmd(cmd, &cmd_out);
+  CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_OK, cmd_code);
+  CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "01)"));
+  CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "02)"));
+  CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "03)"));
+  CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "04)"));
+  CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "05)"));
+  CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "06)"));
+  CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "07)"));
+  CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "08)"));
+  CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "09)"));
+  CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "10)"));
+  CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "11)"));
+  CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "12)"));
+}
+
+CLOVE_TEST(DefaultReportTripleDigitTest) {
+  const char* cmd = RES_PRJ03_EXEC_PATH;
+  int cmd_code = exec_cmd(cmd, &cmd_out);
+  CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_OK, cmd_code);
+  CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "001)"));
+  CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "002)"));
+  CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "003)"));
+  CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "004)"));
+  CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "005)"));
+  CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "006)"));
+  CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "007)"));
+  CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "008)"));
+  CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "009)"));
+  CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "010)"));
+  CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "011)"));
+  CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "012)"));
+}
+
 CLOVE_TEST(DefaultReportIncludeOverExcludeOneTest) {
     const char* cmd = RES_PRJ01_EXEC_PATH" -i Prj01Suite01.Test01 -e Prj01Suite01.Test01";
     int cmd_code = exec_cmd(cmd, &cmd_out);
