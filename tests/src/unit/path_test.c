@@ -24,4 +24,26 @@ CLOVE_TEST(BasePathForJustExecutable) {
     char expected[3] = { '.', __CLOVE_PATH_SEPARATOR, '\0' };
     char* result = __clove_path_basepath("file.exe");
     CLOVE_STRING_EQ(expected, result);
-}  
+}
+
+CLOVE_TEST(BasePathForFullPath) {
+#ifdef _WIN32
+  char expected[] = "\\path\\to\\directory";
+#else
+  char expected[] = "/path/to/directory";
+#endif
+  char* result = __clove_path_basepath("/path/to/directory/file.txt");
+  CLOVE_STRING_EQ(expected, result);
+  free(result);
+}
+
+CLOVE_TEST(BasePathForDirectory) {
+#ifdef _WIN32
+  char expected[] = "\\path\\to\\directory";
+#else
+  char expected[] = "/path/to/directory";
+#endif
+  char* result = __clove_path_basepath("/path/to/directory/");
+  CLOVE_STRING_EQ(expected, result);
+  free(result);
+}
