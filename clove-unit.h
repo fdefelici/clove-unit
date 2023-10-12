@@ -817,7 +817,6 @@ bool __clove_path_is_relative(const char* path) {
 char* __clove_path_basepath(const char* a_path) {
     size_t path_length = strlen(a_path);
     size_t last_separator_index = path_length;
-
     for (size_t i = path_length; i > 0U; --i) {
         size_t current_index = i - 1U;
         char current_char = a_path[current_index];
@@ -828,13 +827,14 @@ char* __clove_path_basepath(const char* a_path) {
     }
 
     size_t bytes_count;
-    const char* path_choosen = a_path;
+    const char* path_choosen;
     if (last_separator_index == path_length) {
         static char dot_path[3] = { '.', __CLOVE_PATH_SEPARATOR, '\0' };
-        bytes_count = sizeof(dot_path) - 1U; // Equivalent to strlen
+        bytes_count = sizeof(dot_path) - 1; //equivalent to strlen
         path_choosen = dot_path;
     } else {
         bytes_count = last_separator_index;
+        path_choosen = a_path;
     }
 
     // +1 takes the null terminator into account.
