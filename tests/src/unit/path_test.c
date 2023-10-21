@@ -27,42 +27,42 @@ CLOVE_TEST(BasePathForJustExecutable) {
 }
 
 CLOVE_TEST(BasePathForFullPath) {
-  char* expected = __clove_path_to_os("\\path\\to\\directory");
-  char* result = __clove_path_basepath("/path/to/directory/file.txt");
-  CLOVE_STRING_EQ(expected, result);
-  free(expected);
-  free(result);
+    char expected[] = "\\path\\to\\directory";
+    __clove_path_to_os (expected);
+
+    char* result = __clove_path_basepath("/path/to/directory/file.txt");
+    CLOVE_STRING_EQ(expected, result);
+    free(result);
 }
 
 CLOVE_TEST(BasePathForDirectory) {
-  char* expected = __clove_path_to_os("\\path\\to\\directory");
-  char* result = __clove_path_basepath("/path/to/directory/");
-  CLOVE_STRING_EQ(expected, result);
-  free(expected);
-  free(result);
+    char expected[] = "\\path\\to\\directory";
+    __clove_path_to_os (expected);
+
+    char* result = __clove_path_basepath("/path/to/directory/");
+    CLOVE_STRING_EQ(expected, result);
+    free(result);
 }
 
 CLOVE_TEST(PathToOs) {
 #ifdef _WIN32
-  const char* expected = "\\path\\to\\directory";
-  const char* provided = "/path/to/directory";
+    const char* expected = "\\path\\to\\directory";
+    char provided[] = "/path/to/directory";
 #else
-  const char* expected = "/path/to/directory";
-  const char* provided = "\\path\\to\\directory";
+    const char* expected = "/path/to/directory";
+    char provided[] = "\\path\\to\\directory";
 #endif
-  char* result = __clove_path_to_os(provided);
-  CLOVE_STRING_EQ(expected, result);
-  free(result);
+    __clove_path_to_os(provided);
+    CLOVE_STRING_EQ(expected, provided);
 }
 
 CLOVE_TEST(PathToOsMixed) {
-  const char* provided = "/path\\to/directory";
+    char provided[] = "/path\\to/directory";
 #ifdef _WIN32
-  const char* expected = "\\path\\to\\directory";
+    const char* expected = "\\path\\to\\directory";
 #else
-  const char* expected = "/path/to/directory";
+    const char* expected = "/path/to/directory";
 #endif
-  char* result = __clove_path_to_os(provided);
-  CLOVE_STRING_EQ(expected, result);
-  free(result);
+    __clove_path_to_os(provided);
+    CLOVE_STRING_EQ(expected, provided);
 }

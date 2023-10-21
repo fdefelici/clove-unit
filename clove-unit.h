@@ -67,7 +67,7 @@ __CLOVE_EXTERN_C const char* __clove_get_exec_path();
 __CLOVE_EXTERN_C char* __clove_path_concat(const char separator, const char* path1, const char* path2);
 __CLOVE_EXTERN_C char* __clove_path_rel_to_abs_exec_path(const char* rel_path);
 __CLOVE_EXTERN_C bool __clove_path_is_relative(const char* path);
-__CLOVE_EXTERN_C char* __clove_path_to_os(const char* path);
+__CLOVE_EXTERN_C void __clove_path_to_os(char* path);
 __CLOVE_EXTERN_C char* __clove_path_basepath(const char* path);
 #pragma endregion // Path Decl
 
@@ -816,18 +816,14 @@ bool __clove_path_is_relative(const char* path) {
     return true;
 }
 
-char* __clove_path_to_os(const char* path) {
-    size_t path_length = __clove_string_length (path);
-    char* os_path = __CLOVE_MEMORY_CALLOC_TYPE_N(char, path_length);
-    __clove_memory_memcpy(os_path, path_length, path, path_length);
-    __clove_string_replace_char(os_path, '/', __CLOVE_PATH_SEPARATOR);
-    __clove_string_replace_char(os_path, '\\', __CLOVE_PATH_SEPARATOR);
-    return os_path;
+void __clove_path_to_os(char* path) {
+    __clove_string_replace_char(path, '/', __CLOVE_PATH_SEPARATOR);
+    __clove_string_replace_char(path, '\\', __CLOVE_PATH_SEPARATOR);
 }
 
 char* __clove_path_basepath(const char* a_path) {
     // Find the last path separator character in the input path.
-    const char* last_char = a_path + strlen(a_path) - 1U;
+    const char* last_char = a_path + (__clove_string_length(a_path) - 1U);
     while (last_char > a_path && *last_char != '/' && *last_char != '\\') {
         --last_char;
     }
@@ -838,12 +834,13 @@ char* __clove_path_basepath(const char* a_path) {
         return strdup(dot_path);
     }
 
-    // Trim the os_path to only include the base path
+    // Calculate base path length based on the position of the last path separator.
     size_t base_length = last_char - a_path;
-    char* os_path = __clove_path_to_os(a_path);
-    os_path[base_length] = '\0';
+    char* base_path = __CLOVE_MEMORY_CALLOC_TYPE_N(char, base_length + 1);
+    memcpy(base_path, a_path, base_length);
+    __clove_path_to_os (base_path);
 
-    return os_path;
+    return base_path;
 }
 #pragma endregion // Path Impl
 
