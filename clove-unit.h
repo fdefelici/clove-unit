@@ -67,6 +67,7 @@ __CLOVE_EXTERN_C const char* __clove_get_exec_path();
 __CLOVE_EXTERN_C char* __clove_path_concat(const char separator, const char* path1, const char* path2);
 __CLOVE_EXTERN_C char* __clove_path_rel_to_abs_exec_path(const char* rel_path);
 __CLOVE_EXTERN_C bool __clove_path_is_relative(const char* path);
+__CLOVE_EXTERN_C char* __clove_path_to_os(const char* path);
 __CLOVE_EXTERN_C char* __clove_path_basepath(const char* path);
 #pragma endregion // Path Decl
 
@@ -815,38 +816,34 @@ bool __clove_path_is_relative(const char* path) {
     return true;
 }
 
+char* __clove_path_to_os(const char* path) {
+    size_t path_length = __clove_string_length (path);
+    char* os_path = __CLOVE_MEMORY_CALLOC_TYPE_N(char, path_length);
+    __clove_memory_memcpy(os_path, path_length, path, path_length);
+    __clove_string_replace_char(os_path, '/', __CLOVE_PATH_SEPARATOR);
+    __clove_string_replace_char(os_path, '\\', __CLOVE_PATH_SEPARATOR);
+    return os_path;
+}
+
 char* __clove_path_basepath(const char* a_path) {
-    size_t path_length = strlen(a_path);
-    size_t last_separator_index = path_length;
-    for (size_t i = path_length; i > 0U; --i) {
-        size_t current_index = i - 1U;
-        char current_char = a_path[current_index];
-        if (current_char == '/' || current_char == '\\') {
-            last_separator_index = current_index;
-            break;
-        }
+    // Find the last path separator character in the input path.
+    const char* last_char = a_path + strlen(a_path) - 1U;
+    while (last_char > a_path && *last_char != '/' && *last_char != '\\') {
+        --last_char;
     }
 
-    size_t bytes_count;
-    const char* path_choosen;
-    if (last_separator_index == path_length) {
+    // If there are no separators in the path, return the current directory path.
+    if (last_char == a_path) {
         static char dot_path[3] = { '.', __CLOVE_PATH_SEPARATOR, '\0' };
-        bytes_count = sizeof(dot_path) - 1; //equivalent to strlen
-        path_choosen = dot_path;
-    } else {
-        bytes_count = last_separator_index;
-        path_choosen = a_path;
+        return strdup(dot_path);
     }
 
-    // +1 takes the null terminator into account.
-    char* base_path = __CLOVE_MEMORY_CALLOC_TYPE_N(char, (bytes_count + 1U));
+    // Trim the os_path to only include the base path
+    size_t base_length = last_char - a_path;
+    char* os_path = __clove_path_to_os(a_path);
+    os_path[base_length] = '\0';
 
-    // Make sure base_path only contains the OS separator.
-    for (size_t i = 0; i < bytes_count; ++i) {
-        base_path[i] = (char)((path_choosen[i] == '/' || path_choosen[i] == '\\') ? __CLOVE_PATH_SEPARATOR : path_choosen[i]);
-    }
-
-    return base_path;
+    return os_path;
 }
 #pragma endregion // Path Impl
 
