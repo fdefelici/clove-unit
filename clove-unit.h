@@ -823,7 +823,7 @@ void __clove_path_to_os(char* path) {
 
 char* __clove_path_basepath(const char* a_path) {
     // Find the last path separator character in the input path.
-    const char* last_char = a_path + (__clove_string_length(a_path) - 1U);
+    const char* last_char = a_path + __clove_string_length(a_path) - 1;
     while (last_char > a_path && *last_char != '/' && *last_char != '\\') {
         --last_char;
     }
@@ -831,15 +831,14 @@ char* __clove_path_basepath(const char* a_path) {
     // If there are no separators in the path, return the current directory path.
     if (last_char == a_path) {
         static char dot_path[3] = { '.', __CLOVE_PATH_SEPARATOR, '\0' };
-        return strdup(dot_path);
+        return __clove_string_strdup(dot_path);
     }
 
     // Calculate base path length based on the position of the last path separator.
     size_t base_length = last_char - a_path;
     char* base_path = __CLOVE_MEMORY_CALLOC_TYPE_N(char, base_length + 1);
-    memcpy(base_path, a_path, base_length);
-    __clove_path_to_os (base_path);
-
+    __clove_string_strncpy(base_path, base_length + 1, a_path, base_length);
+    __clove_path_to_os(base_path);
     return base_path;
 }
 #pragma endregion // Path Impl
