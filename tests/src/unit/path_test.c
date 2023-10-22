@@ -24,4 +24,45 @@ CLOVE_TEST(BasePathForJustExecutable) {
     char expected[3] = { '.', __CLOVE_PATH_SEPARATOR, '\0' };
     char* result = __clove_path_basepath("file.exe");
     CLOVE_STRING_EQ(expected, result);
-}  
+}
+
+CLOVE_TEST(BasePathForFullPath) {
+    char expected[] = "\\path\\to\\directory";
+    __clove_path_to_os (expected);
+
+    char* result = __clove_path_basepath("/path/to/directory/file.txt");
+    CLOVE_STRING_EQ(expected, result);
+    free(result);
+}
+
+CLOVE_TEST(BasePathForDirectory) {
+    char expected[] = "\\path\\to\\directory";
+    __clove_path_to_os (expected);
+
+    char* result = __clove_path_basepath("/path/to/directory/");
+    CLOVE_STRING_EQ(expected, result);
+    free(result);
+}
+
+CLOVE_TEST(PathToOs) {
+#ifdef _WIN32
+    const char* expected = "\\path\\to\\directory";
+    char provided[] = "/path/to/directory";
+#else
+    const char* expected = "/path/to/directory";
+    char provided[] = "\\path\\to\\directory";
+#endif
+    __clove_path_to_os(provided);
+    CLOVE_STRING_EQ(expected, provided);
+}
+
+CLOVE_TEST(PathToOsMixed) {
+    char provided[] = "/path\\to/directory";
+#ifdef _WIN32
+    const char* expected = "\\path\\to\\directory";
+#else
+    const char* expected = "/path/to/directory";
+#endif
+    __clove_path_to_os(provided);
+    CLOVE_STRING_EQ(expected, provided);
+}
