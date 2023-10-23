@@ -9,8 +9,6 @@ target_include_directories(CLoveUnitTest PRIVATE ../ ./src/)
 set_property(TARGET CLoveUnitTest PROPERTY C_STANDARD 11)
 
 add_subdirectory(resources/prj01)
-add_subdirectory(resources/prj02)
-add_subdirectory(resources/prj03)
 
 #[[
 get_cmake_property(_variableNames VARIABLES)
