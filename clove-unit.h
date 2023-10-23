@@ -103,44 +103,6 @@ __CLOVE_EXTERN_C void __clove_file_write(FILE* file, const char* str);
 __CLOVE_EXTERN_C void __clove_file_writeline(FILE* file, const char* str);
 #pragma endregion //File Decl
 
-#pragma region PRIVATE - Stream Decl
-typedef struct __clove_stream_t {
-    bool (*open)(struct __clove_stream_t* _this);
-    void (*close)(struct __clove_stream_t* _this);
-    void (*writef)(struct __clove_stream_t* _this, const char* format, ...);
-    void (*seek)(struct __clove_stream_t* _this, long offset, int origin);
-    bool (*has_ansi_support)(struct __clove_stream_t* _this);
-    void (*free)(struct __clove_stream_t* _this);
-} __clove_stream_t;
-
-typedef struct __clove_stream_console_t {
-    __clove_stream_t base;
-} __clove_stream_console_t;
-
-__CLOVE_EXTERN_C __clove_stream_console_t* __clove_stream_console_new();
-__CLOVE_EXTERN_C bool __clove_stream_console_open(__clove_stream_t* stream);
-__CLOVE_EXTERN_C void __clove_stream_console_close(__clove_stream_t* stream);
-__CLOVE_EXTERN_C void __clove_stream_console_writef(__clove_stream_t* stream, const char* format, ...);
-__CLOVE_EXTERN_C void __clove_stream_console_seek(__clove_stream_t* stream, long offset, int origin);
-__CLOVE_EXTERN_C bool __clove_stream_console_has_ansi_support(struct __clove_stream_t* _this);
-__CLOVE_EXTERN_C void __clove_stream_console_free(__clove_stream_t* stream);
-
-#include <stdio.h> 
-typedef struct __clove_stream_file_t {
-    __clove_stream_t base;
-     const char* file_path;
-    FILE* file; //No way to forward declaring FILE. the only way should be to use void*
-} __clove_stream_file_t;
-
-__CLOVE_EXTERN_C __clove_stream_file_t* __clove_stream_file_new(const char* file_path);
-__CLOVE_EXTERN_C bool __clove_stream_file_open(__clove_stream_t* stream);
-__CLOVE_EXTERN_C void __clove_stream_file_close(__clove_stream_t* stream);
-__CLOVE_EXTERN_C void __clove_stream_file_writef(__clove_stream_t* stream, const char* format, ...);
-__CLOVE_EXTERN_C void __clove_stream_file_seek(__clove_stream_t* stream, long offset, int origin);
-__CLOVE_EXTERN_C bool __clove_stream_file_has_ansi_support(struct __clove_stream_t* _this);
-__CLOVE_EXTERN_C void __clove_stream_file_free(__clove_stream_t* stream);
-#pragma endregion //Stream Decl
-
 #pragma region PRIVATE - String Decl
 #include <stdbool.h>
 __CLOVE_EXTERN_C bool __clove_string_equal(const char* str1, const char* str2);
@@ -532,6 +494,60 @@ __CLOVE_EXTERN_C void __clove_assert_float(__clove_assert_check_e check_mode, fl
 __CLOVE_EXTERN_C void __clove_assert_double(__clove_assert_check_e check_mode, double expected, double result, __clove_test_t* _this);
 __CLOVE_EXTERN_C void __clove_assert_string(__clove_assert_check_e check_mode, const char* expected, const char* result, __clove_test_t* _this);
 #pragma endregion // Assert Decl
+
+#pragma region PRIVATE - Stream Decl
+typedef struct __clove_stream_t {
+    bool (*open)(struct __clove_stream_t* _this);
+    void (*close)(struct __clove_stream_t* _this);
+    void (*writef)(struct __clove_stream_t* _this, const char* format, ...);
+    void (*seek)(struct __clove_stream_t* _this, long offset, int origin);
+    bool (*has_ansi_support)(struct __clove_stream_t* _this);
+    void (*free)(struct __clove_stream_t* _this);
+} __clove_stream_t;
+
+typedef struct __clove_stream_console_t {
+    __clove_stream_t base;
+} __clove_stream_console_t;
+
+__CLOVE_EXTERN_C __clove_stream_console_t* __clove_stream_console_new();
+__CLOVE_EXTERN_C bool __clove_stream_console_open(__clove_stream_t* stream);
+__CLOVE_EXTERN_C void __clove_stream_console_close(__clove_stream_t* stream);
+__CLOVE_EXTERN_C void __clove_stream_console_writef(__clove_stream_t* stream, const char* format, ...);
+__CLOVE_EXTERN_C void __clove_stream_console_seek(__clove_stream_t* stream, long offset, int origin);
+__CLOVE_EXTERN_C bool __clove_stream_console_has_ansi_support(struct __clove_stream_t* _this);
+__CLOVE_EXTERN_C void __clove_stream_console_free(__clove_stream_t* stream);
+
+#include <stdio.h> 
+typedef struct __clove_stream_file_t {
+    __clove_stream_t base;
+     const char* file_path;
+    FILE* file; //No way to forward declaring FILE. the only way should be to use void*
+} __clove_stream_file_t;
+
+__CLOVE_EXTERN_C __clove_stream_file_t* __clove_stream_file_new(const char* file_path);
+__CLOVE_EXTERN_C bool __clove_stream_file_open(__clove_stream_t* stream);
+__CLOVE_EXTERN_C void __clove_stream_file_close(__clove_stream_t* stream);
+__CLOVE_EXTERN_C void __clove_stream_file_writef(__clove_stream_t* stream, const char* format, ...);
+__CLOVE_EXTERN_C void __clove_stream_file_seek(__clove_stream_t* stream, long offset, int origin);
+__CLOVE_EXTERN_C bool __clove_stream_file_has_ansi_support(struct __clove_stream_t* _this);
+__CLOVE_EXTERN_C void __clove_stream_file_free(__clove_stream_t* stream);
+
+//In Memory Stream
+typedef struct __clove_stream_memory_t {
+    __clove_stream_t base;
+    __clove_vector_t lines;
+} __clove_stream_memory_t;
+
+__CLOVE_EXTERN_C __clove_stream_memory_t* __clove_stream_memory_new();
+__CLOVE_EXTERN_C bool __clove_stream_memory_open(__clove_stream_t* stream);
+__CLOVE_EXTERN_C void __clove_stream_memory_close(__clove_stream_t* stream);
+__CLOVE_EXTERN_C void __clove_stream_memory_writef(__clove_stream_t* stream, const char* format, ...);
+__CLOVE_EXTERN_C void __clove_stream_memory_seek(__clove_stream_t* stream, long offset, int origin);
+__CLOVE_EXTERN_C bool __clove_stream_memory_has_ansi_support(struct __clove_stream_t* _this);
+__CLOVE_EXTERN_C void __clove_stream_memory_free(__clove_stream_t* stream);
+__CLOVE_EXTERN_C char* __clove_stream_memory_get_line(__clove_stream_memory_t* mem_stream, size_t index);
+__CLOVE_EXTERN_C char* __clove_stream_memory_as_string(__clove_stream_memory_t* mem_stream);
+#pragma endregion //Stream Decl
 
 #pragma region PRIVATE - Report Decl
 typedef struct __clove_report_t {
@@ -925,129 +941,6 @@ bool __clove_memory_memset(void* dest, size_t size, unsigned char value) {
     return memset(dest, value, size) != NULL;
 }
 #pragma endregion //Memory Impl
-
-#pragma region PRIVATE - Stream Impl
-__clove_stream_console_t* __clove_stream_console_new() {
-    __clove_stream_console_t* stream = __CLOVE_MEMORY_MALLOC_TYPE(__clove_stream_console_t);
-    stream->base.open = __clove_stream_console_open;
-    stream->base.close = __clove_stream_console_close;
-    stream->base.writef = __clove_stream_console_writef;
-    stream->base.seek = __clove_stream_console_seek;
-    stream->base.has_ansi_support = __clove_stream_console_has_ansi_support;
-    stream->base.free = __clove_stream_console_free;
-    return stream;
-}
-bool __clove_stream_console_open(__clove_stream_t* stream) {
-    return true;
-}
-void __clove_stream_console_close(__clove_stream_t* stream) { 
-    //nothing todo
-}
-void __clove_stream_console_writef(__clove_stream_t* stream, const char* format, ...) {
-    va_list args;
-    va_start(args, format);
-    __clove_console_vprintf(format, args);
-    va_end(args);
-}
-void __clove_stream_console_seek(__clove_stream_t* stream, long offset, int origin) {
-    //nothing todo
-}
-
-#ifdef _WIN32
-#include <windows.h>
-#include <stdbool.h>
-#ifndef ENABLE_VIRTUAL_TERMINAL_PROCESSING
-#define ENABLE_VIRTUAL_TERMINAL_PROCESSING  0x0004
-#endif
-bool __clove_stream_console_has_ansi_support(__clove_stream_t* stream) {
-    DWORD outMode = 0, inMode = 0;
-    HANDLE stdoutHandle = GetStdHandle(STD_OUTPUT_HANDLE);
-    HANDLE stdinHandle = GetStdHandle(STD_INPUT_HANDLE);
-
-    if (stdoutHandle == INVALID_HANDLE_VALUE || stdinHandle == INVALID_HANDLE_VALUE) {
-        //exit(GetLastError());
-        return false;
-    }
-
-    if (!GetConsoleMode(stdoutHandle, &outMode) || !GetConsoleMode(stdinHandle, &inMode)) {
-        //exit(GetLastError());
-        return false;
-    }
-
-    DWORD outModeInit = outMode;
-    DWORD inModeInit = inMode;
-
-    // Enable ANSI escape codes
-    outMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-
-    // Set stdin as no echo and unbuffered
-    inMode &= ~(ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT);
-
-    if (!SetConsoleMode(stdoutHandle, outMode) || !SetConsoleMode(stdinHandle, inMode)) {
-        //exit(GetLastError());
-        return false;
-    }
-    return true;
-}
-#else
-#include <stdbool.h>
-#include <unistd.h>
-bool __clove_stream_console_has_ansi_support(__clove_stream_t* stream) {
-    if (isatty(STDOUT_FILENO)) {
-        // standard output is a tty
-        return true;
-    }
-    return false;
-}
-#endif //_WIN32
-
-
-void __clove_stream_console_free(__clove_stream_t* stream) {
-    free(stream);
-}
-
-__clove_stream_file_t* __clove_stream_file_new(const char* file_path) {
-    __clove_stream_file_t* stream = __CLOVE_MEMORY_MALLOC_TYPE(__clove_stream_file_t);
-    stream->base.open = __clove_stream_file_open;
-    stream->base.close = __clove_stream_file_close;
-    stream->base.writef = __clove_stream_file_writef;
-    stream->base.seek = __clove_stream_file_seek;
-    stream->base.has_ansi_support = __clove_stream_file_has_ansi_support;
-    stream->base.free = __clove_stream_file_free;
-    stream->file_path = __clove_string_strdup(file_path);
-    stream->file = NULL;
-    return stream;
-}
-bool __clove_stream_file_open(__clove_stream_t* stream) {
-    __clove_stream_file_t* _this = (__clove_stream_file_t*)stream;
-    _this->file = __clove_file_open(_this->file_path, "wb"); //binary mode so \n will stay \n (and not converted to \r\n on windows)
-    return _this->file != NULL;
-}
-void __clove_stream_file_close(__clove_stream_t* stream) {
-    __clove_stream_file_t* _this = (__clove_stream_file_t*)stream;
-    __clove_file_close(_this->file);
-}
-void __clove_stream_file_writef(__clove_stream_t* stream, const char* format, ...) {
-    __clove_stream_file_t* _this = (__clove_stream_file_t*)stream;
-    va_list args;
-    va_start(args, format);
-    __clove_file_vprintf(_this->file, format, args);
-    va_end(args);
-}
-void __clove_stream_file_seek(__clove_stream_t* stream, long offset, int origin) {
-     __clove_stream_file_t* _this = (__clove_stream_file_t*)stream;
-    fseek(_this->file, offset, origin); //TODO: wrap into __clove_file_seek method
-}
-bool __clove_stream_file_has_ansi_support(struct __clove_stream_t* _this) {
-    return false;
-}
-void __clove_stream_file_free(__clove_stream_t* stream) {
-    __clove_stream_file_t* _this = (__clove_stream_file_t*)stream;
-    _this->file = NULL;
-    free((char*)_this->file_path);
-    free(_this);
-}
-#pragma endregion //Stream Impl
 
 #pragma region PRIVATE - String Impl
 #include <string.h>
@@ -2256,6 +2149,187 @@ void __clove_assert_string(__clove_assert_check_e check_mode, const char* expect
 }
 #pragma endregion // Assert Impl
 
+#pragma region PRIVATE - Stream Impl
+__clove_stream_console_t* __clove_stream_console_new() {
+    __clove_stream_console_t* stream = __CLOVE_MEMORY_MALLOC_TYPE(__clove_stream_console_t);
+    stream->base.open = __clove_stream_console_open;
+    stream->base.close = __clove_stream_console_close;
+    stream->base.writef = __clove_stream_console_writef;
+    stream->base.seek = __clove_stream_console_seek;
+    stream->base.has_ansi_support = __clove_stream_console_has_ansi_support;
+    stream->base.free = __clove_stream_console_free;
+    return stream;
+}
+bool __clove_stream_console_open(__clove_stream_t* stream) {
+    return true;
+}
+void __clove_stream_console_close(__clove_stream_t* stream) { 
+    //nothing todo
+}
+void __clove_stream_console_writef(__clove_stream_t* stream, const char* format, ...) {
+    va_list args;
+    va_start(args, format);
+    __clove_console_vprintf(format, args);
+    va_end(args);
+}
+void __clove_stream_console_seek(__clove_stream_t* stream, long offset, int origin) {
+    //nothing todo
+}
+
+#ifdef _WIN32
+#include <windows.h>
+#include <stdbool.h>
+#ifndef ENABLE_VIRTUAL_TERMINAL_PROCESSING
+#define ENABLE_VIRTUAL_TERMINAL_PROCESSING  0x0004
+#endif
+bool __clove_stream_console_has_ansi_support(__clove_stream_t* stream) {
+    DWORD outMode = 0, inMode = 0;
+    HANDLE stdoutHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+    HANDLE stdinHandle = GetStdHandle(STD_INPUT_HANDLE);
+
+    if (stdoutHandle == INVALID_HANDLE_VALUE || stdinHandle == INVALID_HANDLE_VALUE) {
+        //exit(GetLastError());
+        return false;
+    }
+
+    if (!GetConsoleMode(stdoutHandle, &outMode) || !GetConsoleMode(stdinHandle, &inMode)) {
+        //exit(GetLastError());
+        return false;
+    }
+
+    DWORD outModeInit = outMode;
+    DWORD inModeInit = inMode;
+
+    // Enable ANSI escape codes
+    outMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+
+    // Set stdin as no echo and unbuffered
+    inMode &= ~(ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT);
+
+    if (!SetConsoleMode(stdoutHandle, outMode) || !SetConsoleMode(stdinHandle, inMode)) {
+        //exit(GetLastError());
+        return false;
+    }
+    return true;
+}
+#else
+#include <stdbool.h>
+#include <unistd.h>
+bool __clove_stream_console_has_ansi_support(__clove_stream_t* stream) {
+    if (isatty(STDOUT_FILENO)) {
+        // standard output is a tty
+        return true;
+    }
+    return false;
+}
+#endif //_WIN32
+
+
+void __clove_stream_console_free(__clove_stream_t* stream) {
+    free(stream);
+}
+
+__clove_stream_file_t* __clove_stream_file_new(const char* file_path) {
+    __clove_stream_file_t* stream = __CLOVE_MEMORY_MALLOC_TYPE(__clove_stream_file_t);
+    stream->base.open = __clove_stream_file_open;
+    stream->base.close = __clove_stream_file_close;
+    stream->base.writef = __clove_stream_file_writef;
+    stream->base.seek = __clove_stream_file_seek;
+    stream->base.has_ansi_support = __clove_stream_file_has_ansi_support;
+    stream->base.free = __clove_stream_file_free;
+    stream->file_path = __clove_string_strdup(file_path);
+    stream->file = NULL;
+    return stream;
+}
+bool __clove_stream_file_open(__clove_stream_t* stream) {
+    __clove_stream_file_t* _this = (__clove_stream_file_t*)stream;
+    _this->file = __clove_file_open(_this->file_path, "wb"); //binary mode so \n will stay \n (and not converted to \r\n on windows)
+    return _this->file != NULL;
+}
+void __clove_stream_file_close(__clove_stream_t* stream) {
+    __clove_stream_file_t* _this = (__clove_stream_file_t*)stream;
+    __clove_file_close(_this->file);
+}
+void __clove_stream_file_writef(__clove_stream_t* stream, const char* format, ...) {
+    __clove_stream_file_t* _this = (__clove_stream_file_t*)stream;
+    va_list args;
+    va_start(args, format);
+    __clove_file_vprintf(_this->file, format, args);
+    va_end(args);
+}
+void __clove_stream_file_seek(__clove_stream_t* stream, long offset, int origin) {
+     __clove_stream_file_t* _this = (__clove_stream_file_t*)stream;
+    fseek(_this->file, offset, origin); //TODO: wrap into __clove_file_seek method
+}
+bool __clove_stream_file_has_ansi_support(struct __clove_stream_t* _this) {
+    return false;
+}
+void __clove_stream_file_free(__clove_stream_t* stream) {
+    __clove_stream_file_t* _this = (__clove_stream_file_t*)stream;
+    _this->file = NULL;
+    free((char*)_this->file_path);
+    free(_this);
+}
+
+//In Memory Stream
+__clove_stream_memory_t* __clove_stream_memory_new() {
+    __clove_stream_memory_t* stream = __CLOVE_MEMORY_MALLOC_TYPE(__clove_stream_memory_t);
+    stream->base.open = __clove_stream_memory_open;
+    stream->base.close = __clove_stream_memory_close;
+    stream->base.writef = __clove_stream_memory_writef;
+    stream->base.seek = __clove_stream_memory_seek;
+    stream->base.has_ansi_support = __clove_stream_memory_has_ansi_support;
+    stream->base.free = __clove_stream_memory_free;
+    __CLOVE_VECTOR_INIT(&stream->lines, char*);
+    return stream;
+}
+bool __clove_stream_memory_open(__clove_stream_t* stream) {
+    return true;
+}
+void __clove_stream_memory_close(__clove_stream_t* stream) { 
+    //nothing todo
+}
+void __clove_stream_memory_writef(__clove_stream_t* stream, const char* format, ...) {
+    va_list args;
+    va_start(args, format);
+    
+    char* line = __CLOVE_MEMORY_CALLOC_TYPE_N(char, 1000); //TODO: Better computing real line size.
+    __clove_string_vsprintf(line, 1000, format, args);
+    __CLOVE_VECTOR_ADD(&((__clove_stream_memory_t*)stream)->lines, char*, line);
+
+    va_end(args);
+}
+void __clove_stream_memory_seek(__clove_stream_t* stream, long offset, int origin) {
+    //nothing todo
+}
+
+bool __clove_stream_memory_has_ansi_support(__clove_stream_t* stream) {
+    return false;
+}
+
+void __clove_stream_memory_free(__clove_stream_t* stream) {
+    __clove_vector_free(&((__clove_stream_memory_t*)stream)->lines);
+    free(stream);
+}
+
+char* __clove_stream_memory_get_line(__clove_stream_memory_t* mem_stream, size_t index) {
+    return (char*)__clove_vector_get(&mem_stream->lines, index);
+}
+
+char* __clove_stream_memory_as_string(__clove_stream_memory_t* mem_stream) {
+    size_t buffer_size = 0;
+    __CLOVE_VECTOR_FOREACH(&mem_stream->lines, char*, line, {
+       buffer_size += __clove_string_length(*line);
+    });
+
+    char* buffer = __CLOVE_MEMORY_CALLOC_TYPE_N(char, buffer_size + 1);
+    __CLOVE_VECTOR_FOREACH(&mem_stream->lines, char*, line, {
+       __clove_string_strcat(buffer, buffer_size + 1, *line);
+    });
+    return buffer;
+}
+#pragma endregion //Stream Impl
+
 #pragma region PRIVATE - Report Impl
 void __clove_test_expr_init(__clove_test_expr_t* expr,  const char* expr_str) {
     const char* dot_begin = __clove_string_strstr(expr_str, ".");
@@ -2347,7 +2421,7 @@ void __clove_report_pretty_start(__clove_report_t* _this, size_t suite_count, si
 
     report->stream->open(report->stream);
     report->stream->writef(report->stream, "%s Executing Test Runner in 'Verbose' mode\n", report->labels.info);
-    report->stream->writef(report->stream, "%s Suite / Tests found: %zu / %zu \n", report->labels.info, suite_count, test_count);
+    report->stream->writef(report->stream, "%s Suite / Tests found: %zu / %zu\n", report->labels.info, suite_count, test_count);
 }
 void __clove_report_pretty_begin_suite(__clove_report_t* _this, __clove_suite_t* suite, size_t index) {
     //nothing todo
