@@ -111,16 +111,19 @@ CLOVE_TEST(SizetComparison) {
 }
 
 CLOVE_TEST(FloatComparison) {
-    CLOVE_FLOAT_EQ(1.1, 1.1);
-    CLOVE_FLOAT_NE(1.1, 1.2);
+    CLOVE_FLOAT_EQ(1.1f, 1.1f);
+    CLOVE_FLOAT_NE(1.1f, 1.2f);
 
-    CLOVE_FLOAT_GT(1.2, 1.1);
-    CLOVE_FLOAT_GTE(1.2, 1.1);
-    CLOVE_FLOAT_GTE(1.2, 1.2);
+    CLOVE_FLOAT_EQ_P(0.00000012f, 0.00000013f, 7);
+    CLOVE_FLOAT_NE_P(0.00000012f, 0.00000013f, 8);
+
+    CLOVE_FLOAT_GT(1.2f, 1.1f);
+    CLOVE_FLOAT_GTE(1.2f, 1.1f);
+    CLOVE_FLOAT_GTE(1.2f, 1.2f);
     
-    CLOVE_FLOAT_LT(1.1, 1.2);
-    CLOVE_FLOAT_LTE(1.1, 1.2);
-    CLOVE_FLOAT_LTE(1.2, 1.2);
+    CLOVE_FLOAT_LT(1.1f, 1.2f);
+    CLOVE_FLOAT_LTE(1.1f, 1.2f);
+    CLOVE_FLOAT_LTE(1.2f, 1.2f);
 }
 
 CLOVE_TEST(DoubleComparison) {
