@@ -9,8 +9,6 @@ target_include_directories(CLoveUnitTest PRIVATE ../ ./src/)
 set_property(TARGET CLoveUnitTest PROPERTY C_STANDARD 11)
 
 add_subdirectory(resources/prj01)
-add_subdirectory(resources/prj02)
-add_subdirectory(resources/prj03)
 
 #[[
 get_cmake_property(_variableNames VARIABLES)
@@ -23,16 +21,10 @@ endforeach()
 if(MSVC)
     #set(RES_PRJ01_EXEC_PATH ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_BUILD_TYPE_INIT}/CLoveUnitResourcePrj01.exe)
     set(RES_PRJ01_EXEC_PATH \"${CMAKE_CURRENT_BINARY_DIR}/resources/prj01/${CMAKE_BUILD_TYPE_INIT}/CLoveUnitResourcePrj01.exe\")
-    set(RES_PRJ02_EXEC_PATH \"${CMAKE_CURRENT_BINARY_DIR}/resources/prj02/${CMAKE_BUILD_TYPE_INIT}/CLoveUnitResourcePrj02.exe\")
-    set(RES_PRJ03_EXEC_PATH \"${CMAKE_CURRENT_BINARY_DIR}/resources/prj03/${CMAKE_BUILD_TYPE_INIT}/CLoveUnitResourcePrj03.exe\")
 else()
     set(RES_PRJ01_EXEC_PATH \"${CMAKE_CURRENT_BINARY_DIR}/resources/prj01/CLoveUnitResourcePrj01\")
-    set(RES_PRJ02_EXEC_PATH \"${CMAKE_CURRENT_BINARY_DIR}/resources/prj02/CLoveUnitResourcePrj02\")
-    set(RES_PRJ03_EXEC_PATH \"${CMAKE_CURRENT_BINARY_DIR}/resources/prj03/CLoveUnitResourcePrj03\")
 endif()
 add_compile_definitions(RES_PRJ01_EXEC_PATH=${RES_PRJ01_EXEC_PATH})
-add_compile_definitions(RES_PRJ02_EXEC_PATH=${RES_PRJ02_EXEC_PATH})
-add_compile_definitions(RES_PRJ03_EXEC_PATH=${RES_PRJ03_EXEC_PATH})
 
 #Automatically added by include CTest
 #enable_testing()
