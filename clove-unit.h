@@ -452,9 +452,6 @@ __CLOVE_EXTERN_C void __clove_vector_suite_dtor(void* suite_ptr);
 #pragma endregion
 
 #pragma region PRIVATE - Assert Decl
-//TODO: In future configurable (or passed within the assertion)
-#define __CLOVE_FLOATING_PRECISION 0.000001f
-
 #define __CLOVE_ASSERT_GUARD \
     if (_this->result == __CLOVE_TEST_RESULT_FAILED) { return; }\
     if (_this->file_name == NULL) _this->file_name = __clove_rel_src(__FILE__); \
@@ -491,7 +488,7 @@ __CLOVE_EXTERN_C void __clove_assert_bool(__clove_assert_check_e check_mode, boo
 __CLOVE_EXTERN_C void __clove_assert_null(__clove_assert_check_e check_mode, void* expected, void* result, __clove_test_t* _this);
 __CLOVE_EXTERN_C void __clove_assert_ptr(__clove_assert_check_e check_mode, void* expected, void* result, __clove_test_t* _this);
 __CLOVE_EXTERN_C void __clove_assert_float(__clove_assert_check_e check_mode, float expected, float result, unsigned char precision, __clove_test_t* _this);
-__CLOVE_EXTERN_C void __clove_assert_double(__clove_assert_check_e check_mode, double expected, double result, __clove_test_t* _this);
+__CLOVE_EXTERN_C void __clove_assert_double(__clove_assert_check_e check_mode, double expected, double result, unsigned char precision, __clove_test_t* _this);
 __CLOVE_EXTERN_C void __clove_assert_string(__clove_assert_check_e check_mode, const char* expected, const char* result, __clove_test_t* _this);
 #pragma endregion // Assert Decl
 
@@ -2111,10 +2108,10 @@ void __clove_assert_float(__clove_assert_check_e check_mode, float expected, flo
     }
 }
 
-void __clove_assert_double(__clove_assert_check_e check_mode, double expected, double result, __clove_test_t* _this) {
+void __clove_assert_double(__clove_assert_check_e check_mode, double expected, double result, unsigned char precision, __clove_test_t* _this) {
     bool pass_scenario = false;
-    if (check_mode == __CLOVE_ASSERT_EQ) { pass_scenario = ((float)fabs(expected - result) <= __CLOVE_FLOATING_PRECISION); }
-    else if (check_mode == __CLOVE_ASSERT_NE) { pass_scenario = ((float)fabs(expected - result) > __CLOVE_FLOATING_PRECISION); }
+    if (check_mode == __CLOVE_ASSERT_EQ) { pass_scenario = fabs(expected - result) <= pow(10, -precision); }
+    else if (check_mode == __CLOVE_ASSERT_NE) { pass_scenario = fabs(expected - result) > pow(10, -precision); }
     else if (check_mode == __CLOVE_ASSERT_GT)  { pass_scenario = expected > result; }
     else if (check_mode == __CLOVE_ASSERT_GTE) { pass_scenario = expected >= result; }
     else if (check_mode == __CLOVE_ASSERT_LT)  { pass_scenario = expected < result; }
@@ -3709,96 +3706,98 @@ void __clove_exec_suite(__clove_suite_t* suite, size_t test_counter, size_t* pas
 #pragma endregion //UTILS
 
 #pragma region PUBLIC - ASSERTS
-#define CLOVE_FAIL()                     do { __CLOVE_ASSERT_GUARD __clove_assert_fail(_this); } while(0)
-#define CLOVE_PASS()                     do { __CLOVE_ASSERT_GUARD __clove_assert_pass(_this); } while(0)
-        
-#define CLOVE_IS_TRUE(res)               do { __CLOVE_ASSERT_GUARD __clove_assert_bool(__CLOVE_ASSERT_EQ, true, res, _this); } while(0)
-#define CLOVE_IS_FALSE(res)              do { __CLOVE_ASSERT_GUARD __clove_assert_bool(__CLOVE_ASSERT_EQ, false, res, _this);  } while(0)
-        
-#define CLOVE_CHAR_EQ(exp, res)          do { __CLOVE_ASSERT_GUARD __clove_assert_char(__CLOVE_ASSERT_EQ, exp, res, _this); } while(0)
-#define CLOVE_CHAR_NE(exp, res)          do { __CLOVE_ASSERT_GUARD __clove_assert_char(__CLOVE_ASSERT_NE, exp, res, _this); } while(0)
-#define CLOVE_CHAR_GT(exp, res)          do { __CLOVE_ASSERT_GUARD __clove_assert_char(__CLOVE_ASSERT_GT, exp, res, _this); } while(0)
-#define CLOVE_CHAR_GTE(exp, res)         do { __CLOVE_ASSERT_GUARD __clove_assert_char(__CLOVE_ASSERT_GTE, exp, res, _this); } while(0)
-#define CLOVE_CHAR_LT(exp, res)          do { __CLOVE_ASSERT_GUARD __clove_assert_char(__CLOVE_ASSERT_LT, exp, res, _this); } while(0)
-#define CLOVE_CHAR_LTE(exp, res)         do { __CLOVE_ASSERT_GUARD __clove_assert_char(__CLOVE_ASSERT_LTE, exp, res, _this); } while(0)
-        
-#define CLOVE_INT_EQ(exp, res)           do { __CLOVE_ASSERT_GUARD __clove_assert_int(__CLOVE_ASSERT_EQ, exp, res, _this); } while(0)
-#define CLOVE_INT_NE(exp, res)           do { __CLOVE_ASSERT_GUARD __clove_assert_int(__CLOVE_ASSERT_NE, exp, res, _this); } while(0)
-#define CLOVE_INT_GT(exp, res)           do { __CLOVE_ASSERT_GUARD __clove_assert_int(__CLOVE_ASSERT_GT, exp, res, _this); } while(0)
-#define CLOVE_INT_GTE(exp, res)          do { __CLOVE_ASSERT_GUARD __clove_assert_int(__CLOVE_ASSERT_GTE, exp, res, _this); } while(0)
-#define CLOVE_INT_LT(exp, res)           do { __CLOVE_ASSERT_GUARD __clove_assert_int(__CLOVE_ASSERT_LT, exp, res, _this); } while(0)
-#define CLOVE_INT_LTE(exp, res)          do { __CLOVE_ASSERT_GUARD __clove_assert_int(__CLOVE_ASSERT_LTE, exp, res, _this); } while(0)
-        
-#define CLOVE_UINT_EQ(exp, res)          do { __CLOVE_ASSERT_GUARD __clove_assert_uint(__CLOVE_ASSERT_EQ, exp, res, _this); } while(0)
-#define CLOVE_UINT_NE(exp, res)          do { __CLOVE_ASSERT_GUARD __clove_assert_uint(__CLOVE_ASSERT_NE, exp, res, _this); } while(0)
-#define CLOVE_UINT_GT(exp, res)          do { __CLOVE_ASSERT_GUARD __clove_assert_uint(__CLOVE_ASSERT_GT, exp, res, _this); } while(0)
-#define CLOVE_UINT_GTE(exp, res)         do { __CLOVE_ASSERT_GUARD __clove_assert_uint(__CLOVE_ASSERT_GTE, exp, res, _this); } while(0)
-#define CLOVE_UINT_LT(exp, res)          do { __CLOVE_ASSERT_GUARD __clove_assert_uint(__CLOVE_ASSERT_LT, exp, res, _this); } while(0)
-#define CLOVE_UINT_LTE(exp, res)         do { __CLOVE_ASSERT_GUARD __clove_assert_uint(__CLOVE_ASSERT_LTE, exp, res, _this); } while(0)
-        
-#define CLOVE_LONG_EQ(exp, res)          do { __CLOVE_ASSERT_GUARD __clove_assert_long(__CLOVE_ASSERT_EQ, exp, res, _this); } while(0)
-#define CLOVE_LONG_NE(exp, res)          do { __CLOVE_ASSERT_GUARD __clove_assert_long(__CLOVE_ASSERT_NE, exp, res, _this); } while(0)
-#define CLOVE_LONG_GT(exp, res)          do { __CLOVE_ASSERT_GUARD __clove_assert_long(__CLOVE_ASSERT_GT, exp, res, _this); } while(0)
-#define CLOVE_LONG_GTE(exp, res)         do { __CLOVE_ASSERT_GUARD __clove_assert_long(__CLOVE_ASSERT_GTE, exp, res, _this); } while(0)
-#define CLOVE_LONG_LT(exp, res)          do { __CLOVE_ASSERT_GUARD __clove_assert_long(__CLOVE_ASSERT_LT, exp, res, _this); } while(0)
-#define CLOVE_LONG_LTE(exp, res)         do { __CLOVE_ASSERT_GUARD __clove_assert_long(__CLOVE_ASSERT_LTE, exp, res, _this); } while(0)
-     
-#define CLOVE_ULONG_EQ(exp, res)         do { __CLOVE_ASSERT_GUARD __clove_assert_ulong(__CLOVE_ASSERT_EQ, exp, res, _this); } while(0)
-#define CLOVE_ULONG_NE(exp, res)         do { __CLOVE_ASSERT_GUARD __clove_assert_ulong(__CLOVE_ASSERT_NE, exp, res, _this); } while(0)
-#define CLOVE_ULONG_GT(exp, res)         do { __CLOVE_ASSERT_GUARD __clove_assert_ulong(__CLOVE_ASSERT_GT, exp, res, _this); } while(0)
-#define CLOVE_ULONG_GTE(exp, res)        do { __CLOVE_ASSERT_GUARD __clove_assert_ulong(__CLOVE_ASSERT_GTE, exp, res, _this); } while(0)
-#define CLOVE_ULONG_LT(exp, res)         do { __CLOVE_ASSERT_GUARD __clove_assert_ulong(__CLOVE_ASSERT_LT, exp, res, _this); } while(0)
-#define CLOVE_ULONG_LTE(exp, res)        do { __CLOVE_ASSERT_GUARD __clove_assert_ulong(__CLOVE_ASSERT_LTE, exp, res, _this); } while(0)
-     
-#define CLOVE_LLONG_EQ(exp, res)         do { __CLOVE_ASSERT_GUARD __clove_assert_llong(__CLOVE_ASSERT_EQ, exp, res, _this); } while(0)
-#define CLOVE_LLONG_NE(exp, res)         do { __CLOVE_ASSERT_GUARD __clove_assert_llong(__CLOVE_ASSERT_NE, exp, res, _this); } while(0)
-#define CLOVE_LLONG_GT(exp, res)         do { __CLOVE_ASSERT_GUARD __clove_assert_llong(__CLOVE_ASSERT_GT, exp, res, _this); } while(0)
-#define CLOVE_LLONG_GTE(exp, res)        do { __CLOVE_ASSERT_GUARD __clove_assert_llong(__CLOVE_ASSERT_GTE, exp, res, _this); } while(0)
-#define CLOVE_LLONG_LT(exp, res)         do { __CLOVE_ASSERT_GUARD __clove_assert_llong(__CLOVE_ASSERT_LT, exp, res, _this); } while(0)
-#define CLOVE_LLONG_LTE(exp, res)        do { __CLOVE_ASSERT_GUARD __clove_assert_llong(__CLOVE_ASSERT_LTE, exp, res, _this); } while(0)
-     
-#define CLOVE_ULLONG_EQ(exp, res)        do { __CLOVE_ASSERT_GUARD __clove_assert_ullong(__CLOVE_ASSERT_EQ, exp, res, _this); } while(0)
-#define CLOVE_ULLONG_NE(exp, res)        do { __CLOVE_ASSERT_GUARD __clove_assert_ullong(__CLOVE_ASSERT_NE, exp, res, _this); } while(0)
-#define CLOVE_ULLONG_GT(exp, res)        do { __CLOVE_ASSERT_GUARD __clove_assert_ullong(__CLOVE_ASSERT_GT, exp, res, _this); } while(0)
-#define CLOVE_ULLONG_GTE(exp, res)       do { __CLOVE_ASSERT_GUARD __clove_assert_ullong(__CLOVE_ASSERT_GTE, exp, res, _this); } while(0)
-#define CLOVE_ULLONG_LT(exp, res)        do { __CLOVE_ASSERT_GUARD __clove_assert_ullong(__CLOVE_ASSERT_LT, exp, res, _this); } while(0)
-#define CLOVE_ULLONG_LTE(exp, res)       do { __CLOVE_ASSERT_GUARD __clove_assert_ullong(__CLOVE_ASSERT_LTE, exp, res, _this); } while(0)
-     
-#define CLOVE_SIZET_EQ(exp, res)         do { __CLOVE_ASSERT_GUARD __clove_assert_sizet(__CLOVE_ASSERT_EQ, exp, res, _this); } while(0)
-#define CLOVE_SIZET_NE(exp, res)         do { __CLOVE_ASSERT_GUARD __clove_assert_sizet(__CLOVE_ASSERT_NE, exp, res, _this); } while(0)
-#define CLOVE_SIZET_GT(exp, res)         do { __CLOVE_ASSERT_GUARD __clove_assert_sizet(__CLOVE_ASSERT_GT, exp, res, _this); } while(0)
-#define CLOVE_SIZET_GTE(exp, res)        do { __CLOVE_ASSERT_GUARD __clove_assert_sizet(__CLOVE_ASSERT_GTE, exp, res, _this); } while(0)
-#define CLOVE_SIZET_LT(exp, res)         do { __CLOVE_ASSERT_GUARD __clove_assert_sizet(__CLOVE_ASSERT_LT, exp, res, _this); } while(0)
-#define CLOVE_SIZET_LTE(exp, res)        do { __CLOVE_ASSERT_GUARD __clove_assert_sizet(__CLOVE_ASSERT_LTE, exp, res, _this); } while(0)
-     
-#define CLOVE_FLOAT_EQ(exp, res)         CLOVE_FLOAT_EQ_P(exp, res, (unsigned char)6)
-#define CLOVE_FLOAT_NE(exp, res)         CLOVE_FLOAT_NE_P(exp, res, (unsigned char)6)
-#define CLOVE_FLOAT_EQ_P(exp, res, prec) do { __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_EQ, exp, res, (unsigned char)prec, _this); } while(0)
-#define CLOVE_FLOAT_NE_P(exp, res, prec) do { __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_NE, exp, res, (unsigned char)prec, _this); } while(0)
-#define CLOVE_FLOAT_GT(exp, res)         do { __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_GT, exp, res, (unsigned char)0, _this); } while(0)
-#define CLOVE_FLOAT_GTE(exp, res)        do {  __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_GTE, exp, res, (unsigned char)0, _this); } while(0)
-#define CLOVE_FLOAT_LT(exp, res)         do { __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_LT, exp, res, (unsigned char)0, _this); } while(0)
-#define CLOVE_FLOAT_LTE(exp, res)        do { __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_LTE, exp, res, (unsigned char)0, _this); } while(0)
-
-#define CLOVE_DOUBLE_EQ(exp, res)        do { __CLOVE_ASSERT_GUARD __clove_assert_double(__CLOVE_ASSERT_EQ, exp, res, _this); } while(0)
-#define CLOVE_DOUBLE_NE(exp, res)        do { __CLOVE_ASSERT_GUARD __clove_assert_double(__CLOVE_ASSERT_NE, exp, res, _this); } while(0)
-#define CLOVE_DOUBLE_GT(exp, res)        do { __CLOVE_ASSERT_GUARD __clove_assert_double(__CLOVE_ASSERT_GT, exp, res, _this); } while(0)
-#define CLOVE_DOUBLE_GTE(exp, res)       do { __CLOVE_ASSERT_GUARD __clove_assert_double(__CLOVE_ASSERT_GTE, exp, res, _this); } while(0)
-#define CLOVE_DOUBLE_LT(exp, res)        do { __CLOVE_ASSERT_GUARD __clove_assert_double(__CLOVE_ASSERT_LT, exp, res, _this); } while(0)
-#define CLOVE_DOUBLE_LTE(exp, res)       do { __CLOVE_ASSERT_GUARD __clove_assert_double(__CLOVE_ASSERT_LTE, exp, res, _this); } while(0)
-     
-#define CLOVE_NULL(res)                  do { __CLOVE_ASSERT_GUARD __clove_assert_null(__CLOVE_ASSERT_EQ, NULL, (void*)res, _this); } while(0)
-#define CLOVE_NOT_NULL(res)              do { __CLOVE_ASSERT_GUARD __clove_assert_null(__CLOVE_ASSERT_NE, NULL, (void*)res, _this); } while(0)
-     
-#define CLOVE_PTR_EQ(p1, p2)             do { __CLOVE_ASSERT_GUARD __clove_assert_ptr(__CLOVE_ASSERT_EQ, (void*)p1, (void*)p2, _this); } while(0)
-#define CLOVE_PTR_NE(p1, p2)             do { __CLOVE_ASSERT_GUARD __clove_assert_ptr(__CLOVE_ASSERT_NE, (void*)p1, (void*)p2, _this); } while(0)
-#define CLOVE_PTR_GT(p1, p2)             do { __CLOVE_ASSERT_GUARD __clove_assert_ptr(__CLOVE_ASSERT_GT, (void*)p1, (void*)p2, _this); } while(0)
-#define CLOVE_PTR_GTE(p1, p2)            do { __CLOVE_ASSERT_GUARD __clove_assert_ptr(__CLOVE_ASSERT_GTE, (void*)p1, (void*)p2, _this); } while(0)
-#define CLOVE_PTR_LT(p1, p2)             do { __CLOVE_ASSERT_GUARD __clove_assert_ptr(__CLOVE_ASSERT_LT, (void*)p1, (void*)p2, _this); } while(0)
-#define CLOVE_PTR_LTE(p1, p2)            do { __CLOVE_ASSERT_GUARD __clove_assert_ptr(__CLOVE_ASSERT_LTE, (void*)p1, (void*)p2, _this); } while(0)
-     
-#define CLOVE_STRING_EQ(exp, res)        do { __CLOVE_ASSERT_GUARD __clove_assert_string(__CLOVE_ASSERT_EQ, exp, res, _this); } while(0)
-#define CLOVE_STRING_NE(exp, res)        do { __CLOVE_ASSERT_GUARD __clove_assert_string(__CLOVE_ASSERT_NE, exp, res, _this); } while(0)
+#define CLOVE_FAIL()                       do { __CLOVE_ASSERT_GUARD __clove_assert_fail(_this); } while(0)
+#define CLOVE_PASS()                       do { __CLOVE_ASSERT_GUARD __clove_assert_pass(_this); } while(0)
+          
+#define CLOVE_IS_TRUE(res)                 do { __CLOVE_ASSERT_GUARD __clove_assert_bool(__CLOVE_ASSERT_EQ, true, res, _this); } while(0)
+#define CLOVE_IS_FALSE(res)                do { __CLOVE_ASSERT_GUARD __clove_assert_bool(__CLOVE_ASSERT_EQ, false, res, _this);  } while(0)
+          
+#define CLOVE_CHAR_EQ(exp, res)            do { __CLOVE_ASSERT_GUARD __clove_assert_char(__CLOVE_ASSERT_EQ, exp, res, _this); } while(0)
+#define CLOVE_CHAR_NE(exp, res)            do { __CLOVE_ASSERT_GUARD __clove_assert_char(__CLOVE_ASSERT_NE, exp, res, _this); } while(0)
+#define CLOVE_CHAR_GT(exp, res)            do { __CLOVE_ASSERT_GUARD __clove_assert_char(__CLOVE_ASSERT_GT, exp, res, _this); } while(0)
+#define CLOVE_CHAR_GTE(exp, res)           do { __CLOVE_ASSERT_GUARD __clove_assert_char(__CLOVE_ASSERT_GTE, exp, res, _this); } while(0)
+#define CLOVE_CHAR_LT(exp, res)            do { __CLOVE_ASSERT_GUARD __clove_assert_char(__CLOVE_ASSERT_LT, exp, res, _this); } while(0)
+#define CLOVE_CHAR_LTE(exp, res)           do { __CLOVE_ASSERT_GUARD __clove_assert_char(__CLOVE_ASSERT_LTE, exp, res, _this); } while(0)
+          
+#define CLOVE_INT_EQ(exp, res)             do { __CLOVE_ASSERT_GUARD __clove_assert_int(__CLOVE_ASSERT_EQ, exp, res, _this); } while(0)
+#define CLOVE_INT_NE(exp, res)             do { __CLOVE_ASSERT_GUARD __clove_assert_int(__CLOVE_ASSERT_NE, exp, res, _this); } while(0)
+#define CLOVE_INT_GT(exp, res)             do { __CLOVE_ASSERT_GUARD __clove_assert_int(__CLOVE_ASSERT_GT, exp, res, _this); } while(0)
+#define CLOVE_INT_GTE(exp, res)            do { __CLOVE_ASSERT_GUARD __clove_assert_int(__CLOVE_ASSERT_GTE, exp, res, _this); } while(0)
+#define CLOVE_INT_LT(exp, res)             do { __CLOVE_ASSERT_GUARD __clove_assert_int(__CLOVE_ASSERT_LT, exp, res, _this); } while(0)
+#define CLOVE_INT_LTE(exp, res)            do { __CLOVE_ASSERT_GUARD __clove_assert_int(__CLOVE_ASSERT_LTE, exp, res, _this); } while(0)
+          
+#define CLOVE_UINT_EQ(exp, res)            do { __CLOVE_ASSERT_GUARD __clove_assert_uint(__CLOVE_ASSERT_EQ, exp, res, _this); } while(0)
+#define CLOVE_UINT_NE(exp, res)            do { __CLOVE_ASSERT_GUARD __clove_assert_uint(__CLOVE_ASSERT_NE, exp, res, _this); } while(0)
+#define CLOVE_UINT_GT(exp, res)            do { __CLOVE_ASSERT_GUARD __clove_assert_uint(__CLOVE_ASSERT_GT, exp, res, _this); } while(0)
+#define CLOVE_UINT_GTE(exp, res)           do { __CLOVE_ASSERT_GUARD __clove_assert_uint(__CLOVE_ASSERT_GTE, exp, res, _this); } while(0)
+#define CLOVE_UINT_LT(exp, res)            do { __CLOVE_ASSERT_GUARD __clove_assert_uint(__CLOVE_ASSERT_LT, exp, res, _this); } while(0)
+#define CLOVE_UINT_LTE(exp, res)           do { __CLOVE_ASSERT_GUARD __clove_assert_uint(__CLOVE_ASSERT_LTE, exp, res, _this); } while(0)
+          
+#define CLOVE_LONG_EQ(exp, res)            do { __CLOVE_ASSERT_GUARD __clove_assert_long(__CLOVE_ASSERT_EQ, exp, res, _this); } while(0)
+#define CLOVE_LONG_NE(exp, res)            do { __CLOVE_ASSERT_GUARD __clove_assert_long(__CLOVE_ASSERT_NE, exp, res, _this); } while(0)
+#define CLOVE_LONG_GT(exp, res)            do { __CLOVE_ASSERT_GUARD __clove_assert_long(__CLOVE_ASSERT_GT, exp, res, _this); } while(0)
+#define CLOVE_LONG_GTE(exp, res)           do { __CLOVE_ASSERT_GUARD __clove_assert_long(__CLOVE_ASSERT_GTE, exp, res, _this); } while(0)
+#define CLOVE_LONG_LT(exp, res)            do { __CLOVE_ASSERT_GUARD __clove_assert_long(__CLOVE_ASSERT_LT, exp, res, _this); } while(0)
+#define CLOVE_LONG_LTE(exp, res)           do { __CLOVE_ASSERT_GUARD __clove_assert_long(__CLOVE_ASSERT_LTE, exp, res, _this); } while(0)
+       
+#define CLOVE_ULONG_EQ(exp, res)           do { __CLOVE_ASSERT_GUARD __clove_assert_ulong(__CLOVE_ASSERT_EQ, exp, res, _this); } while(0)
+#define CLOVE_ULONG_NE(exp, res)           do { __CLOVE_ASSERT_GUARD __clove_assert_ulong(__CLOVE_ASSERT_NE, exp, res, _this); } while(0)
+#define CLOVE_ULONG_GT(exp, res)           do { __CLOVE_ASSERT_GUARD __clove_assert_ulong(__CLOVE_ASSERT_GT, exp, res, _this); } while(0)
+#define CLOVE_ULONG_GTE(exp, res)          do { __CLOVE_ASSERT_GUARD __clove_assert_ulong(__CLOVE_ASSERT_GTE, exp, res, _this); } while(0)
+#define CLOVE_ULONG_LT(exp, res)           do { __CLOVE_ASSERT_GUARD __clove_assert_ulong(__CLOVE_ASSERT_LT, exp, res, _this); } while(0)
+#define CLOVE_ULONG_LTE(exp, res)          do { __CLOVE_ASSERT_GUARD __clove_assert_ulong(__CLOVE_ASSERT_LTE, exp, res, _this); } while(0)
+       
+#define CLOVE_LLONG_EQ(exp, res)           do { __CLOVE_ASSERT_GUARD __clove_assert_llong(__CLOVE_ASSERT_EQ, exp, res, _this); } while(0)
+#define CLOVE_LLONG_NE(exp, res)           do { __CLOVE_ASSERT_GUARD __clove_assert_llong(__CLOVE_ASSERT_NE, exp, res, _this); } while(0)
+#define CLOVE_LLONG_GT(exp, res)           do { __CLOVE_ASSERT_GUARD __clove_assert_llong(__CLOVE_ASSERT_GT, exp, res, _this); } while(0)
+#define CLOVE_LLONG_GTE(exp, res)          do { __CLOVE_ASSERT_GUARD __clove_assert_llong(__CLOVE_ASSERT_GTE, exp, res, _this); } while(0)
+#define CLOVE_LLONG_LT(exp, res)           do { __CLOVE_ASSERT_GUARD __clove_assert_llong(__CLOVE_ASSERT_LT, exp, res, _this); } while(0)
+#define CLOVE_LLONG_LTE(exp, res)          do { __CLOVE_ASSERT_GUARD __clove_assert_llong(__CLOVE_ASSERT_LTE, exp, res, _this); } while(0)
+       
+#define CLOVE_ULLONG_EQ(exp, res)          do { __CLOVE_ASSERT_GUARD __clove_assert_ullong(__CLOVE_ASSERT_EQ, exp, res, _this); } while(0)
+#define CLOVE_ULLONG_NE(exp, res)          do { __CLOVE_ASSERT_GUARD __clove_assert_ullong(__CLOVE_ASSERT_NE, exp, res, _this); } while(0)
+#define CLOVE_ULLONG_GT(exp, res)          do { __CLOVE_ASSERT_GUARD __clove_assert_ullong(__CLOVE_ASSERT_GT, exp, res, _this); } while(0)
+#define CLOVE_ULLONG_GTE(exp, res)         do { __CLOVE_ASSERT_GUARD __clove_assert_ullong(__CLOVE_ASSERT_GTE, exp, res, _this); } while(0)
+#define CLOVE_ULLONG_LT(exp, res)          do { __CLOVE_ASSERT_GUARD __clove_assert_ullong(__CLOVE_ASSERT_LT, exp, res, _this); } while(0)
+#define CLOVE_ULLONG_LTE(exp, res)         do { __CLOVE_ASSERT_GUARD __clove_assert_ullong(__CLOVE_ASSERT_LTE, exp, res, _this); } while(0)
+       
+#define CLOVE_SIZET_EQ(exp, res)           do { __CLOVE_ASSERT_GUARD __clove_assert_sizet(__CLOVE_ASSERT_EQ, exp, res, _this); } while(0)
+#define CLOVE_SIZET_NE(exp, res)           do { __CLOVE_ASSERT_GUARD __clove_assert_sizet(__CLOVE_ASSERT_NE, exp, res, _this); } while(0)
+#define CLOVE_SIZET_GT(exp, res)           do { __CLOVE_ASSERT_GUARD __clove_assert_sizet(__CLOVE_ASSERT_GT, exp, res, _this); } while(0)
+#define CLOVE_SIZET_GTE(exp, res)          do { __CLOVE_ASSERT_GUARD __clove_assert_sizet(__CLOVE_ASSERT_GTE, exp, res, _this); } while(0)
+#define CLOVE_SIZET_LT(exp, res)           do { __CLOVE_ASSERT_GUARD __clove_assert_sizet(__CLOVE_ASSERT_LT, exp, res, _this); } while(0)
+#define CLOVE_SIZET_LTE(exp, res)          do { __CLOVE_ASSERT_GUARD __clove_assert_sizet(__CLOVE_ASSERT_LTE, exp, res, _this); } while(0)
+       
+#define CLOVE_FLOAT_EQ(exp, res)           CLOVE_FLOAT_EQ_P(exp, res, (unsigned char)6)
+#define CLOVE_FLOAT_NE(exp, res)           CLOVE_FLOAT_NE_P(exp, res, (unsigned char)6)
+#define CLOVE_FLOAT_EQ_P(exp, res, prec)   do { __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_EQ, exp, res, (unsigned char)prec, _this); } while(0)
+#define CLOVE_FLOAT_NE_P(exp, res, prec)   do { __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_NE, exp, res, (unsigned char)prec, _this); } while(0)
+#define CLOVE_FLOAT_GT(exp, res)           do { __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_GT, exp, res, (unsigned char)0, _this); } while(0)
+#define CLOVE_FLOAT_GTE(exp, res)          do {  __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_GTE, exp, res, (unsigned char)0, _this); } while(0)
+#define CLOVE_FLOAT_LT(exp, res)           do { __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_LT, exp, res, (unsigned char)0, _this); } while(0)
+#define CLOVE_FLOAT_LTE(exp, res)          do { __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_LTE, exp, res, (unsigned char)0, _this); } while(0)
+  
+#define CLOVE_DOUBLE_EQ(exp, res)          CLOVE_DOUBLE_EQ_P(exp, res, (unsigned char)15)
+#define CLOVE_DOUBLE_NE(exp, res)          CLOVE_DOUBLE_NE_P(exp, res, (unsigned char)15)
+#define CLOVE_DOUBLE_EQ_P(exp, res, prec)  do { __CLOVE_ASSERT_GUARD __clove_assert_double(__CLOVE_ASSERT_EQ, exp, res, prec, _this); } while(0)
+#define CLOVE_DOUBLE_NE_P(exp, res, prec)  do { __CLOVE_ASSERT_GUARD __clove_assert_double(__CLOVE_ASSERT_NE, exp, res, prec, _this); } while(0)
+#define CLOVE_DOUBLE_GT(exp, res)          do { __CLOVE_ASSERT_GUARD __clove_assert_double(__CLOVE_ASSERT_GT, exp, res, (unsigned char)0, _this); } while(0)
+#define CLOVE_DOUBLE_GTE(exp, res)         do { __CLOVE_ASSERT_GUARD __clove_assert_double(__CLOVE_ASSERT_GTE, exp, res, (unsigned char)0, _this); } while(0)
+#define CLOVE_DOUBLE_LT(exp, res)          do { __CLOVE_ASSERT_GUARD __clove_assert_double(__CLOVE_ASSERT_LT, exp, res, (unsigned char)0, _this); } while(0)
+#define CLOVE_DOUBLE_LTE(exp, res)         do { __CLOVE_ASSERT_GUARD __clove_assert_double(__CLOVE_ASSERT_LTE, exp, res, (unsigned char)0, _this); } while(0)
+       
+#define CLOVE_NULL(res)                    do { __CLOVE_ASSERT_GUARD __clove_assert_null(__CLOVE_ASSERT_EQ, NULL, (void*)res, _this); } while(0)
+#define CLOVE_NOT_NULL(res)                do { __CLOVE_ASSERT_GUARD __clove_assert_null(__CLOVE_ASSERT_NE, NULL, (void*)res, _this); } while(0)
+       
+#define CLOVE_PTR_EQ(p1, p2)               do { __CLOVE_ASSERT_GUARD __clove_assert_ptr(__CLOVE_ASSERT_EQ, (void*)p1, (void*)p2, _this); } while(0)
+#define CLOVE_PTR_NE(p1, p2)               do { __CLOVE_ASSERT_GUARD __clove_assert_ptr(__CLOVE_ASSERT_NE, (void*)p1, (void*)p2, _this); } while(0)
+#define CLOVE_PTR_GT(p1, p2)               do { __CLOVE_ASSERT_GUARD __clove_assert_ptr(__CLOVE_ASSERT_GT, (void*)p1, (void*)p2, _this); } while(0)
+#define CLOVE_PTR_GTE(p1, p2)              do { __CLOVE_ASSERT_GUARD __clove_assert_ptr(__CLOVE_ASSERT_GTE, (void*)p1, (void*)p2, _this); } while(0)
+#define CLOVE_PTR_LT(p1, p2)               do { __CLOVE_ASSERT_GUARD __clove_assert_ptr(__CLOVE_ASSERT_LT, (void*)p1, (void*)p2, _this); } while(0)
+#define CLOVE_PTR_LTE(p1, p2)              do { __CLOVE_ASSERT_GUARD __clove_assert_ptr(__CLOVE_ASSERT_LTE, (void*)p1, (void*)p2, _this); } while(0)
+       
+#define CLOVE_STRING_EQ(exp, res)          do { __CLOVE_ASSERT_GUARD __clove_assert_string(__CLOVE_ASSERT_EQ, exp, res, _this); } while(0)
+#define CLOVE_STRING_NE(exp, res)          do { __CLOVE_ASSERT_GUARD __clove_assert_string(__CLOVE_ASSERT_NE, exp, res, _this); } while(0)
 #pragma endregion //ASSERTS
 
 #pragma region PUBLIC - SUITE
