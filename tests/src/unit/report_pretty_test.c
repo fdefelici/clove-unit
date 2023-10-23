@@ -3,14 +3,14 @@
 
 static __clove_suite_t create_suite(const char* name, size_t test_count) {
     __clove_suite_t suite;
-    suite.name = name;
+    suite.name = (char*)name; //remove const just to avoid build warnings
     suite.test_count = test_count;
     return suite;
 }
 
 static __clove_test_t create_test(const char* name) {
      __clove_test_t test;
-    test.name = name;
+    test.name = (char*)name; //remove const just to avoid build warnings
     test.file_name = "test_file.c";
     test.result = __CLOVE_TEST_RESULT_PASSED;
     test.duration.seconds = 0;
