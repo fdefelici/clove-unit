@@ -53,6 +53,13 @@ __CLOVE_EXTERN_C const char* __clove_get_exec_path();
 #define __CLOVE_SWITCH_END() }
 #pragma endregion // Utils Decl
 
+#pragma region PRIVATE - Math Decl
+//mainly math header operations re-implemented to avoid explicit linking to math library on unix os (with option -lm).
+__CLOVE_EXTERN_C unsigned int __clove_math_powi(unsigned int base, unsigned int exp);
+__CLOVE_EXTERN_C float __clove_math_decimalf(unsigned char precision);
+__CLOVE_EXTERN_C double __clove_math_decimald(unsigned char precision);
+#pragma endregion
+
 #pragma region PRIVATE - Path Decl
 #include <stdbool.h>
 
@@ -797,6 +804,27 @@ const char* __clove_get_exec_path() {
     return __clove_exec_path;
 }
 #pragma endregion // Utils Impl
+
+#pragma region PRIVATE - Math Impl
+#include <math.h>
+unsigned int __clove_math_powi(unsigned int base, unsigned int exp) {
+    unsigned int result = 1;
+    for(unsigned int i=0; i < exp; ++i) {
+        result *= base;
+    }
+    return result;
+}
+
+float __clove_math_decimalf(unsigned char precision) {
+    unsigned int divider = __clove_math_powi(10, precision);
+    return 1.0f / (float)divider;
+}
+
+double __clove_math_decimald(unsigned char precision) {
+    unsigned int divider = __clove_math_powi(10, precision);
+    return 1.0 / (double)divider;
+}
+#pragma endregion
 
 #pragma region PRIVATE - Path Impl
 #include <string.h>
@@ -2090,8 +2118,8 @@ void __clove_assert_ptr(__clove_assert_check_e check_mode, void* expected, void*
 
 void __clove_assert_float(__clove_assert_check_e check_mode, float expected, float result, unsigned char precision, __clove_test_t* _this) {
     bool pass_scenario = false;
-    if (check_mode == __CLOVE_ASSERT_EQ) { pass_scenario = fabsf(expected - result) <= powf(10, -precision); }
-    else if (check_mode == __CLOVE_ASSERT_NE) { pass_scenario = fabsf(expected - result) > powf(10, -precision); }
+    if (check_mode == __CLOVE_ASSERT_EQ) { pass_scenario = fabsf(expected - result) <= __clove_math_decimalf(precision); }
+    else if (check_mode == __CLOVE_ASSERT_NE) { pass_scenario = fabsf(expected - result) > __clove_math_decimald(precision); }
     else if (check_mode == __CLOVE_ASSERT_GT)  { pass_scenario = expected > result; }
     else if (check_mode == __CLOVE_ASSERT_GTE) { pass_scenario = expected >= result; }
     else if (check_mode == __CLOVE_ASSERT_LT)  { pass_scenario = expected < result; }
