@@ -2119,7 +2119,7 @@ void __clove_assert_ptr(__clove_assert_check_e check_mode, void* expected, void*
 void __clove_assert_float(__clove_assert_check_e check_mode, float expected, float result, unsigned char precision, __clove_test_t* _this) {
     bool pass_scenario = false;
     if (check_mode == __CLOVE_ASSERT_EQ) { pass_scenario = fabsf(expected - result) <= __clove_math_decimalf(precision); }
-    else if (check_mode == __CLOVE_ASSERT_NE) { pass_scenario = fabsf(expected - result) > __clove_math_decimald(precision); }
+    else if (check_mode == __CLOVE_ASSERT_NE) { pass_scenario = fabsf(expected - result) > __clove_math_decimalf(precision); }
     else if (check_mode == __CLOVE_ASSERT_GT)  { pass_scenario = expected > result; }
     else if (check_mode == __CLOVE_ASSERT_GTE) { pass_scenario = expected >= result; }
     else if (check_mode == __CLOVE_ASSERT_LT)  { pass_scenario = expected < result; }
@@ -2138,8 +2138,8 @@ void __clove_assert_float(__clove_assert_check_e check_mode, float expected, flo
 
 void __clove_assert_double(__clove_assert_check_e check_mode, double expected, double result, unsigned char precision, __clove_test_t* _this) {
     bool pass_scenario = false;
-    if (check_mode == __CLOVE_ASSERT_EQ) { pass_scenario = fabs(expected - result) <= pow(10, -precision); }
-    else if (check_mode == __CLOVE_ASSERT_NE) { pass_scenario = fabs(expected - result) > pow(10, -precision); }
+    if (check_mode == __CLOVE_ASSERT_EQ) { pass_scenario = fabs(expected - result) <= __clove_math_decimald(precision); }
+    else if (check_mode == __CLOVE_ASSERT_NE) { pass_scenario = fabs(expected - result) > __clove_math_decimald(precision); }
     else if (check_mode == __CLOVE_ASSERT_GT)  { pass_scenario = expected > result; }
     else if (check_mode == __CLOVE_ASSERT_GTE) { pass_scenario = expected >= result; }
     else if (check_mode == __CLOVE_ASSERT_LT)  { pass_scenario = expected < result; }
