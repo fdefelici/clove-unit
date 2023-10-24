@@ -430,6 +430,7 @@ typedef struct __clove_test_t {
         __clove_generic_type_e data_type;
         __clove_generic_u expected;
         __clove_generic_u actual;
+        unsigned char floating_precision; //Just used for float/double to represent decimal digit. NOTE: Eventually refactor to a data struct to represent expected/actual and encapusulate also __clove_generic_u.
     } issue;
 } __clove_test_t;
 
@@ -602,12 +603,14 @@ __CLOVE_EXTERN_C void __clove_report_pretty_pad_right(char* result, char* strToP
 #define __CLOVE_TEST_ENTRY_LENGTH 60
 #define __PRETTY_PRINT_FAIL_ASSERT_MSG(buffer, buffer_size, assert, exp, act, print_type) \
 { \
-    if (assert == __CLOVE_ASSERT_EQ)      __clove_string_sprintf(buffer, buffer_size, "expected [" print_type "] but was [" print_type "]", exp, act); \
-    else if(assert == __CLOVE_ASSERT_NE)  __clove_string_sprintf(buffer, buffer_size, "not expected [" print_type "] but was [" print_type "]", exp, act); \
-    else if(assert == __CLOVE_ASSERT_GT)  __clove_string_sprintf(buffer, buffer_size, "expected [" print_type " > " print_type "] but wasn't", exp, act); \
-    else if(assert == __CLOVE_ASSERT_GTE) __clove_string_sprintf(buffer, buffer_size, "expected [" print_type " >= " print_type "] but wasn't", exp, act); \
-    else if(assert == __CLOVE_ASSERT_LT) __clove_string_sprintf(buffer, buffer_size, "expected [" print_type " < " print_type "] but wasn't", exp, act); \
-    else if(assert == __CLOVE_ASSERT_LTE) __clove_string_sprintf(buffer, buffer_size, "expected [" print_type " <= " print_type "] but wasn't", exp, act); \
+    char phrase_format[40] = {0}; \
+    if (assert == __CLOVE_ASSERT_EQ)      __clove_string_sprintf(phrase_format, sizeof(phrase_format), "expected [%s] but was [%s]", print_type, print_type); \
+    else if(assert == __CLOVE_ASSERT_NE)  __clove_string_sprintf(phrase_format, sizeof(phrase_format), "not expected [%s] but was [%s]", print_type, print_type); \
+    else if(assert == __CLOVE_ASSERT_GT)  __clove_string_sprintf(phrase_format, sizeof(phrase_format), "expected [%s > %s] but wasn't", print_type, print_type); \
+    else if(assert == __CLOVE_ASSERT_GTE) __clove_string_sprintf(phrase_format, sizeof(phrase_format), "expected [%s >= %s] but wasn't", print_type, print_type); \
+    else if(assert == __CLOVE_ASSERT_LT) __clove_string_sprintf(phrase_format, sizeof(phrase_format),  "expected [%s < %s] but wasn't", print_type, print_type); \
+    else if(assert == __CLOVE_ASSERT_LTE) __clove_string_sprintf(phrase_format, sizeof(phrase_format), "expected [%s <= %s] but wasn't", print_type, print_type); \
+    __clove_string_sprintf(buffer, buffer_size, phrase_format, exp, act); \
 }
 #pragma endregion
 
@@ -2133,6 +2136,7 @@ void __clove_assert_float(__clove_assert_check_e check_mode, float expected, flo
         _this->issue.data_type = __CLOVE_GENERIC_FLOAT;
         _this->issue.expected._float = expected;
         _this->issue.actual._float = result;
+        _this->issue.floating_precision = precision;
     }
 }
 
@@ -2153,6 +2157,7 @@ void __clove_assert_double(__clove_assert_check_e check_mode, double expected, d
         _this->issue.data_type = __CLOVE_GENERIC_DOUBLE;
         _this->issue.expected._double = expected;
         _this->issue.actual._double = result;
+        _this->issue.floating_precision = precision;
     }
 }
 
@@ -2551,18 +2556,18 @@ void __clove_report_pretty_end_test(__clove_report_t* _this, __clove_suite_t* su
                     __PRETTY_PRINT_FAIL_ASSERT_MSG(msg, sizeof(msg), test->issue.assert, exp, act, "%zu");
                 }
                 __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_FLOAT) {
-                    //const char* non = test->issue.assert == __CLOVE_ASSERT_EQ ? "" : "not ";
                     const float exp = test->issue.expected._float;
                     const float act = test->issue.actual._float;
-                    //__clove_string_sprintf(msg, sizeof(msg), "%sexpected [%f] but was [%f]", non, exp, act);
-                    __PRETTY_PRINT_FAIL_ASSERT_MSG(msg, sizeof(msg), test->issue.assert, exp, act, "%f");
+                    char format[6] = {0}; //Example: %.NNf
+                    __clove_string_sprintf(format, sizeof(format), "%%.%df", test->issue.floating_precision);
+                    __PRETTY_PRINT_FAIL_ASSERT_MSG(msg, sizeof(msg), test->issue.assert, exp, act, format);
                 }
                 __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_DOUBLE) {
-                    const char* non = test->issue.assert == __CLOVE_ASSERT_EQ ? "" : "not ";
                     const double exp = test->issue.expected._double;
                     const double act = test->issue.actual._double;
-                    //__clove_string_sprintf(msg, sizeof(msg), "%sexpected [%f] but was [%f]", non, exp, act);
-                    __PRETTY_PRINT_FAIL_ASSERT_MSG(msg, sizeof(msg), test->issue.assert, exp, act, "%f");
+                    char format[6] = {0}; //Example: %.NNf
+                    __clove_string_sprintf(format, sizeof(format), "%%.%df", test->issue.floating_precision);
+                    __PRETTY_PRINT_FAIL_ASSERT_MSG(msg, sizeof(msg), test->issue.assert, exp, act, format);
                 }
                 __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_STRING) {
                     const char* non = test->issue.assert == __CLOVE_ASSERT_EQ ? "" : "not ";
@@ -2727,9 +2732,9 @@ void __clove_report_run_tests_csv_print_data(__clove_report_run_tests_csv_t* ins
             __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_SIZET)
                 instance->stream->writef(instance->stream, "%zu", data->_sizet);
             __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_FLOAT)
-                instance->stream->writef(instance->stream, "%f", data->_float);
+                instance->stream->writef(instance->stream, "%.*f", test->issue.floating_precision, data->_float);
             __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_DOUBLE)
-                instance->stream->writef(instance->stream, "%f", data->_double);
+                instance->stream->writef(instance->stream, "%.*f", test->issue.floating_precision, data->_double);
             __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_STRING) {
                 char* escaped = __clove_string_csv_escape(data->_string);
                 instance->stream->writef(instance->stream, "%s", escaped);
@@ -2830,9 +2835,9 @@ void __clove_report_json_print_data(__clove_report_json_t* instance, __clove_tes
             __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_SIZET)
                 instance->stream->writef(instance->stream, "%zu", data->_sizet);
             __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_FLOAT)
-                instance->stream->writef(instance->stream, "%f", data->_float);
+                instance->stream->writef(instance->stream, "%.*f", test->issue.floating_precision, data->_float);
             __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_DOUBLE)
-                instance->stream->writef(instance->stream, "%f", data->_double);
+                instance->stream->writef(instance->stream, "%.*f", test->issue.floating_precision, data->_double);
             __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_STRING) {
                 char* escaped = __clove_string_escape(data->_string);
                 instance->stream->writef(instance->stream, "%s", escaped);
@@ -3800,19 +3805,19 @@ void __clove_exec_suite(__clove_suite_t* suite, size_t test_counter, size_t* pas
 #define CLOVE_FLOAT_NE(exp, res)           CLOVE_FLOAT_NE_P(exp, res, (unsigned char)6)
 #define CLOVE_FLOAT_EQ_P(exp, res, prec)   do { __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_EQ, exp, res, (unsigned char)prec, _this); } while(0)
 #define CLOVE_FLOAT_NE_P(exp, res, prec)   do { __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_NE, exp, res, (unsigned char)prec, _this); } while(0)
-#define CLOVE_FLOAT_GT(exp, res)           do { __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_GT, exp, res, (unsigned char)0, _this); } while(0)
-#define CLOVE_FLOAT_GTE(exp, res)          do {  __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_GTE, exp, res, (unsigned char)0, _this); } while(0)
-#define CLOVE_FLOAT_LT(exp, res)           do { __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_LT, exp, res, (unsigned char)0, _this); } while(0)
-#define CLOVE_FLOAT_LTE(exp, res)          do { __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_LTE, exp, res, (unsigned char)0, _this); } while(0)
+#define CLOVE_FLOAT_GT(exp, res)           do { __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_GT, exp, res, (unsigned char)6, _this); } while(0)
+#define CLOVE_FLOAT_GTE(exp, res)          do {  __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_GTE, exp, res, (unsigned char)6, _this); } while(0)
+#define CLOVE_FLOAT_LT(exp, res)           do { __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_LT, exp, res, (unsigned char)6, _this); } while(0)
+#define CLOVE_FLOAT_LTE(exp, res)          do { __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_LTE, exp, res, (unsigned char)6, _this); } while(0)
   
 #define CLOVE_DOUBLE_EQ(exp, res)          CLOVE_DOUBLE_EQ_P(exp, res, (unsigned char)15)
 #define CLOVE_DOUBLE_NE(exp, res)          CLOVE_DOUBLE_NE_P(exp, res, (unsigned char)15)
 #define CLOVE_DOUBLE_EQ_P(exp, res, prec)  do { __CLOVE_ASSERT_GUARD __clove_assert_double(__CLOVE_ASSERT_EQ, exp, res, prec, _this); } while(0)
 #define CLOVE_DOUBLE_NE_P(exp, res, prec)  do { __CLOVE_ASSERT_GUARD __clove_assert_double(__CLOVE_ASSERT_NE, exp, res, prec, _this); } while(0)
-#define CLOVE_DOUBLE_GT(exp, res)          do { __CLOVE_ASSERT_GUARD __clove_assert_double(__CLOVE_ASSERT_GT, exp, res, (unsigned char)0, _this); } while(0)
-#define CLOVE_DOUBLE_GTE(exp, res)         do { __CLOVE_ASSERT_GUARD __clove_assert_double(__CLOVE_ASSERT_GTE, exp, res, (unsigned char)0, _this); } while(0)
-#define CLOVE_DOUBLE_LT(exp, res)          do { __CLOVE_ASSERT_GUARD __clove_assert_double(__CLOVE_ASSERT_LT, exp, res, (unsigned char)0, _this); } while(0)
-#define CLOVE_DOUBLE_LTE(exp, res)         do { __CLOVE_ASSERT_GUARD __clove_assert_double(__CLOVE_ASSERT_LTE, exp, res, (unsigned char)0, _this); } while(0)
+#define CLOVE_DOUBLE_GT(exp, res)          do { __CLOVE_ASSERT_GUARD __clove_assert_double(__CLOVE_ASSERT_GT, exp, res, (unsigned char)15, _this); } while(0)
+#define CLOVE_DOUBLE_GTE(exp, res)         do { __CLOVE_ASSERT_GUARD __clove_assert_double(__CLOVE_ASSERT_GTE, exp, res, (unsigned char)15, _this); } while(0)
+#define CLOVE_DOUBLE_LT(exp, res)          do { __CLOVE_ASSERT_GUARD __clove_assert_double(__CLOVE_ASSERT_LT, exp, res, (unsigned char)15, _this); } while(0)
+#define CLOVE_DOUBLE_LTE(exp, res)         do { __CLOVE_ASSERT_GUARD __clove_assert_double(__CLOVE_ASSERT_LTE, exp, res, (unsigned char)15, _this); } while(0)
        
 #define CLOVE_NULL(res)                    do { __CLOVE_ASSERT_GUARD __clove_assert_null(__CLOVE_ASSERT_EQ, NULL, (void*)res, _this); } while(0)
 #define CLOVE_NOT_NULL(res)                do { __CLOVE_ASSERT_GUARD __clove_assert_null(__CLOVE_ASSERT_NE, NULL, (void*)res, _this); } while(0)

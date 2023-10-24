@@ -112,7 +112,7 @@ CLOVE_TEST(SizetComparison) {
 
 CLOVE_TEST(FloatComparison) {
     CLOVE_FLOAT_EQ(1.1f, 1.1f);
-    CLOVE_FLOAT_NE(1.1f, 1.2f);
+    CLOVE_FLOAT_NE(1.2f, 1.3f);
 
     CLOVE_FLOAT_EQ_P(0.00000012f, 0.00000013f, 7);
     CLOVE_FLOAT_NE_P(0.00000012f, 0.00000013f, 8);
