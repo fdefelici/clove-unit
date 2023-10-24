@@ -167,14 +167,18 @@ Assertions that can be used within a ```CLOVE_TEST``` definition.
 | CLOVE_SIZET_GTE(expected, actual) | Check expected size_t to be greather than or equal to actual |
 | CLOVE_SIZET_LT(expected, actual)  | Check expected size_t to be lesser than actual |
 | CLOVE_SIZET_LTE(expected, actual) | Check expected size_t to be lesser than or equal to actual |
-| CLOVE_FLOAT_EQ(expected, actual)   | Check expected float to be equal to actual |
-| CLOVE_FLOAT_NE(expected, actual)   | Check expected float to be not equal to actual |
+| CLOVE_FLOAT_EQ(expected, actual)   | Check expected float to be equal to actual with default precision to 6 decimals (1E-6) |
+| CLOVE_FLOAT_NE(expected, actual)   | Check expected float to be not equal to actual with default precision to 6 decimals (1E-6) |
+| CLOVE_FLOAT_EQ_P(expected, actual, precision)   | CLOVE_FLOAT_EQ variant with custom precision as number of decimals to take into account |
+| CLOVE_FLOAT_NE_P(expected, actual, precision)   | CLOVE_FLOAT_NE variant with custom precision as number of decimals to take into account |
 | CLOVE_FLOAT_GT(expected, actual)   | Check expected float to be greather than actual |
 | CLOVE_FLOAT_GTE(expected, actual)  | Check expected float to be greather than or equal to actual |
 | CLOVE_FLOAT_LT(expected, actual)   | Check expected float to be lesser than actual |
 | CLOVE_FLOAT_LTE(expected, actual)  | Check expected float to be greather than or equal to actual |
-| CLOVE_DOUBLE_EQ(expected, actual)   | Check expected double to be equal to actual |
-| CLOVE_DOUBLE_NE(expected, actual)   | Check expected double to be not equal to actual |
+| CLOVE_DOUBLE_EQ(expected, actual)   | Check expected double to be equal to actual with default precision to 15 decimals (1E-15) | 
+| CLOVE_DOUBLE_NE(expected, actual)   | Check expected double to be not equal to actual with default precision to 15 decimals (1E-15) | 
+| CLOVE_DOUBLE_EQ_P(expected, actual, precision)   | CLOVE_DOUBLE_EQ variant with custom precision as number of decimals to take into account |
+| CLOVE_DOUBLE_NE_P(expected, actual, precision)   | CLOVE_DOUBLE_NE variant with custom precision as number of decimals to take into account |
 | CLOVE_DOUBLE_GT(expected, actual)   | Check expected double to be greather than actual |
 | CLOVE_DOUBLE_GTE(expected, actual)  | Check expected double to be greather than or equal to actual |
 | CLOVE_DOUBLE_LT(expected, actual)   | Check expected double to be lesser than actual |
