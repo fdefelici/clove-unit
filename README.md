@@ -129,10 +129,10 @@ Build and run the test executable and `CLove-Unit` will do the magic :-)
 
 APIs used for the very basic setup of the library.
 
-| API                    | Description                                                                                    |
-|------------------------|------------------------------------------------------------------------------------------------|
-| `CLOVE_IMPLEMENTATION` | Macro used to implement the entire library. It should only be used once before `clove-unit.h`. |
-| `CLOVE_RUNNER()`       | Generates program entry point.                                                                 |
+| API                    | Description                                                                                          |
+|------------------------|------------------------------------------------------------------------------------------------------|
+| `CLOVE_IMPLEMENTATION` | Macro used to implement the entire library. <br />It should only be used once before `clove-unit.h`. |
+| `CLOVE_RUNNER()`       | Generates program entry point.                                                                       |
 
 ### Test Definitions
 
