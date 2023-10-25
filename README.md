@@ -1,54 +1,89 @@
-# CLove-Unit  &middot; [![version](https://img.shields.io/github/v/release/fdefelici/clove-unit?label=latest&sort=semver)](./clove-unit.h) [![workflow](https://img.shields.io/github/actions/workflow/status/fdefelici/clove-unit/ci_action.yml)](https://github.com/fdefelici/clove-unit/actions/workflows/ci_action.yml) [![conan](https://img.shields.io/badge/conan-available-blueviolet)](https://conan.io/center/clove-unit)
-`CLove-Unit` is a unit testing single-header library for C (mainly, but could also work with C++), with test autodiscovery feature.
+# CLove-Unit &middot; [![version](https://img.shields.io/github/v/release/fdefelici/clove-unit?label=latest&sort=semver)](./clove-unit.h) [![workflow](https://img.shields.io/github/actions/workflow/status/fdefelici/clove-unit/ci_action.yml)](https://github.com/fdefelici/clove-unit/actions/workflows/ci_action.yml) [![conan](https://img.shields.io/badge/conan-available-blueviolet)](https://conan.io/center/recipes/clove-unit)
 
-The aim of this library is to reduce at the minimum the boilder-plate for C developers and just focus on unit test development (such as avoiding to register manually the tests to an execution list).
+`CLove-Unit` is a single-header unit testing library designed for C (compatible with C++).
 
-`CLove-Unit` is able to discover and run your tests, gathering information about positives and failures (file, line, reason), with possibility to show the result in different output formats (configurable by a powerful command-line api).
+This library can automatically detect and execute your tests, providing comprehensive details about successes and failures, such as file, line number,
+and reason for failure. Additionally, it offers a variety of output formats thanks to a powerful command-line API.
 
-Here an example of the default report format (pretty printing on console with ansi support)
+`CLove-Unit` allows you to focus solely on creating unit tests, eliminating the need to manually register tests or create custom assertions.
 
+Here is an example of the default report format, which features pretty printing with ANSI support:
 ![Clove test run result](./examples/result.png)
 
-# Features
-Here a list of features provided by `CLove-Unit`:
-* Single Header
-* Tests Autodiscovery (reducing at minimum developer boiler-plate on writing tests)
-* Test Report with different format (pretty print ansi, csv, json) and output (console or file)
-* Tests / Run duration
-* Tests / Run failure pointing to the file/line where the assertions are unsatisfied
-* Selective test execution (opportunity to include/exclude tests from the execution)
-* Command-line api to interact with the test binary, useful for creating IDE Plugins and Automations
+## Table of Contents
 
-# IDE Extension
-For the one, who prefer UI oriented test executor, `CLove-Unit` is supported on the following IDEs:
-* `Visual Studio`: available from [VS Market Place](https://marketplace.visualstudio.com/items?itemName=fdefelici.vs-clove-unit)
-* `Visual Studio Code`:  available from the [VSCode Market Place](https://marketplace.visualstudio.com/items?itemName=fdefelici.vscode-clove-unit). 
+* [Features](#features)
+* [IDE Extension](#ide-extension)
+* [Supported Package Managers](#supported-package-managers)
+* [How It Works](#how-it-works)
+* [Usage](#usage)
+    * [1. Include CLove-Unit](#1-include-clove-unit)
+    * [2. Define a Suite](#2-define-a-suite)
+    * [3. Create a Translation Unit](#3-create-a-translation-unit)
+    * [4. Build and Run](#4-build-and-run)
+* [Development APIs](#development-apis)
+    * [Library Configuration](#library-configuration)
+    * [Test Definitions](#test-definitions)
+    * [Test Assertions](#test-assertions)
+    * [Test Helpers](#test-helpers)
+* [Command-Line API](#command-line-api)
+    * [Test Inclusion/Exclusion](#test-inclusionexclusion)
+
+## Features
+
+- **Single Header**: Simply include [clove-unit.h](./clove-unit.h) to integrate it into your project.
+- **Tests Auto-discovery**: Simplify test writing with the `CLOVE_TEST` macro for automatic registration.
+- **Test Report**: Output in ANSI, CSV, or JSON. Customize format and destination with command-line args.
+- **Tests/Run Duration**: Measure and report test execution times.
+- **Tests/Run Failure**: Get file, line, and failure info with the assertion macros.
+- **Selective Test Execution**: Include or exclude tests for each run.
+- **Command-line API**: Create IDE plugins and automate with versatile options.
+
+## IDE Extension
+
+For those who prefer a UI oriented test executor, `CLove-Unit` is supported on the following IDEs:
+
+* **Visual Studio:** available from [VS Market Place](https://marketplace.visualstudio.com/items?itemName=fdefelici.vs-clove-unit)
+* **Visual Studio Code:** available from the [VSCode Market Place](https://marketplace.visualstudio.com/items?itemName=fdefelici.vscode-clove-unit).
 
 Have a look and enjoy ;-)
 
-# Supported Package Managers
+## Supported Package Managers
+
 `CLove-Unit` is also available on the following Package Managers:
-* [Conan](https://conan.io/center/clove-unit)
 
-# How it works
-`CLove-Unit` is implemented around the following concepts:
-- **Test**: a test is basically a fuction where you can stimulate your code and validate it using assertions
-- **Suite**: a suite is a set of Tests to be run. A Suite allow to execute setup/teardown behaviour for each Test execution (or once for all the Tests).
-- **Runner**: a runner allow execution of a set of Suites and provide results
+* [Conan](https://conan.io/center/recipes/clove-unit)
 
-> `CLove-Unit` tests discovery works parsing the symbol table in the test executable. 
+## How It Works
+
+`CLove-Unit` is built upon these fundamental concepts:
+
+- **Test:** A test is essentially a function that lets you stimulate your code and verify its behavior through assertions.
+- **Suite:** A suite is a collection of tests is run. It enables you to define setup and teardown procedures for each test execution or for the
+  entire suite.
+- **Runner:** The runner facilitates the execution of multiple suites and offers result reporting.
+
+> The test discovery in CLove-Unit works by parsing the symbol table inside the test executable.
 >
-> At the moment this feature is available for the following OS / Architecture / Executable Format:
+> Currently, this feature is accessible for the following combinations of OS, architecture, and executable formats:
+>
 > - Windows / 32-64 bit little-endian / PE (Portable Executable)
 > - MacOS / 64 bit little-endian / Mach-o (Mach Object)
 > - Linux / 64 bit little-endian / ELF (Executable and Linkable Format)
-> 
-> Further compatibilities in terms of OS, Architecture and Format can be implement later on as needed.
+>
+> Additional compatibilities regarding OS, architecture, and formats can be implemented in the future as needed.
 
-# Usage
-Just add [clove-unit.h](./clove-unit.h) header in your project and starts creating unit tests for your code base as follow:
+## Usage
 
-First define a Suite name and then implement related test cases:
+Getting started with CLove-Unit is simple. Just follow these steps:
+
+### 1. Include CLove-Unit
+
+Include the [clove-unit.h](./clove-unit.h) header in your project.
+
+### 2. Define a Suite
+
+Before creating test cases, define a suite name. For example:
 
 ```c
 //file test_suite1.c
@@ -66,9 +101,10 @@ CLOVE_TEST(SecondTest) {
 }
 ```
 
-Then setup a translation unit to be the main program with autodiscovery feature.
+### 3. Create a Translation Unit
 
-Using `CLOVE_IMPLEMENTATION` definition **once** before `clove-unit.h` will include whole library implementation.
+A translation unit is the entry point of the program that enables the auto-discovery feature by defining `CLOVE_IMPLEMENTATION`
+**once** before `clove-unit.h`. This will include the entire library implementation.
 
 ```c
 //file main.c
@@ -78,164 +114,173 @@ Using `CLOVE_IMPLEMENTATION` definition **once** before `clove-unit.h` will incl
 CLOVE_RUNNER()
 ```
 
-Finally, build and run the test executable and `CLove-Unit` will do the magic :-)
+### 4. Build and Run
 
+Build and run the test executable and `CLove-Unit` will do the magic :-)
 
-> Look at the [example](./examples/clove101) project for samples about:
-> - implement clove suites and tests
-> - assertion usage ([test_suite1.c](./examples/clove101/test_suite1.c))
-> - suite setup & tear down feature ([test_suite2.c](./examples/clove101/test_suite2.c))
+> Look at the [CLove101](./examples/clove101) project for samples about:
+> - Implementing suites and tests.
+> - Assertion usage ([test_suite1.c](./examples/clove101/src/test_suite1.c))
+> - Suite setup & tear down feature ([test_suite2.c](./examples/clove101/src/test_suite2.c))
 
-# Development Apis
-Here a list of availables apis to support test development.
+## Development APIs
 
-## Library Configuration
-Apis to be used for the very base setup of the library.
+### Library Configuration
 
-| Api | Description |
-| ------------- | ------------- |
-| CLOVE_IMPLEMENTATION | macro to be declared just once before `clove-unit.h` will include whole library implementation |
-| CLOVE_RUNNER()  | generate program entry point  |
+APIs used for the very basic setup of the library.
 
+| API                    | Description                                                                                    |
+|------------------------|------------------------------------------------------------------------------------------------|
+| `CLOVE_IMPLEMENTATION` | Macro used to implement the entire library. It should only be used once before `clove-unit.h`. |
+| `CLOVE_RUNNER()`       | Generates program entry point.                                                                 |
 
-## Test Definition
-Apis to be used for defining suite and tests.
+### Test Definitions
 
-| Api | Description |
-| ------------- | ------------- |
-| CLOVE_SUITE_NAME  | Macro to be defined for each suite, before including clove header |
-| CLOVE_SUITE_SETUP_ONCE()  | Implement a procedure to be executed only once before all the test cases (Optional) |
-| CLOVE_SUITE_TEARDOWN_ONCE()  | Implement a procedure to be executed only once after all the test cases (Optional) |
-| CLOVE_SUITE_SETUP()  | Implement a procedure to be executed before each test case (Optional) |
-| CLOVE_SUITE_TEARDOWN()  | Implement a procedure to be executed after each test case (Optional) |
-| CLOVE_TEST(name)  | Define test case named "name" |
+APIs used for defining suites and tests.
 
-## Test Assertions
-Assertions that can be used within a ```CLOVE_TEST``` definition.
+| API                           | Description                                                                             |
+|-------------------------------|-----------------------------------------------------------------------------------------|
+| `CLOVE_SUITE_NAME`            | Macro used to define a suite name, before including the `clove-unit.h` header.          |
+| `CLOVE_SUITE_SETUP_ONCE()`    | Implements a procedure which is executed only once before all the test cases (optional) |
+| `CLOVE_SUITE_TEARDOWN_ONCE()` | Implements a procedure which is executed only once after all the test cases (optional)  |
+| `CLOVE_SUITE_SETUP()`         | Implements a procedure which is executed before each test case (optional)               |
+| `CLOVE_SUITE_TEARDOWN()`      | Implements a procedure which is executed after each test case (optional)                |
+| `CLOVE_TEST(name)`            | Define test case named "name"                                                           |
 
-| Api | Description |
-| ------------- | ------------- |
-| CLOVE_PASS()  | Assertion that always make the test pass |
-| CLOVE_FAIL()  | Assertion that always make the test fail |
-| CLOVE_IS_TRUE(actual)  | Check if int is not 0 |
-| CLOVE_IS_FALSE(actual)  | Check if int is 0 |
-| CLOVE_CHAR_EQ(expected, actual)  | Check expected char to be equal to actual |
-| CLOVE_CHAR_NE(expected, actual)  | Check expected char to be not equal to actual |
-| CLOVE_CHAR_GT(expected, actual)  | Check expected char to be greather than actual |
-| CLOVE_CHAR_GTE(expected, actual) | Check expected char to be greather than or equal to actual |
-| CLOVE_CHAR_LT(expected, actual)  | Check expected char to be lesser than actual |
-| CLOVE_CHAR_LTE(expected, actual) | Check expected char to be lesser than or equal to actual |
-| CLOVE_INT_EQ(expected, actual)   | Check expected int to be equal to actual |
-| CLOVE_INT_NE(expected, actual)   | Check expected int to be not equal to actual |
-| CLOVE_INT_GT(expected, actual)   | Check expected int to be greather than actual |
-| CLOVE_INT_GTE(expected, actual)  | Check expected int to be greather than or equal to actual |
-| CLOVE_INT_LT(expected, actual)   | Check expected int to be lesser than actual |
-| CLOVE_INT_LTE(expected, actual)  | Check expected int to be greather than or equal to actual |
-| CLOVE_UINT_EQ(expected, actual)  | Check expected unsigned int to be equal to actual |
-| CLOVE_UINT_NE(expected, actual)  | Check expected unsigned int to be not equal to actual |
-| CLOVE_UINT_GT(expected, actual)  | Check expected unsigned int to be greather than  actual |
-| CLOVE_UINT_GTE(expected, actual) | Check expected unsigned int to be greather than or equal to actual |
-| CLOVE_UINT_LT(expected, actual)  | Check expected unsigned int to be lesser than actual |
-| CLOVE_UINT_LTE(expected, actual) | Check expected unsigned int to be lesser than or equal to actual |
-| CLOVE_LONG_EQ(expected, actual)  | Check expected long to be equal to actual |
-| CLOVE_LONG_NE(expected, actual)  | Check expected long to be not equal to actual |
-| CLOVE_LONG_GT(expected, actual)  | Check expected long to be greather than  actual |
-| CLOVE_LONG_GTE(expected, actual) | Check expected long to be greather than or equal to actual |
-| CLOVE_LONG_LT(expected, actual)  | Check expected long to be lesser than actual |
-| CLOVE_LONG_LTE(expected, actual) | Check expected long to be lesser than or equal to actual |
-| CLOVE_ULONG_EQ(expected, actual)  | Check expected unsigned long to be equal to actual |
-| CLOVE_ULONG_NE(expected, actual)  | Check expected unsigned long to be not equal to actual |
-| CLOVE_ULONG_GT(expected, actual)  | Check expected unsigned long to be greather than  actual |
-| CLOVE_ULONG_GTE(expected, actual) | Check expected unsigned long to be greather than or equal to actual |
-| CLOVE_ULONG_LT(expected, actual)  | Check expected unsigned long to be lesser than actual |
-| CLOVE_ULONG_LTE(expected, actual) | Check expected unsigned long to be lesser than or equal to actual |
-| CLOVE_LLONG_EQ(expected, actual)  | Check expected long long to be equal to actual |
-| CLOVE_LLONG_NE(expected, actual)  | Check expected long long to be not equal to actual |
-| CLOVE_LLONG_GT(expected, actual)  | Check expected long long to be greather than  actual |
-| CLOVE_LLONG_GTE(expected, actual) | Check expected long long to be greather than or equal to actual |
-| CLOVE_LLONG_LT(expected, actual)  | Check expected long long to be lesser than actual |
-| CLOVE_LLONG_LTE(expected, actual) | Check expected long long to be lesser than or equal to actual |
-| CLOVE_ULLONG_EQ(expected, actual)  | Check expected unsigned long long to be equal to actual |
-| CLOVE_ULLONG_NE(expected, actual)  | Check expected unsigned long long to be not equal to actual |
-| CLOVE_ULLONG_GT(expected, actual)  | Check expected unsigned long long to be greather than  actual |
-| CLOVE_ULLONG_GTE(expected, actual) | Check expected unsigned long long to be greather than or equal to actual |
-| CLOVE_ULLONG_LT(expected, actual)  | Check expected unsigned long long to be lesser than actual |
-| CLOVE_ULLONG_LTE(expected, actual) | Check expected unsigned long long to be lesser than or equal to actual |
-| CLOVE_SIZET_EQ(expected, actual)  | Check expected size_t to be equal to actual |
-| CLOVE_SIZET_NE(expected, actual)  | Check expected size_t to be not equal to actual |
-| CLOVE_SIZET_GT(expected, actual)  | Check expected size_t to be greather than  actual |
-| CLOVE_SIZET_GTE(expected, actual) | Check expected size_t to be greather than or equal to actual |
-| CLOVE_SIZET_LT(expected, actual)  | Check expected size_t to be lesser than actual |
-| CLOVE_SIZET_LTE(expected, actual) | Check expected size_t to be lesser than or equal to actual |
-| CLOVE_FLOAT_EQ(expected, actual)   | Check expected float to be equal to actual with default precision to 6 decimals (1E-6) |
-| CLOVE_FLOAT_NE(expected, actual)   | Check expected float to be not equal to actual with default precision to 6 decimals (1E-6) |
-| CLOVE_FLOAT_EQ_P(expected, actual, precision)   | CLOVE_FLOAT_EQ variant with custom precision as number of decimals to take into account |
-| CLOVE_FLOAT_NE_P(expected, actual, precision)   | CLOVE_FLOAT_NE variant with custom precision as number of decimals to take into account |
-| CLOVE_FLOAT_GT(expected, actual)   | Check expected float to be greather than actual |
-| CLOVE_FLOAT_GTE(expected, actual)  | Check expected float to be greather than or equal to actual |
-| CLOVE_FLOAT_LT(expected, actual)   | Check expected float to be lesser than actual |
-| CLOVE_FLOAT_LTE(expected, actual)  | Check expected float to be greather than or equal to actual |
-| CLOVE_DOUBLE_EQ(expected, actual)   | Check expected double to be equal to actual with default precision to 15 decimals (1E-15) | 
-| CLOVE_DOUBLE_NE(expected, actual)   | Check expected double to be not equal to actual with default precision to 15 decimals (1E-15) | 
-| CLOVE_DOUBLE_EQ_P(expected, actual, precision)   | CLOVE_DOUBLE_EQ variant with custom precision as number of decimals to take into account |
-| CLOVE_DOUBLE_NE_P(expected, actual, precision)   | CLOVE_DOUBLE_NE variant with custom precision as number of decimals to take into account |
-| CLOVE_DOUBLE_GT(expected, actual)   | Check expected double to be greather than actual |
-| CLOVE_DOUBLE_GTE(expected, actual)  | Check expected double to be greather than or equal to actual |
-| CLOVE_DOUBLE_LT(expected, actual)   | Check expected double to be lesser than actual |
-| CLOVE_DOUBLE_LTE(expected, actual)  | Check expected double to be greather than or equal to actual |
-| CLOVE_STRING_EQ(expected, actual)  | Check equality between string (null terminated char pointer or array) |
-| CLOVE_STRING_NE(expected, actual)  | Check inequality between string (null terminated char pointer or array) |
-| CLOVE_NULL(actual)  | Check if actual is NULL |
-| CLOVE_NOT_NULL(actual)  | Check if actual is not NULL |
-| CLOVE_PTR_EQ(expected, actual)   | Check expected pointer to be equal to actual |
-| CLOVE_PTR_NE(expected, actual)   | Check expected pointer to be not equal to actual |
-| CLOVE_PTR_GT(expected, actual)   | Check expected pointer to be greather than actual |
-| CLOVE_PTR_GTE(expected, actual)  | Check expected pointer to be greather than or equal to actual |
-| CLOVE_PTR_LT(expected, actual)   | Check expected pointer to be lesser than actual |
-| CLOVE_PTR_LTE(expected, actual)  | Check expected pointer to be greather than or equal to actual |
+### Test Assertions
 
-## Test Helper
-Helper apis to support test implementation
-| Api | Description |
-| ------------- | ------------- |
-| CLOVE_EXEC_PATH()  | Macro to easily retrive executable path as a char* |
-| CLOVE_EXEC_BASE_PATH() | Macro to easily retrive executable base path as a char* |
+Assertions that can be used within a `CLOVE_TEST` definition.
 
-# Command-Line Api
-A binary built with `CLove-Unit` library supports a set of command-line options when lanched like this:
+| API                                               | Description                                                                                     |
+|---------------------------------------------------|-------------------------------------------------------------------------------------------------|
+| `CLOVE_PASS();`                                   | Assertion that always make the test pass.                                                       |
+| `CLOVE_FAIL();`                                   | Assertion that always make the test fail.                                                       |
+| `CLOVE_IS_TRUE(actual);`                          | Checks if int is not 0.                                                                         |
+| `CLOVE_IS_FALSE(actual);`                         | Checks if int is 0.                                                                             |
+| `CLOVE_CHAR_EQ(expected, actual);`                | Checks if expected char is equal to actual.                                                     |
+| `CLOVE_CHAR_NE(expected, actual);`                | Checks if expected char is not equal to actual.                                                 |
+| `CLOVE_CHAR_GT(expected, actual);`                | Checks if expected char is greater than actual.                                                 |
+| `CLOVE_CHAR_GTE(expected, actual);`               | Checks if expected char is greater than or equal to actual.                                     |
+| `CLOVE_CHAR_LT(expected, actual);`                | Checks if expected char is lesser than actual.                                                  |
+| `CLOVE_CHAR_LTE(expected, actual);`               | Checks if expected char is lesser than or equal to actual.                                      |
+| `CLOVE_INT_EQ(expected, actual);`                 | Checks if expected int is equal to actual.                                                      |
+| `CLOVE_INT_NE(expected, actual);`                 | Checks if expected int is not equal to actual.                                                  |
+| `CLOVE_INT_GT(expected, actual);`                 | Checks if expected int is greater than actual.                                                  |
+| `CLOVE_INT_GTE(expected, actual);`                | Checks if expected int is greater than or equal to actual.                                      |
+| `CLOVE_INT_LT(expected, actual);`                 | Checks if expected int is lesser than actual.                                                   |
+| `CLOVE_INT_LTE(expected, actual);`                | Checks if expected int is greater than or equal to actual.                                      |
+| `CLOVE_UINT_EQ(expected, actual);`                | Checks if expected unsigned int is equal to actual.                                             |
+| `CLOVE_UINT_NE(expected, actual);`                | Checks if expected unsigned int is not equal to actual.                                         |
+| `CLOVE_UINT_GT(expected, actual);`                | Checks if expected unsigned int is greater than actual.                                         |
+| `CLOVE_UINT_GTE(expected, actual);`               | Checks if expected unsigned int is greater than or equal to actual.                             |
+| `CLOVE_UINT_LT(expected, actual);`                | Checks if expected unsigned int is lesser than actual.                                          |
+| `CLOVE_UINT_LTE(expected, actual);`               | Checks if expected unsigned int is lesser than or equal to actual.                              |
+| `CLOVE_LONG_EQ(expected, actual);`                | Checks if expected long is equal to actual.                                                     |
+| `CLOVE_LONG_NE(expected, actual);`                | Checks if expected long is not equal to actual.                                                 |
+| `CLOVE_LONG_GT(expected, actual);`                | Checks if expected long is greater than actual.                                                 |
+| `CLOVE_LONG_GTE(expected, actual);`               | Checks if expected long is greater than or equal to actual.                                     |
+| `CLOVE_LONG_LT(expected, actual);`                | Checks if expected long is lesser than actual.                                                  |
+| `CLOVE_LONG_LTE(expected, actual);`               | Checks if expected long is lesser than or equal to actual.                                      |
+| `CLOVE_ULONG_EQ(expected, actual);`               | Checks if expected unsigned long is equal to actual.                                            |
+| `CLOVE_ULONG_NE(expected, actual);`               | Checks if expected unsigned long is not equal to actual.                                        |
+| `CLOVE_ULONG_GT(expected, actual);`               | Checks if expected unsigned long is greater than actual.                                        |
+| `CLOVE_ULONG_GTE(expected, actual);`              | Checks if expected unsigned long is greater than or equal to actual.                            |
+| `CLOVE_ULONG_LT(expected, actual);`               | Checks if expected unsigned long is lesser than actual.                                         |
+| `CLOVE_ULONG_LTE(expected, actual);`              | Checks if expected unsigned long is lesser than or equal to actual.                             |
+| `CLOVE_LLONG_EQ(expected, actual);`               | Checks if expected long long is equal to actual.                                                |
+| `CLOVE_LLONG_NE(expected, actual);`               | Checks if expected long long is not equal to actual.                                            |
+| `CLOVE_LLONG_GT(expected, actual);`               | Checks if expected long long is greater than actual.                                            |
+| `CLOVE_LLONG_GTE(expected, actual);`              | Checks if expected long long is greater than or equal to actual.                                |
+| `CLOVE_LLONG_LT(expected, actual);`               | Checks if expected long long is lesser than actual.                                             |
+| `CLOVE_LLONG_LTE(expected, actual);`              | Checks if expected long long is lesser than or equal to actual.                                 |
+| `CLOVE_ULLONG_EQ(expected, actual);`              | Checks if expected unsigned long long is equal to actual.                                       |
+| `CLOVE_ULLONG_NE(expected, actual);`              | Checks if expected unsigned long long is not equal to actual.                                   |
+| `CLOVE_ULLONG_GT(expected, actual);`              | Checks if expected unsigned long long is greater than actual.                                   |
+| `CLOVE_ULLONG_GTE(expected, actual);`             | Checks if expected unsigned long long is greater than or equal to actual.                       |
+| `CLOVE_ULLONG_LT(expected, actual);`              | Checks if expected unsigned long long is lesser than actual.                                    |
+| `CLOVE_ULLONG_LTE(expected, actual);`             | Checks if expected unsigned long long is lesser than or equal to actual.                        |
+| `CLOVE_SIZET_EQ(expected, actual);`               | Checks if expected size_t is equal to actual.                                                   |
+| `CLOVE_SIZET_NE(expected, actual);`               | Checks if expected size_t is not equal to actual.                                               |
+| `CLOVE_SIZET_GT(expected, actual);`               | Checks if expected size_t is greater than actual.                                               |
+| `CLOVE_SIZET_GTE(expected, actual);`              | Checks if expected size_t is greater than or equal to actual.                                   |
+| `CLOVE_SIZET_LT(expected, actual);`               | Checks if expected size_t is lesser than actual.                                                |
+| `CLOVE_SIZET_LTE(expected, actual);`              | Checks if expected size_t is lesser than or equal to actual.                                    |
+| `CLOVE_FLOAT_EQ(expected, actual);`               | Checks if expected float is equal to actual with default precision to 6 decimals (1E-6)         |
+| `CLOVE_FLOAT_NE(expected, actual);`               | Checks if expected float is not equal to actual with default precision to 6 decimals (1E-6)     |
+| `CLOVE_FLOAT_EQ_P(expected, actual, precision);`  | CLOVE_FLOAT_EQ variant with custom precision as the number of decimals to take into account.    |
+| `CLOVE_FLOAT_NE_P(expected, actual, precision);`  | CLOVE_FLOAT_NE variant with custom precision as the number of decimals to take into account.    |
+| `CLOVE_FLOAT_GT(expected, actual);`               | Checks if expected float is greater than actual.                                                |
+| `CLOVE_FLOAT_GTE(expected, actual);`              | Checks if expected float is greater than or equal to actual.                                    |
+| `CLOVE_FLOAT_LT(expected, actual);`               | Checks if expected float is lesser than actual.                                                 |
+| `CLOVE_FLOAT_LTE(expected, actual);`              | Checks if expected float is greater than or equal to actual.                                    |
+| `CLOVE_DOUBLE_EQ(expected, actual);`              | Checks if expected double is equal to actual with default precision to 15 decimals (1E-15).     | 
+| `CLOVE_DOUBLE_NE(expected, actual);`              | Checks if expected double is not equal to actual with default precision to 15 decimals (1E-15). | 
+| `CLOVE_DOUBLE_EQ_P(expected, actual, precision);` | CLOVE_DOUBLE_EQ variant with custom precision as the number of decimals to take into account.   |
+| `CLOVE_DOUBLE_NE_P(expected, actual, precision);` | CLOVE_DOUBLE_NE variant with custom precision as the number of decimals to take into account.   |
+| `CLOVE_DOUBLE_GT(expected, actual);`              | Checks if expected double is greater than actual.                                               |
+| `CLOVE_DOUBLE_GTE(expected, actual);`             | Checks if expected double is greater than or equal to actual.                                   |
+| `CLOVE_DOUBLE_LT(expected, actual);`              | Checks if expected double is lesser than actual.                                                |
+| `CLOVE_DOUBLE_LTE(expected, actual);`             | Checks if expected double is greater than or equal to actual.                                   |
+| `CLOVE_STRING_EQ(expected, actual);`              | Checks equality between strings (null terminated char pointer or array).                        |
+| `CLOVE_STRING_NE(expected, actual);`              | Checks inequality between strings (null terminated char pointer or array).                      |
+| `CLOVE_NULL(actual);`                             | Checks if actual is NULL.                                                                       |
+| `CLOVE_NOT_NULL(actual);`                         | Checks if actual is not NULL.                                                                   |
+| `CLOVE_PTR_EQ(expected, actual);`                 | Checks if expected pointer is equal to actual.                                                  |
+| `CLOVE_PTR_NE(expected, actual);`                 | Checks if expected pointer is not equal to actual.                                              |
+| `CLOVE_PTR_GT(expected, actual);`                 | Checks if expected pointer is greater than actual.                                              |
+| `CLOVE_PTR_GTE(expected, actual);`                | Checks if expected pointer is greater than or equal to actual.                                  |
+| `CLOVE_PTR_LT(expected, actual);`                 | Checks if expected pointer is lesser than actual.                                               |
+| `CLOVE_PTR_LTE(expected, actual);`                | Checks if expected pointer is greater than or equal to actual.                                  |
 
-> ```<executable> [options] ```
+### Test Helpers
 
-| Option | Description |
-| ------------- | ------------- |
-| \<no-option\>  | Running executable with no args will execute tests producing a report in `pretty` format (default) |
-| -e, --exclude \<expr\> | Exclude tests to be run/listed<br /> (can be repeated more than once)<br /> [[read here for more details](#test-inclusionexclusion)] |
-| -h, --help | Display usage information |
-| -i, --include \<expr\> | Include tests to be run/listed<br /> (can be repeated more than once)<br /> [[read here for more details](#test-inclusionexclusion)]|
-| -l, --list-tests | List all/matching test cases in `pretty` format (default).<br />Accepts inclusion/exclusion expression |
-| -o, --output \<stream\> | Specify output stream for a report. Possible choises: `stdout` (default) or `<file path>` |
-| -r, --report \<format\> | Specify report format when running/listing tests. Possible choises: `pretty`, `csv`, `json` |
-| -t, --run-tests | Execute all/matching test cases (same as \<no-option\> scenario).<br />Accepts inclusion/exclusion expression |
-| -v, --version | Show CLove-Unit version |
-| -x, --error-on-test-fail | Test run process will end with error in case of test failure. Default is to end the process succesfully |
+Helper APIs to support test implementation.
 
-## Test Inclusion/Exclusion
-Inclusion/Exclusion options are useful to collect a specific subset of Suite/Tests and can be repeated more the once in the commandline.
+| API                      | Description                                                |
+|--------------------------|------------------------------------------------------------|
+| `CLOVE_EXEC_PATH()`      | Macro to easily retrieve executable path as a `char*`      |
+| `CLOVE_EXEC_BASE_PATH()` | Macro to easily retrieve executable base path as a `char*` |
 
-> NOTE: If both inclusion and exclusion options are provided, the inclusion pattern always wins over the exclusion one.
+## Command-Line API
 
-These options allow to specify an expression that works as follow:
-* Basic: `SuiteName.TestName`
-* Wildcard: Only `*` is supported, and can be used to implement pattern such as "start with", "end with", "contains", "all", for both the SuiteName and TestName
+A binary built with the `CLove-Unit` library supports a number of command line options at startup:
 
-So for instance the following are valids select patterns (non-exhaustive list):
-| Pattern Example | Description |
-| ------------- | ------------- |
-| MySuite01.Test01 | will match exactly the Suite Name and the Test Name |
-| MySuite01 | will match all tests whose Suite Name is "MySuite01" |
-| Suite\* | will match all tests whose Suite Name starts with "Suite" |
-| \*Suite01 | will match all tests whose Suite Name ends with "Suite01" |
-| \*Suite\* | will match all tests whose Suite Name contains "Suite" |
-| \*Suite\* | will match all tests whose Suite Name contains "Suite" |
-| MySuite01.*01 | will match all tests whose Suite Name is MySuite01 and Test Name ends with "01" |
-| \*.\* | will match all suites and tests |
+> `<executable> [options]`
+
+| Options                     | Description                                                                                                                       |
+|-----------------------------|-----------------------------------------------------------------------------------------------------------------------------------|
+| \<no-option\>               | Running executable with no args will execute tests producing a report in`pretty` format (default)                                 |
+| `-e` `--exclude <expr>`     | Exclude tests is run/listed<br /> (can be repeated more than once)<br /> [[read here for more details](#test-inclusionexclusion)] |
+| `-h` `--help`               | Display usage information.                                                                                                        |
+| `-i` `--include <expr>`     | Include tests is run/listed<br /> (can be repeated more than once)<br /> [[read here for more details](#test-inclusionexclusion)] |
+| `-l` `--list-tests`         | List all/matching test cases in `pretty` format (default).<br />Accepts inclusion/exclusion expression.                           |
+| `-o` `--output <stream>`    | Specify output stream for a report. Possible options: `stdout` (default) or `<file path>`                                         |
+| `-r` `--report <format>`    | Specify report format when running/listing tests. Possible options: `pretty` `csv` `json`                                         |
+| `-t` `--run-tests`          | Execute all/matching test cases (same as \<no-option\> scenario).<br />Accepts inclusion/exclusion expression.                    |
+| `-v` `--version`            | Show CLove-Unit version.                                                                                                          |
+| `-x` `--error-on-test-fail` | Test run process will end with error in case of test failure. Default is to end the process successfully.                         |
+
+### Test Inclusion/Exclusion
+
+Inclusion/Exclusion options are useful to collect a specific subset of Suites/Tests and can be repeated more than once on the command line.
+
+> NOTE: If both inclusion and exclusion options are provided, the inclusion pattern always wins over the exclusion pattern.
+
+These options allow you to specify an expression that works like this:
+
+* **Basic:** `SuiteName.TestName`
+* **Wildcard:** Only `*` is supported, and can be used to implement patterns such as "starts with", "ends with", "contains", "all", for both the
+  SuiteName and TestName
+
+For example, the following are valid selection patterns (non-exhaustive list):
+
+| Pattern            | Description                                                                      |
+|--------------------|----------------------------------------------------------------------------------|
+| `MySuite01.Test01` | Will match exactly the Suite Name and the Test Name.                             |
+| `MySuite01`        | Will match all tests whose Suite Name is "MySuite01".                            |
+| `Suite*`           | Will match all tests whose Suite Name starts with "Suite".                       |
+| `*Suite01`         | Will match all tests whose Suite Name ends with "Suite01".                       |
+| `*Suite*`          | Will match all tests whose Suite Name contains "Suite".                          |
+| `*Suite*`          | Will match all tests whose Suite Name contains "Suite".                          |
+| `MySuite01.*01`    | Will match all tests whose Suite Name is MySuite01 and Test Name ends with "01". |
+| `*.*`              | Will match all suites and tests.                                                 |
