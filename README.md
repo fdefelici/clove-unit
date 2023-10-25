@@ -205,8 +205,8 @@ Assertions that can be used within a `CLOVE_TEST` definition.
 | `CLOVE_SIZET_GTE(expected, actual);`              | Checks if expected size_t is greater than or equal to actual.                                   |
 | `CLOVE_SIZET_LT(expected, actual);`               | Checks if expected size_t is lesser than actual.                                                |
 | `CLOVE_SIZET_LTE(expected, actual);`              | Checks if expected size_t is lesser than or equal to actual.                                    |
-| `CLOVE_FLOAT_EQ(expected, actual);`               | Checks if expected float is equal to actual with default precision to 6 decimals (1E-6)         |
-| `CLOVE_FLOAT_NE(expected, actual);`               | Checks if expected float is not equal to actual with default precision to 6 decimals (1E-6)     |
+| `CLOVE_FLOAT_EQ(expected, actual);`               | Checks if expected float is equal to actual with default precision to 6 decimals (1E-6).        |
+| `CLOVE_FLOAT_NE(expected, actual);`               | Checks if expected float is not equal to actual with default precision to 6 decimals (1E-6).    |
 | `CLOVE_FLOAT_EQ_P(expected, actual, precision);`  | CLOVE_FLOAT_EQ variant with custom precision as the number of decimals to take into account.    |
 | `CLOVE_FLOAT_NE_P(expected, actual, precision);`  | CLOVE_FLOAT_NE variant with custom precision as the number of decimals to take into account.    |
 | `CLOVE_FLOAT_GT(expected, actual);`               | Checks if expected float is greater than actual.                                                |
@@ -249,16 +249,16 @@ A binary built with the `CLove-Unit` library supports a number of command line o
 
 | Options                     | Description                                                                                                                       |
 |-----------------------------|-----------------------------------------------------------------------------------------------------------------------------------|
-| \<no-option\>               | Running executable with no args will execute tests producing a report in`pretty` format (default)                                 |
+| \<no-option\>               | Running executable with no args will execute tests <br />producing a report in `pretty` format (default)                          |
 | `-e` `--exclude <expr>`     | Exclude tests is run/listed<br /> (can be repeated more than once)<br /> [[read here for more details](#test-inclusionexclusion)] |
 | `-h` `--help`               | Display usage information.                                                                                                        |
 | `-i` `--include <expr>`     | Include tests is run/listed<br /> (can be repeated more than once)<br /> [[read here for more details](#test-inclusionexclusion)] |
 | `-l` `--list-tests`         | List all/matching test cases in `pretty` format (default).<br />Accepts inclusion/exclusion expression.                           |
-| `-o` `--output <stream>`    | Specify output stream for a report. Possible options: `stdout` (default) or `<file path>`                                         |
-| `-r` `--report <format>`    | Specify report format when running/listing tests. Possible options: `pretty` `csv` `json`                                         |
+| `-o` `--output <stream>`    | Specify output stream for a report. <br />Possible options: `stdout` (default) or `<file path>`                                   |
+| `-r` `--report <format>`    | Specify report format when running/listing tests. <br />Possible options: `pretty` `csv` `json`                                   |
 | `-t` `--run-tests`          | Execute all/matching test cases (same as \<no-option\> scenario).<br />Accepts inclusion/exclusion expression.                    |
 | `-v` `--version`            | Show CLove-Unit version.                                                                                                          |
-| `-x` `--error-on-test-fail` | Test run process will end with error in case of test failure. Default is to end the process successfully.                         |
+| `-x` `--error-on-test-fail` | Test run process will end with error in case of test failure. <br />Default is to end the process successfully.                   |
 
 ### Test Inclusion/Exclusion
 
