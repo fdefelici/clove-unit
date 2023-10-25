@@ -19,21 +19,20 @@ Here is an example of the default report format, which features pretty printing 
 * [Usage](#usage)
     * [1. Include CLove-Unit](#1-include-clove-unit)
     * [2. Define a Suite](#2-define-a-suite)
-    * [3. Create a Translation Unit](#3-create-a-translation-unit)
+    * [3. Setup the Runner](#3-setup-the-runner)
     * [4. Build and Run](#4-build-and-run)
-* [Development APIs](#development-apis)
+* [Development API](#development-api)
     * [Library Configuration](#library-configuration)
     * [Test Definitions](#test-definitions)
     * [Test Assertions](#test-assertions)
     * [Test Helpers](#test-helpers)
 * [Command-Line API](#command-line-api)
-    * [Test Inclusion/Exclusion](#test-inclusionexclusion)
 
 ## Features
 
 - **Single Header**: Simply include [clove-unit.h](./clove-unit.h) to integrate it into your project.
 - **Tests Auto-discovery**: Simplify test writing with the `CLOVE_TEST` macro for automatic registration.
-- **Test Report**: Output in ANSI, CSV, or JSON. Customize format and destination with command-line args.
+- **Test Report**: Report format in ANSI, CSV, or JSON. Customize format and output with command-line args.
 - **Tests/Run Duration**: Measure and report test execution times.
 - **Tests/Run Failure**: Get file, line, and failure info with the assertion macros.
 - **Selective Test Execution**: Include or exclude tests for each run.
@@ -101,9 +100,9 @@ CLOVE_TEST(SecondTest) {
 }
 ```
 
-### 3. Create a Translation Unit
+### 3. Setup the Runner
 
-A translation unit is the entry point of the program that enables the auto-discovery feature by defining `CLOVE_IMPLEMENTATION`
+A Runner is the entry point of the program that enables the auto-discovery feature by defining `CLOVE_IMPLEMENTATION`
 **once** before `clove-unit.h`. This will include the entire library implementation.
 
 ```c
@@ -123,7 +122,7 @@ Build and run the test executable and `CLove-Unit` will do the magic :-)
 > - Assertion usage ([test_suite1.c](./examples/clove101/src/test_suite1.c))
 > - Suite setup & tear down feature ([test_suite2.c](./examples/clove101/src/test_suite2.c))
 
-## Development APIs
+## Development API
 
 ### Library Configuration
 
@@ -153,84 +152,84 @@ Assertions that can be used within a `CLOVE_TEST` definition.
 
 | API                                               | Description                                                                                     |
 |---------------------------------------------------|-------------------------------------------------------------------------------------------------|
-| `CLOVE_PASS();`                                   | Assertion that always make the test pass.                                                       |
-| `CLOVE_FAIL();`                                   | Assertion that always make the test fail.                                                       |
-| `CLOVE_IS_TRUE(actual);`                          | Checks if int is not 0.                                                                         |
-| `CLOVE_IS_FALSE(actual);`                         | Checks if int is 0.                                                                             |
-| `CLOVE_CHAR_EQ(expected, actual);`                | Checks if expected char is equal to actual.                                                     |
-| `CLOVE_CHAR_NE(expected, actual);`                | Checks if expected char is not equal to actual.                                                 |
-| `CLOVE_CHAR_GT(expected, actual);`                | Checks if expected char is greater than actual.                                                 |
-| `CLOVE_CHAR_GTE(expected, actual);`               | Checks if expected char is greater than or equal to actual.                                     |
-| `CLOVE_CHAR_LT(expected, actual);`                | Checks if expected char is lesser than actual.                                                  |
-| `CLOVE_CHAR_LTE(expected, actual);`               | Checks if expected char is lesser than or equal to actual.                                      |
-| `CLOVE_INT_EQ(expected, actual);`                 | Checks if expected int is equal to actual.                                                      |
-| `CLOVE_INT_NE(expected, actual);`                 | Checks if expected int is not equal to actual.                                                  |
-| `CLOVE_INT_GT(expected, actual);`                 | Checks if expected int is greater than actual.                                                  |
-| `CLOVE_INT_GTE(expected, actual);`                | Checks if expected int is greater than or equal to actual.                                      |
-| `CLOVE_INT_LT(expected, actual);`                 | Checks if expected int is lesser than actual.                                                   |
-| `CLOVE_INT_LTE(expected, actual);`                | Checks if expected int is greater than or equal to actual.                                      |
-| `CLOVE_UINT_EQ(expected, actual);`                | Checks if expected unsigned int is equal to actual.                                             |
-| `CLOVE_UINT_NE(expected, actual);`                | Checks if expected unsigned int is not equal to actual.                                         |
-| `CLOVE_UINT_GT(expected, actual);`                | Checks if expected unsigned int is greater than actual.                                         |
-| `CLOVE_UINT_GTE(expected, actual);`               | Checks if expected unsigned int is greater than or equal to actual.                             |
-| `CLOVE_UINT_LT(expected, actual);`                | Checks if expected unsigned int is lesser than actual.                                          |
-| `CLOVE_UINT_LTE(expected, actual);`               | Checks if expected unsigned int is lesser than or equal to actual.                              |
-| `CLOVE_LONG_EQ(expected, actual);`                | Checks if expected long is equal to actual.                                                     |
-| `CLOVE_LONG_NE(expected, actual);`                | Checks if expected long is not equal to actual.                                                 |
-| `CLOVE_LONG_GT(expected, actual);`                | Checks if expected long is greater than actual.                                                 |
-| `CLOVE_LONG_GTE(expected, actual);`               | Checks if expected long is greater than or equal to actual.                                     |
-| `CLOVE_LONG_LT(expected, actual);`                | Checks if expected long is lesser than actual.                                                  |
-| `CLOVE_LONG_LTE(expected, actual);`               | Checks if expected long is lesser than or equal to actual.                                      |
-| `CLOVE_ULONG_EQ(expected, actual);`               | Checks if expected unsigned long is equal to actual.                                            |
-| `CLOVE_ULONG_NE(expected, actual);`               | Checks if expected unsigned long is not equal to actual.                                        |
-| `CLOVE_ULONG_GT(expected, actual);`               | Checks if expected unsigned long is greater than actual.                                        |
-| `CLOVE_ULONG_GTE(expected, actual);`              | Checks if expected unsigned long is greater than or equal to actual.                            |
-| `CLOVE_ULONG_LT(expected, actual);`               | Checks if expected unsigned long is lesser than actual.                                         |
-| `CLOVE_ULONG_LTE(expected, actual);`              | Checks if expected unsigned long is lesser than or equal to actual.                             |
-| `CLOVE_LLONG_EQ(expected, actual);`               | Checks if expected long long is equal to actual.                                                |
-| `CLOVE_LLONG_NE(expected, actual);`               | Checks if expected long long is not equal to actual.                                            |
-| `CLOVE_LLONG_GT(expected, actual);`               | Checks if expected long long is greater than actual.                                            |
-| `CLOVE_LLONG_GTE(expected, actual);`              | Checks if expected long long is greater than or equal to actual.                                |
-| `CLOVE_LLONG_LT(expected, actual);`               | Checks if expected long long is lesser than actual.                                             |
-| `CLOVE_LLONG_LTE(expected, actual);`              | Checks if expected long long is lesser than or equal to actual.                                 |
-| `CLOVE_ULLONG_EQ(expected, actual);`              | Checks if expected unsigned long long is equal to actual.                                       |
-| `CLOVE_ULLONG_NE(expected, actual);`              | Checks if expected unsigned long long is not equal to actual.                                   |
-| `CLOVE_ULLONG_GT(expected, actual);`              | Checks if expected unsigned long long is greater than actual.                                   |
-| `CLOVE_ULLONG_GTE(expected, actual);`             | Checks if expected unsigned long long is greater than or equal to actual.                       |
-| `CLOVE_ULLONG_LT(expected, actual);`              | Checks if expected unsigned long long is lesser than actual.                                    |
-| `CLOVE_ULLONG_LTE(expected, actual);`             | Checks if expected unsigned long long is lesser than or equal to actual.                        |
-| `CLOVE_SIZET_EQ(expected, actual);`               | Checks if expected size_t is equal to actual.                                                   |
-| `CLOVE_SIZET_NE(expected, actual);`               | Checks if expected size_t is not equal to actual.                                               |
-| `CLOVE_SIZET_GT(expected, actual);`               | Checks if expected size_t is greater than actual.                                               |
-| `CLOVE_SIZET_GTE(expected, actual);`              | Checks if expected size_t is greater than or equal to actual.                                   |
-| `CLOVE_SIZET_LT(expected, actual);`               | Checks if expected size_t is lesser than actual.                                                |
-| `CLOVE_SIZET_LTE(expected, actual);`              | Checks if expected size_t is lesser than or equal to actual.                                    |
-| `CLOVE_FLOAT_EQ(expected, actual);`               | Checks if expected float is equal to actual with default precision to 6 decimals (1E-6).        |
-| `CLOVE_FLOAT_NE(expected, actual);`               | Checks if expected float is not equal to actual with default precision to 6 decimals (1E-6).    |
-| `CLOVE_FLOAT_EQ_P(expected, actual, precision);`  | CLOVE_FLOAT_EQ variant with custom precision as the number of decimals to take into account.    |
-| `CLOVE_FLOAT_NE_P(expected, actual, precision);`  | CLOVE_FLOAT_NE variant with custom precision as the number of decimals to take into account.    |
-| `CLOVE_FLOAT_GT(expected, actual);`               | Checks if expected float is greater than actual.                                                |
-| `CLOVE_FLOAT_GTE(expected, actual);`              | Checks if expected float is greater than or equal to actual.                                    |
-| `CLOVE_FLOAT_LT(expected, actual);`               | Checks if expected float is lesser than actual.                                                 |
-| `CLOVE_FLOAT_LTE(expected, actual);`              | Checks if expected float is greater than or equal to actual.                                    |
-| `CLOVE_DOUBLE_EQ(expected, actual);`              | Checks if expected double is equal to actual with default precision to 15 decimals (1E-15).     | 
-| `CLOVE_DOUBLE_NE(expected, actual);`              | Checks if expected double is not equal to actual with default precision to 15 decimals (1E-15). | 
-| `CLOVE_DOUBLE_EQ_P(expected, actual, precision);` | CLOVE_DOUBLE_EQ variant with custom precision as the number of decimals to take into account.   |
-| `CLOVE_DOUBLE_NE_P(expected, actual, precision);` | CLOVE_DOUBLE_NE variant with custom precision as the number of decimals to take into account.   |
-| `CLOVE_DOUBLE_GT(expected, actual);`              | Checks if expected double is greater than actual.                                               |
-| `CLOVE_DOUBLE_GTE(expected, actual);`             | Checks if expected double is greater than or equal to actual.                                   |
-| `CLOVE_DOUBLE_LT(expected, actual);`              | Checks if expected double is lesser than actual.                                                |
-| `CLOVE_DOUBLE_LTE(expected, actual);`             | Checks if expected double is greater than or equal to actual.                                   |
-| `CLOVE_STRING_EQ(expected, actual);`              | Checks equality between strings (null terminated char pointer or array).                        |
-| `CLOVE_STRING_NE(expected, actual);`              | Checks inequality between strings (null terminated char pointer or array).                      |
-| `CLOVE_NULL(actual);`                             | Checks if actual is NULL.                                                                       |
-| `CLOVE_NOT_NULL(actual);`                         | Checks if actual is not NULL.                                                                   |
-| `CLOVE_PTR_EQ(expected, actual);`                 | Checks if expected pointer is equal to actual.                                                  |
-| `CLOVE_PTR_NE(expected, actual);`                 | Checks if expected pointer is not equal to actual.                                              |
-| `CLOVE_PTR_GT(expected, actual);`                 | Checks if expected pointer is greater than actual.                                              |
-| `CLOVE_PTR_GTE(expected, actual);`                | Checks if expected pointer is greater than or equal to actual.                                  |
-| `CLOVE_PTR_LT(expected, actual);`                 | Checks if expected pointer is lesser than actual.                                               |
-| `CLOVE_PTR_LTE(expected, actual);`                | Checks if expected pointer is greater than or equal to actual.                                  |
+| `CLOVE_PASS()`                                   | Assertion that always make the test pass.                                                       |
+| `CLOVE_FAIL()`                                   | Assertion that always make the test fail.                                                       |
+| `CLOVE_IS_TRUE(actual)`                          | Checks if int is not 0.                                                                         |
+| `CLOVE_IS_FALSE(actual)`                         | Checks if int is 0.                                                                             |
+| `CLOVE_CHAR_EQ(expected, actual)`                | Checks if expected char is equal to actual.                                                     |
+| `CLOVE_CHAR_NE(expected, actual)`                | Checks if expected char is not equal to actual.                                                 |
+| `CLOVE_CHAR_GT(expected, actual)`                | Checks if expected char is greater than actual.                                                 |
+| `CLOVE_CHAR_GTE(expected, actual)`               | Checks if expected char is greater than or equal to actual.                                     |
+| `CLOVE_CHAR_LT(expected, actual)`                | Checks if expected char is lesser than actual.                                                  |
+| `CLOVE_CHAR_LTE(expected, actual)`               | Checks if expected char is lesser than or equal to actual.                                      |
+| `CLOVE_INT_EQ(expected, actual)`                 | Checks if expected int is equal to actual.                                                      |
+| `CLOVE_INT_NE(expected, actual)`                 | Checks if expected int is not equal to actual.                                                  |
+| `CLOVE_INT_GT(expected, actual)`                 | Checks if expected int is greater than actual.                                                  |
+| `CLOVE_INT_GTE(expected, actual)`                | Checks if expected int is greater than or equal to actual.                                      |
+| `CLOVE_INT_LT(expected, actual)`                 | Checks if expected int is lesser than actual.                                                   |
+| `CLOVE_INT_LTE(expected, actual)`                | Checks if expected int is greater than or equal to actual.                                      |
+| `CLOVE_UINT_EQ(expected, actual)`                | Checks if expected unsigned int is equal to actual.                                             |
+| `CLOVE_UINT_NE(expected, actual)`                | Checks if expected unsigned int is not equal to actual.                                         |
+| `CLOVE_UINT_GT(expected, actual)`                | Checks if expected unsigned int is greater than actual.                                         |
+| `CLOVE_UINT_GTE(expected, actual)`               | Checks if expected unsigned int is greater than or equal to actual.                             |
+| `CLOVE_UINT_LT(expected, actual)`                | Checks if expected unsigned int is lesser than actual.                                          |
+| `CLOVE_UINT_LTE(expected, actual)`               | Checks if expected unsigned int is lesser than or equal to actual.                              |
+| `CLOVE_LONG_EQ(expected, actual)`                | Checks if expected long is equal to actual.                                                     |
+| `CLOVE_LONG_NE(expected, actual)`                | Checks if expected long is not equal to actual.                                                 |
+| `CLOVE_LONG_GT(expected, actual)`                | Checks if expected long is greater than actual.                                                 |
+| `CLOVE_LONG_GTE(expected, actual)`               | Checks if expected long is greater than or equal to actual.                                     |
+| `CLOVE_LONG_LT(expected, actual)`                | Checks if expected long is lesser than actual.                                                  |
+| `CLOVE_LONG_LTE(expected, actual)`               | Checks if expected long is lesser than or equal to actual.                                      |
+| `CLOVE_ULONG_EQ(expected, actual)`               | Checks if expected unsigned long is equal to actual.                                            |
+| `CLOVE_ULONG_NE(expected, actual)`               | Checks if expected unsigned long is not equal to actual.                                        |
+| `CLOVE_ULONG_GT(expected, actual)`               | Checks if expected unsigned long is greater than actual.                                        |
+| `CLOVE_ULONG_GTE(expected, actual)`              | Checks if expected unsigned long is greater than or equal to actual.                            |
+| `CLOVE_ULONG_LT(expected, actual)`               | Checks if expected unsigned long is lesser than actual.                                         |
+| `CLOVE_ULONG_LTE(expected, actual)`              | Checks if expected unsigned long is lesser than or equal to actual.                             |
+| `CLOVE_LLONG_EQ(expected, actual)`               | Checks if expected long long is equal to actual.                                                |
+| `CLOVE_LLONG_NE(expected, actual)`               | Checks if expected long long is not equal to actual.                                            |
+| `CLOVE_LLONG_GT(expected, actual)`               | Checks if expected long long is greater than actual.                                            |
+| `CLOVE_LLONG_GTE(expected, actual)`              | Checks if expected long long is greater than or equal to actual.                                |
+| `CLOVE_LLONG_LT(expected, actual)`               | Checks if expected long long is lesser than actual.                                             |
+| `CLOVE_LLONG_LTE(expected, actual)`              | Checks if expected long long is lesser than or equal to actual.                                 |
+| `CLOVE_ULLONG_EQ(expected, actual)`              | Checks if expected unsigned long long is equal to actual.                                       |
+| `CLOVE_ULLONG_NE(expected, actual)`              | Checks if expected unsigned long long is not equal to actual.                                   |
+| `CLOVE_ULLONG_GT(expected, actual)`              | Checks if expected unsigned long long is greater than actual.                                   |
+| `CLOVE_ULLONG_GTE(expected, actual)`             | Checks if expected unsigned long long is greater than or equal to actual.                       |
+| `CLOVE_ULLONG_LT(expected, actual)`              | Checks if expected unsigned long long is lesser than actual.                                    |
+| `CLOVE_ULLONG_LTE(expected, actual)`             | Checks if expected unsigned long long is lesser than or equal to actual.                        |
+| `CLOVE_SIZET_EQ(expected, actual)`               | Checks if expected size_t is equal to actual.                                                   |
+| `CLOVE_SIZET_NE(expected, actual)`               | Checks if expected size_t is not equal to actual.                                               |
+| `CLOVE_SIZET_GT(expected, actual)`               | Checks if expected size_t is greater than actual.                                               |
+| `CLOVE_SIZET_GTE(expected, actual)`              | Checks if expected size_t is greater than or equal to actual.                                   |
+| `CLOVE_SIZET_LT(expected, actual)`               | Checks if expected size_t is lesser than actual.                                                |
+| `CLOVE_SIZET_LTE(expected, actual)`              | Checks if expected size_t is lesser than or equal to actual.                                    |
+| `CLOVE_FLOAT_EQ(expected, actual)`               | Checks if expected float is equal to actual with default precision to 6 decimals (1E-6).        |
+| `CLOVE_FLOAT_NE(expected, actual)`               | Checks if expected float is not equal to actual with default precision to 6 decimals (1E-6).    |
+| `CLOVE_FLOAT_EQ_P(expected, actual, precision)`  | CLOVE_FLOAT_EQ variant with custom precision as the number of decimals to take into account.    |
+| `CLOVE_FLOAT_NE_P(expected, actual, precision)`  | CLOVE_FLOAT_NE variant with custom precision as the number of decimals to take into account.    |
+| `CLOVE_FLOAT_GT(expected, actual)`               | Checks if expected float is greater than actual.                                                |
+| `CLOVE_FLOAT_GTE(expected, actual)`              | Checks if expected float is greater than or equal to actual.                                    |
+| `CLOVE_FLOAT_LT(expected, actual)`               | Checks if expected float is lesser than actual.                                                 |
+| `CLOVE_FLOAT_LTE(expected, actual)`              | Checks if expected float is greater than or equal to actual.                                    |
+| `CLOVE_DOUBLE_EQ(expected, actual)`              | Checks if expected double is equal to actual with default precision to 15 decimals (1E-15).     | 
+| `CLOVE_DOUBLE_NE(expected, actual)`              | Checks if expected double is not equal to actual with default precision to 15 decimals (1E-15). | 
+| `CLOVE_DOUBLE_EQ_P(expected, actual, precision)` | CLOVE_DOUBLE_EQ variant with custom precision as the number of decimals to take into account.   |
+| `CLOVE_DOUBLE_NE_P(expected, actual, precision)` | CLOVE_DOUBLE_NE variant with custom precision as the number of decimals to take into account.   |
+| `CLOVE_DOUBLE_GT(expected, actual)`              | Checks if expected double is greater than actual.                                               |
+| `CLOVE_DOUBLE_GTE(expected, actual)`             | Checks if expected double is greater than or equal to actual.                                   |
+| `CLOVE_DOUBLE_LT(expected, actual)`              | Checks if expected double is lesser than actual.                                                |
+| `CLOVE_DOUBLE_LTE(expected, actual)`             | Checks if expected double is greater than or equal to actual.                                   |
+| `CLOVE_STRING_EQ(expected, actual)`              | Checks equality between strings (null terminated char pointer or array).                        |
+| `CLOVE_STRING_NE(expected, actual)`              | Checks inequality between strings (null terminated char pointer or array).                      |
+| `CLOVE_NULL(actual)`                             | Checks if actual is NULL.                                                                       |
+| `CLOVE_NOT_NULL(actual)`                         | Checks if actual is not NULL.                                                                   |
+| `CLOVE_PTR_EQ(expected, actual)`                 | Checks if expected pointer is equal to actual.                                                  |
+| `CLOVE_PTR_NE(expected, actual)`                 | Checks if expected pointer is not equal to actual.                                              |
+| `CLOVE_PTR_GT(expected, actual)`                 | Checks if expected pointer is greater than actual.                                              |
+| `CLOVE_PTR_GTE(expected, actual)`                | Checks if expected pointer is greater than or equal to actual.                                  |
+| `CLOVE_PTR_LT(expected, actual)`                 | Checks if expected pointer is lesser than actual.                                               |
+| `CLOVE_PTR_LTE(expected, actual)`                | Checks if expected pointer is greater than or equal to actual.                                  |
 
 ### Test Helpers
 
