@@ -19,7 +19,7 @@ Here is an example of the default report format, which features pretty printing 
 * [Usage](#usage)
     * [1. Include CLove-Unit](#1-include-clove-unit)
     * [2. Define a Suite](#2-define-a-suite)
-    * [3. Setup the Runner](#3-setup-the-runner)
+    * [3. Set up the Runner](#3-set-up-the-runner)
     * [4. Build and Run](#4-build-and-run)
 * [Development API](#development-api)
     * [Library Configuration](#library-configuration)
@@ -100,7 +100,7 @@ CLOVE_TEST(SecondTest) {
 }
 ```
 
-### 3. Setup the Runner
+### 3. Set up the Runner
 
 A Runner is the entry point of the program that enables the auto-discovery feature by defining `CLOVE_IMPLEMENTATION`
 **once** before `clove-unit.h`. This will include the entire library implementation.
@@ -150,8 +150,8 @@ APIs used for defining suites and tests.
 
 Assertions that can be used within a `CLOVE_TEST` definition.
 
-| API                                               | Description                                                                                     |
-|---------------------------------------------------|-------------------------------------------------------------------------------------------------|
+| API                                              | Description                                                                                     |
+|--------------------------------------------------|-------------------------------------------------------------------------------------------------|
 | `CLOVE_PASS()`                                   | Assertion that always make the test pass.                                                       |
 | `CLOVE_FAIL()`                                   | Assertion that always make the test fail.                                                       |
 | `CLOVE_IS_TRUE(actual)`                          | Checks if int is not 0.                                                                         |
