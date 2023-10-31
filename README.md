@@ -1,4 +1,4 @@
-# CLove-Unit &middot; [![version](https://img.shields.io/github/v/release/fdefelici/clove-unit?label=latest&sort=semver)](./clove-unit.h) [![workflow](https://img.shields.io/github/actions/workflow/status/fdefelici/clove-unit/ci_action.yml)](https://github.com/fdefelici/clove-unit/actions/workflows/ci_action.yml) [![conan](https://img.shields.io/badge/conan-available-blueviolet)](https://conan.io/center/recipes/clove-unit)
+# CLove-Unit &middot; [![version](https://img.shields.io/github/v/release/fdefelici/clove-unit?label=latest&sort=semver)](./clove-unit.h) [![workflow](https://img.shields.io/github/actions/workflow/status/fdefelici/clove-unit/ci_action.yml)](https://github.com/fdefelici/clove-unit/actions/workflows/ci_action.yml) [![conan](https://img.shields.io/badge/conan-available-blueviolet)](https://conan.io/center/recipes/clove-unit) [![Discord channel](https://img.shields.io/discord/1167864219190964255?logo=discord&logoColor=violet)](https://discord.gg/XV8kQg7Q)
 
 `CLove-Unit` is a single-header unit testing library designed for C (compatible with C++).
 
@@ -13,7 +13,7 @@ Here is an example of the default report format, which features pretty printing 
 ## Table of Contents
 
 * [Features](#features)
-* [IDE Extension](#ide-extension)
+* [IDE Extensions](#ide-extensions)
 * [Supported Package Managers](#supported-package-managers)
 * [How It Works](#how-it-works)
 * [Getting Started](#getting-started)
@@ -34,7 +34,7 @@ Here is an example of the default report format, which features pretty printing 
 - **Selective Test Execution**: Include or exclude tests for each run.
 - **Command-line API**: Create IDE plugins and automate with versatile options.
 
-## IDE Extension
+## IDE Extensions
 
 For those who prefer a UI oriented test executor, `CLove-Unit` is supported on the following IDEs:
 
