@@ -17,7 +17,7 @@ Here is an example of the default report format, which features pretty printing 
 * [Supported Package Managers](#supported-package-managers)
 * [How It Works](#how-it-works)
 * [Getting Started](#getting-started)
-* [Development API](#development-api)
+* [Programming API](#programming-api)
     * [Library Configuration](#library-configuration)
     * [Test Definitions](#test-definitions)
     * [Test Assertions](#test-assertions)
@@ -118,7 +118,7 @@ Build and run the test executable and `CLove-Unit` will do the magic :-)
 > - Assertion usage ([test_suite1.c](./examples/clove101/src/test_suite1.c))
 > - Suite setup & tear down feature ([test_suite2.c](./examples/clove101/src/test_suite2.c))
 
-## Development API
+## Programming API
 
 ### Library Configuration
 
