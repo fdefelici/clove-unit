@@ -1,6 +1,6 @@
 /*
  * clove-unit
- * v2.4.0
+ * v2.4.1
  * Single-Header Unit Testing library for C/C++
  * https://github.com/fdefelici/clove-unit
  *
