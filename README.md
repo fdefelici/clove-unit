@@ -16,11 +16,7 @@ Here is an example of the default report format, which features pretty printing 
 * [IDE Extension](#ide-extension)
 * [Supported Package Managers](#supported-package-managers)
 * [How It Works](#how-it-works)
-* [Usage](#usage)
-    * [1. Include CLove-Unit](#1-include-clove-unit)
-    * [2. Define a Suite](#2-define-a-suite)
-    * [3. Set up the Runner](#3-set-up-the-runner)
-    * [4. Build and Run](#4-build-and-run)
+* [Getting Started](#getting-started)
 * [Development API](#development-api)
     * [Library Configuration](#library-configuration)
     * [Test Definitions](#test-definitions)
@@ -72,7 +68,7 @@ Have a look and enjoy ;-)
 >
 > Additional compatibilities regarding OS, architecture, and formats can be implemented in the future as needed.
 
-## Usage
+## Getting Started
 
 Getting started with CLove-Unit is simple. Just follow these steps:
 
