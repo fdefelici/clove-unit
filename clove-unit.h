@@ -10,8 +10,8 @@
 
 #define __CLOVE_VERSION_MAJOR 2
 #define __CLOVE_VERSION_MINOR 4
-#define __CLOVE_VERSION_PATCH 0
-#define __CLOVE_VERSION "2.4.0"
+#define __CLOVE_VERSION_PATCH 1
+#define __CLOVE_VERSION "2.4.1"
 
 #pragma region PRIVATE
 
@@ -53,6 +53,13 @@ __CLOVE_EXTERN_C const char* __clove_get_exec_path();
 #define __CLOVE_SWITCH_END() }
 #pragma endregion // Utils Decl
 
+#pragma region PRIVATE - Math Decl
+//mainly math header operations re-implemented to avoid explicit linking to math library on unix os (with option -lm).
+__CLOVE_EXTERN_C unsigned int __clove_math_powi(unsigned int base, unsigned int exp);
+__CLOVE_EXTERN_C float __clove_math_decimalf(unsigned char precision);
+__CLOVE_EXTERN_C double __clove_math_decimald(unsigned char precision);
+#pragma endregion
+
 #pragma region PRIVATE - Path Decl
 #include <stdbool.h>
 
@@ -67,6 +74,7 @@ __CLOVE_EXTERN_C const char* __clove_get_exec_path();
 __CLOVE_EXTERN_C char* __clove_path_concat(const char separator, const char* path1, const char* path2);
 __CLOVE_EXTERN_C char* __clove_path_rel_to_abs_exec_path(const char* rel_path);
 __CLOVE_EXTERN_C bool __clove_path_is_relative(const char* path);
+__CLOVE_EXTERN_C void __clove_path_to_os(char* path);
 __CLOVE_EXTERN_C char* __clove_path_basepath(const char* path);
 #pragma endregion // Path Decl
 
@@ -101,44 +109,6 @@ __CLOVE_EXTERN_C void __clove_file_vprintf(FILE* file, const char* format, va_li
 __CLOVE_EXTERN_C void __clove_file_write(FILE* file, const char* str);
 __CLOVE_EXTERN_C void __clove_file_writeline(FILE* file, const char* str);
 #pragma endregion //File Decl
-
-#pragma region PRIVATE - Stream Decl
-typedef struct __clove_stream_t {
-    bool (*open)(struct __clove_stream_t* _this);
-    void (*close)(struct __clove_stream_t* _this);
-    void (*writef)(struct __clove_stream_t* _this, const char* format, ...);
-    void (*seek)(struct __clove_stream_t* _this, long offset, int origin);
-    bool (*has_ansi_support)(struct __clove_stream_t* _this);
-    void (*free)(struct __clove_stream_t* _this);
-} __clove_stream_t;
-
-typedef struct __clove_stream_console_t {
-    __clove_stream_t base;
-} __clove_stream_console_t;
-
-__CLOVE_EXTERN_C __clove_stream_console_t* __clove_stream_console_new();
-__CLOVE_EXTERN_C bool __clove_stream_console_open(__clove_stream_t* stream);
-__CLOVE_EXTERN_C void __clove_stream_console_close(__clove_stream_t* stream);
-__CLOVE_EXTERN_C void __clove_stream_console_writef(__clove_stream_t* stream, const char* format, ...);
-__CLOVE_EXTERN_C void __clove_stream_console_seek(__clove_stream_t* stream, long offset, int origin);
-__CLOVE_EXTERN_C bool __clove_stream_console_has_ansi_support(struct __clove_stream_t* _this);
-__CLOVE_EXTERN_C void __clove_stream_console_free(__clove_stream_t* stream);
-
-#include <stdio.h> 
-typedef struct __clove_stream_file_t {
-    __clove_stream_t base;
-     const char* file_path;
-    FILE* file; //No way to forward declaring FILE. the only way should be to use void*
-} __clove_stream_file_t;
-
-__CLOVE_EXTERN_C __clove_stream_file_t* __clove_stream_file_new(const char* file_path);
-__CLOVE_EXTERN_C bool __clove_stream_file_open(__clove_stream_t* stream);
-__CLOVE_EXTERN_C void __clove_stream_file_close(__clove_stream_t* stream);
-__CLOVE_EXTERN_C void __clove_stream_file_writef(__clove_stream_t* stream, const char* format, ...);
-__CLOVE_EXTERN_C void __clove_stream_file_seek(__clove_stream_t* stream, long offset, int origin);
-__CLOVE_EXTERN_C bool __clove_stream_file_has_ansi_support(struct __clove_stream_t* _this);
-__CLOVE_EXTERN_C void __clove_stream_file_free(__clove_stream_t* stream);
-#pragma endregion //Stream Decl
 
 #pragma region PRIVATE - String Decl
 #include <stdbool.h>
@@ -460,6 +430,7 @@ typedef struct __clove_test_t {
         __clove_generic_type_e data_type;
         __clove_generic_u expected;
         __clove_generic_u actual;
+        unsigned char floating_precision; //Just used for float/double to represent decimal digit. NOTE: Eventually refactor to a data struct to represent expected/actual and encapusulate also __clove_generic_u.
     } issue;
 } __clove_test_t;
 
@@ -489,9 +460,6 @@ __CLOVE_EXTERN_C void __clove_vector_suite_dtor(void* suite_ptr);
 #pragma endregion
 
 #pragma region PRIVATE - Assert Decl
-//TODO: In future configurable (or passed within the assertion)
-#define __CLOVE_FLOATING_PRECISION 0.000001f
-
 #define __CLOVE_ASSERT_GUARD \
     if (_this->result == __CLOVE_TEST_RESULT_FAILED) { return; }\
     if (_this->file_name == NULL) _this->file_name = __clove_rel_src(__FILE__); \
@@ -527,10 +495,64 @@ __CLOVE_EXTERN_C void __clove_assert_char(__clove_assert_check_e check_mode, cha
 __CLOVE_EXTERN_C void __clove_assert_bool(__clove_assert_check_e check_mode, bool expected, bool result, __clove_test_t* _this);
 __CLOVE_EXTERN_C void __clove_assert_null(__clove_assert_check_e check_mode, void* expected, void* result, __clove_test_t* _this);
 __CLOVE_EXTERN_C void __clove_assert_ptr(__clove_assert_check_e check_mode, void* expected, void* result, __clove_test_t* _this);
-__CLOVE_EXTERN_C void __clove_assert_float(__clove_assert_check_e check_mode, float expected, float result, __clove_test_t* _this);
-__CLOVE_EXTERN_C void __clove_assert_double(__clove_assert_check_e check_mode, double expected, double result, __clove_test_t* _this);
+__CLOVE_EXTERN_C void __clove_assert_float(__clove_assert_check_e check_mode, float expected, float result, unsigned char precision, __clove_test_t* _this);
+__CLOVE_EXTERN_C void __clove_assert_double(__clove_assert_check_e check_mode, double expected, double result, unsigned char precision, __clove_test_t* _this);
 __CLOVE_EXTERN_C void __clove_assert_string(__clove_assert_check_e check_mode, const char* expected, const char* result, __clove_test_t* _this);
 #pragma endregion // Assert Decl
+
+#pragma region PRIVATE - Stream Decl
+typedef struct __clove_stream_t {
+    bool (*open)(struct __clove_stream_t* _this);
+    void (*close)(struct __clove_stream_t* _this);
+    void (*writef)(struct __clove_stream_t* _this, const char* format, ...);
+    void (*seek)(struct __clove_stream_t* _this, long offset, int origin);
+    bool (*has_ansi_support)(struct __clove_stream_t* _this);
+    void (*free)(struct __clove_stream_t* _this);
+} __clove_stream_t;
+
+typedef struct __clove_stream_console_t {
+    __clove_stream_t base;
+} __clove_stream_console_t;
+
+__CLOVE_EXTERN_C __clove_stream_console_t* __clove_stream_console_new();
+__CLOVE_EXTERN_C bool __clove_stream_console_open(__clove_stream_t* stream);
+__CLOVE_EXTERN_C void __clove_stream_console_close(__clove_stream_t* stream);
+__CLOVE_EXTERN_C void __clove_stream_console_writef(__clove_stream_t* stream, const char* format, ...);
+__CLOVE_EXTERN_C void __clove_stream_console_seek(__clove_stream_t* stream, long offset, int origin);
+__CLOVE_EXTERN_C bool __clove_stream_console_has_ansi_support(struct __clove_stream_t* _this);
+__CLOVE_EXTERN_C void __clove_stream_console_free(__clove_stream_t* stream);
+
+#include <stdio.h> 
+typedef struct __clove_stream_file_t {
+    __clove_stream_t base;
+     const char* file_path;
+    FILE* file; //No way to forward declaring FILE. the only way should be to use void*
+} __clove_stream_file_t;
+
+__CLOVE_EXTERN_C __clove_stream_file_t* __clove_stream_file_new(const char* file_path);
+__CLOVE_EXTERN_C bool __clove_stream_file_open(__clove_stream_t* stream);
+__CLOVE_EXTERN_C void __clove_stream_file_close(__clove_stream_t* stream);
+__CLOVE_EXTERN_C void __clove_stream_file_writef(__clove_stream_t* stream, const char* format, ...);
+__CLOVE_EXTERN_C void __clove_stream_file_seek(__clove_stream_t* stream, long offset, int origin);
+__CLOVE_EXTERN_C bool __clove_stream_file_has_ansi_support(struct __clove_stream_t* _this);
+__CLOVE_EXTERN_C void __clove_stream_file_free(__clove_stream_t* stream);
+
+//In Memory Stream
+typedef struct __clove_stream_memory_t {
+    __clove_stream_t base;
+    __clove_vector_t lines;
+} __clove_stream_memory_t;
+
+__CLOVE_EXTERN_C __clove_stream_memory_t* __clove_stream_memory_new();
+__CLOVE_EXTERN_C bool __clove_stream_memory_open(__clove_stream_t* stream);
+__CLOVE_EXTERN_C void __clove_stream_memory_close(__clove_stream_t* stream);
+__CLOVE_EXTERN_C void __clove_stream_memory_writef(__clove_stream_t* stream, const char* format, ...);
+__CLOVE_EXTERN_C void __clove_stream_memory_seek(__clove_stream_t* stream, long offset, int origin);
+__CLOVE_EXTERN_C bool __clove_stream_memory_has_ansi_support(struct __clove_stream_t* _this);
+__CLOVE_EXTERN_C void __clove_stream_memory_free(__clove_stream_t* stream);
+__CLOVE_EXTERN_C char* __clove_stream_memory_get_line(__clove_stream_memory_t* mem_stream, size_t index);
+__CLOVE_EXTERN_C char* __clove_stream_memory_as_string(__clove_stream_memory_t* mem_stream);
+#pragma endregion //Stream Decl
 
 #pragma region PRIVATE - Report Decl
 typedef struct __clove_report_t {
@@ -558,6 +580,7 @@ typedef struct __clove_report_pretty_t {
     __clove_report_t base;
     __clove_stream_t* stream;
     __clove_time_t start_time;
+    unsigned int max_test_digits;
     struct {
         const char* info;
         const char* warn;
@@ -580,12 +603,14 @@ __CLOVE_EXTERN_C void __clove_report_pretty_pad_right(char* result, char* strToP
 #define __CLOVE_TEST_ENTRY_LENGTH 60
 #define __PRETTY_PRINT_FAIL_ASSERT_MSG(buffer, buffer_size, assert, exp, act, print_type) \
 { \
-    if (assert == __CLOVE_ASSERT_EQ)      __clove_string_sprintf(buffer, buffer_size, "expected [" print_type "] but was [" print_type "]", exp, act); \
-    else if(assert == __CLOVE_ASSERT_NE)  __clove_string_sprintf(buffer, buffer_size, "not expected [" print_type "] but was [" print_type "]", exp, act); \
-    else if(assert == __CLOVE_ASSERT_GT)  __clove_string_sprintf(buffer, buffer_size, "expected [" print_type " > " print_type "] but wasn't", exp, act); \
-    else if(assert == __CLOVE_ASSERT_GTE) __clove_string_sprintf(buffer, buffer_size, "expected [" print_type " >= " print_type "] but wasn't", exp, act); \
-    else if(assert == __CLOVE_ASSERT_LT) __clove_string_sprintf(buffer, buffer_size, "expected [" print_type " < " print_type "] but wasn't", exp, act); \
-    else if(assert == __CLOVE_ASSERT_LTE) __clove_string_sprintf(buffer, buffer_size, "expected [" print_type " <= " print_type "] but wasn't", exp, act); \
+    char phrase_format[40] = {0}; \
+    if (assert == __CLOVE_ASSERT_EQ)      __clove_string_sprintf(phrase_format, sizeof(phrase_format), "expected [%s] but was [%s]", print_type, print_type); \
+    else if(assert == __CLOVE_ASSERT_NE)  __clove_string_sprintf(phrase_format, sizeof(phrase_format), "not expected [%s] but was [%s]", print_type, print_type); \
+    else if(assert == __CLOVE_ASSERT_GT)  __clove_string_sprintf(phrase_format, sizeof(phrase_format), "expected [%s > %s] but wasn't", print_type, print_type); \
+    else if(assert == __CLOVE_ASSERT_GTE) __clove_string_sprintf(phrase_format, sizeof(phrase_format), "expected [%s >= %s] but wasn't", print_type, print_type); \
+    else if(assert == __CLOVE_ASSERT_LT) __clove_string_sprintf(phrase_format, sizeof(phrase_format),  "expected [%s < %s] but wasn't", print_type, print_type); \
+    else if(assert == __CLOVE_ASSERT_LTE) __clove_string_sprintf(phrase_format, sizeof(phrase_format), "expected [%s <= %s] but wasn't", print_type, print_type); \
+    __clove_string_sprintf(buffer, buffer_size, phrase_format, exp, act); \
 }
 #pragma endregion
 
@@ -783,6 +808,27 @@ const char* __clove_get_exec_path() {
 }
 #pragma endregion // Utils Impl
 
+#pragma region PRIVATE - Math Impl
+#include <math.h>
+unsigned int __clove_math_powi(unsigned int base, unsigned int exp) {
+    unsigned int result = 1;
+    for(unsigned int i=0; i < exp; ++i) {
+        result *= base;
+    }
+    return result;
+}
+
+float __clove_math_decimalf(unsigned char precision) {
+    unsigned int divider = __clove_math_powi(10, precision);
+    return 1.0f / (float)divider;
+}
+
+double __clove_math_decimald(unsigned char precision) {
+    unsigned int divider = __clove_math_powi(10, precision);
+    return 1.0 / (double)divider;
+}
+#pragma endregion
+
 #pragma region PRIVATE - Path Impl
 #include <string.h>
 #include <stdbool.h>
@@ -814,32 +860,29 @@ bool __clove_path_is_relative(const char* path) {
     return true;
 }
 
-char* __clove_path_basepath(const char* a_path) {
-    //TODO: Make use only of one allocation
-    char* path = __clove_string_strdup(a_path);
-
-    //make sure path contains only separator specific for the OS
+void __clove_path_to_os(char* path) {
     __clove_string_replace_char(path, '/', __CLOVE_PATH_SEPARATOR);
     __clove_string_replace_char(path, '\\', __CLOVE_PATH_SEPARATOR);
+}
 
-    const char* last_addr = strrchr((const char*)path, __CLOVE_PATH_SEPARATOR);
-    int bytes_count;
+char* __clove_path_basepath(const char* a_path) {
+    // Find the last path separator character in the input path.
+    const char* last_char = a_path + __clove_string_length(a_path) - 1;
+    while (last_char > a_path && *last_char != '/' && *last_char != '\\') {
+        --last_char;
+    }
 
-    char* path_choosen;
-    if (!last_addr) {
+    // If there are no separators in the path, return the current directory path.
+    if (last_char == a_path) {
         static char dot_path[3] = { '.', __CLOVE_PATH_SEPARATOR, '\0' };
-        bytes_count = sizeof(dot_path) - 1; //equivalent to strlen
-        path_choosen = dot_path;
+        return __clove_string_strdup(dot_path);
     }
-    else {
-        bytes_count = (int)(last_addr - path);
-        path_choosen = path;
-    }
-    int count = bytes_count + 1; // +1 take into account null terminator
 
-    char* base_path = __CLOVE_MEMORY_CALLOC_TYPE_N(char, count);
-    __clove_string_strncpy(base_path, count, path_choosen, bytes_count);
-    free(path);
+    // Calculate base path length based on the position of the last path separator.
+    size_t base_length = last_char - a_path;
+    char* base_path = __CLOVE_MEMORY_CALLOC_TYPE_N(char, base_length + 1);
+    __clove_string_strncpy(base_path, base_length + 1, a_path, base_length);
+    __clove_path_to_os(base_path);
     return base_path;
 }
 #pragma endregion // Path Impl
@@ -926,129 +969,6 @@ bool __clove_memory_memset(void* dest, size_t size, unsigned char value) {
     return memset(dest, value, size) != NULL;
 }
 #pragma endregion //Memory Impl
-
-#pragma region PRIVATE - Stream Impl
-__clove_stream_console_t* __clove_stream_console_new() {
-    __clove_stream_console_t* stream = __CLOVE_MEMORY_MALLOC_TYPE(__clove_stream_console_t);
-    stream->base.open = __clove_stream_console_open;
-    stream->base.close = __clove_stream_console_close;
-    stream->base.writef = __clove_stream_console_writef;
-    stream->base.seek = __clove_stream_console_seek;
-    stream->base.has_ansi_support = __clove_stream_console_has_ansi_support;
-    stream->base.free = __clove_stream_console_free;
-    return stream;
-}
-bool __clove_stream_console_open(__clove_stream_t* stream) {
-    return true;
-}
-void __clove_stream_console_close(__clove_stream_t* stream) { 
-    //nothing todo
-}
-void __clove_stream_console_writef(__clove_stream_t* stream, const char* format, ...) {
-    va_list args;
-    va_start(args, format);
-    __clove_console_vprintf(format, args);
-    va_end(args);
-}
-void __clove_stream_console_seek(__clove_stream_t* stream, long offset, int origin) {
-    //nothing todo
-}
-
-#ifdef _WIN32
-#include <windows.h>
-#include <stdbool.h>
-#ifndef ENABLE_VIRTUAL_TERMINAL_PROCESSING
-#define ENABLE_VIRTUAL_TERMINAL_PROCESSING  0x0004
-#endif
-bool __clove_stream_console_has_ansi_support(__clove_stream_t* stream) {
-    DWORD outMode = 0, inMode = 0;
-    HANDLE stdoutHandle = GetStdHandle(STD_OUTPUT_HANDLE);
-    HANDLE stdinHandle = GetStdHandle(STD_INPUT_HANDLE);
-
-    if (stdoutHandle == INVALID_HANDLE_VALUE || stdinHandle == INVALID_HANDLE_VALUE) {
-        //exit(GetLastError());
-        return false;
-    }
-
-    if (!GetConsoleMode(stdoutHandle, &outMode) || !GetConsoleMode(stdinHandle, &inMode)) {
-        //exit(GetLastError());
-        return false;
-    }
-
-    DWORD outModeInit = outMode;
-    DWORD inModeInit = inMode;
-
-    // Enable ANSI escape codes
-    outMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-
-    // Set stdin as no echo and unbuffered
-    inMode &= ~(ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT);
-
-    if (!SetConsoleMode(stdoutHandle, outMode) || !SetConsoleMode(stdinHandle, inMode)) {
-        //exit(GetLastError());
-        return false;
-    }
-    return true;
-}
-#else
-#include <stdbool.h>
-#include <unistd.h>
-bool __clove_stream_console_has_ansi_support(__clove_stream_t* stream) {
-    if (isatty(STDOUT_FILENO)) {
-        // standard output is a tty
-        return true;
-    }
-    return false;
-}
-#endif //_WIN32
-
-
-void __clove_stream_console_free(__clove_stream_t* stream) {
-    free(stream);
-}
-
-__clove_stream_file_t* __clove_stream_file_new(const char* file_path) {
-    __clove_stream_file_t* stream = __CLOVE_MEMORY_MALLOC_TYPE(__clove_stream_file_t);
-    stream->base.open = __clove_stream_file_open;
-    stream->base.close = __clove_stream_file_close;
-    stream->base.writef = __clove_stream_file_writef;
-    stream->base.seek = __clove_stream_file_seek;
-    stream->base.has_ansi_support = __clove_stream_file_has_ansi_support;
-    stream->base.free = __clove_stream_file_free;
-    stream->file_path = __clove_string_strdup(file_path);
-    stream->file = NULL;
-    return stream;
-}
-bool __clove_stream_file_open(__clove_stream_t* stream) {
-    __clove_stream_file_t* _this = (__clove_stream_file_t*)stream;
-    _this->file = __clove_file_open(_this->file_path, "wb"); //binary mode so \n will stay \n (and not converted to \r\n on windows)
-    return _this->file != NULL;
-}
-void __clove_stream_file_close(__clove_stream_t* stream) {
-    __clove_stream_file_t* _this = (__clove_stream_file_t*)stream;
-    __clove_file_close(_this->file);
-}
-void __clove_stream_file_writef(__clove_stream_t* stream, const char* format, ...) {
-    __clove_stream_file_t* _this = (__clove_stream_file_t*)stream;
-    va_list args;
-    va_start(args, format);
-    __clove_file_vprintf(_this->file, format, args);
-    va_end(args);
-}
-void __clove_stream_file_seek(__clove_stream_t* stream, long offset, int origin) {
-     __clove_stream_file_t* _this = (__clove_stream_file_t*)stream;
-    fseek(_this->file, offset, origin); //TODO: wrap into __clove_file_seek method
-}
-bool __clove_stream_file_has_ansi_support(struct __clove_stream_t* _this) {
-    return false;
-}
-void __clove_stream_file_free(__clove_stream_t* stream) {
-    __clove_stream_file_t* _this = (__clove_stream_file_t*)stream;
-    _this->file = NULL;
-    free((char*)_this->file_path);
-    free(_this);
-}
-#pragma endregion //Stream Impl
 
 #pragma region PRIVATE - String Impl
 #include <string.h>
@@ -2199,10 +2119,10 @@ void __clove_assert_ptr(__clove_assert_check_e check_mode, void* expected, void*
     __CLOVE_ASSERT_INTEGER_CHECK(check_mode, expected, result, __CLOVE_GENERIC_PTR, _ptr, _this)
 }
 
-void __clove_assert_float(__clove_assert_check_e check_mode, float expected, float result, __clove_test_t* _this) {
+void __clove_assert_float(__clove_assert_check_e check_mode, float expected, float result, unsigned char precision, __clove_test_t* _this) {
     bool pass_scenario = false;
-    if (check_mode == __CLOVE_ASSERT_EQ) { pass_scenario = fabsf(expected - result) <= __CLOVE_FLOATING_PRECISION; }
-    else if (check_mode == __CLOVE_ASSERT_NE) { pass_scenario = fabsf(expected - result) > __CLOVE_FLOATING_PRECISION; }
+    if (check_mode == __CLOVE_ASSERT_EQ) { pass_scenario = fabsf(expected - result) <= __clove_math_decimalf(precision); }
+    else if (check_mode == __CLOVE_ASSERT_NE) { pass_scenario = fabsf(expected - result) > __clove_math_decimalf(precision); }
     else if (check_mode == __CLOVE_ASSERT_GT)  { pass_scenario = expected > result; }
     else if (check_mode == __CLOVE_ASSERT_GTE) { pass_scenario = expected >= result; }
     else if (check_mode == __CLOVE_ASSERT_LT)  { pass_scenario = expected < result; }
@@ -2216,13 +2136,14 @@ void __clove_assert_float(__clove_assert_check_e check_mode, float expected, flo
         _this->issue.data_type = __CLOVE_GENERIC_FLOAT;
         _this->issue.expected._float = expected;
         _this->issue.actual._float = result;
+        _this->issue.floating_precision = precision;
     }
 }
 
-void __clove_assert_double(__clove_assert_check_e check_mode, double expected, double result, __clove_test_t* _this) {
+void __clove_assert_double(__clove_assert_check_e check_mode, double expected, double result, unsigned char precision, __clove_test_t* _this) {
     bool pass_scenario = false;
-    if (check_mode == __CLOVE_ASSERT_EQ) { pass_scenario = ((float)fabs(expected - result) <= __CLOVE_FLOATING_PRECISION); }
-    else if (check_mode == __CLOVE_ASSERT_NE) { pass_scenario = ((float)fabs(expected - result) > __CLOVE_FLOATING_PRECISION); }
+    if (check_mode == __CLOVE_ASSERT_EQ) { pass_scenario = fabs(expected - result) <= __clove_math_decimald(precision); }
+    else if (check_mode == __CLOVE_ASSERT_NE) { pass_scenario = fabs(expected - result) > __clove_math_decimald(precision); }
     else if (check_mode == __CLOVE_ASSERT_GT)  { pass_scenario = expected > result; }
     else if (check_mode == __CLOVE_ASSERT_GTE) { pass_scenario = expected >= result; }
     else if (check_mode == __CLOVE_ASSERT_LT)  { pass_scenario = expected < result; }
@@ -2236,6 +2157,7 @@ void __clove_assert_double(__clove_assert_check_e check_mode, double expected, d
         _this->issue.data_type = __CLOVE_GENERIC_DOUBLE;
         _this->issue.expected._double = expected;
         _this->issue.actual._double = result;
+        _this->issue.floating_precision = precision;
     }
 }
 
@@ -2256,6 +2178,187 @@ void __clove_assert_string(__clove_assert_check_e check_mode, const char* expect
     }
 }
 #pragma endregion // Assert Impl
+
+#pragma region PRIVATE - Stream Impl
+__clove_stream_console_t* __clove_stream_console_new() {
+    __clove_stream_console_t* stream = __CLOVE_MEMORY_MALLOC_TYPE(__clove_stream_console_t);
+    stream->base.open = __clove_stream_console_open;
+    stream->base.close = __clove_stream_console_close;
+    stream->base.writef = __clove_stream_console_writef;
+    stream->base.seek = __clove_stream_console_seek;
+    stream->base.has_ansi_support = __clove_stream_console_has_ansi_support;
+    stream->base.free = __clove_stream_console_free;
+    return stream;
+}
+bool __clove_stream_console_open(__clove_stream_t* stream) {
+    return true;
+}
+void __clove_stream_console_close(__clove_stream_t* stream) { 
+    //nothing todo
+}
+void __clove_stream_console_writef(__clove_stream_t* stream, const char* format, ...) {
+    va_list args;
+    va_start(args, format);
+    __clove_console_vprintf(format, args);
+    va_end(args);
+}
+void __clove_stream_console_seek(__clove_stream_t* stream, long offset, int origin) {
+    //nothing todo
+}
+
+#ifdef _WIN32
+#include <windows.h>
+#include <stdbool.h>
+#ifndef ENABLE_VIRTUAL_TERMINAL_PROCESSING
+#define ENABLE_VIRTUAL_TERMINAL_PROCESSING  0x0004
+#endif
+bool __clove_stream_console_has_ansi_support(__clove_stream_t* stream) {
+    DWORD outMode = 0, inMode = 0;
+    HANDLE stdoutHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+    HANDLE stdinHandle = GetStdHandle(STD_INPUT_HANDLE);
+
+    if (stdoutHandle == INVALID_HANDLE_VALUE || stdinHandle == INVALID_HANDLE_VALUE) {
+        //exit(GetLastError());
+        return false;
+    }
+
+    if (!GetConsoleMode(stdoutHandle, &outMode) || !GetConsoleMode(stdinHandle, &inMode)) {
+        //exit(GetLastError());
+        return false;
+    }
+
+    DWORD outModeInit = outMode;
+    DWORD inModeInit = inMode;
+
+    // Enable ANSI escape codes
+    outMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+
+    // Set stdin as no echo and unbuffered
+    inMode &= ~(ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT);
+
+    if (!SetConsoleMode(stdoutHandle, outMode) || !SetConsoleMode(stdinHandle, inMode)) {
+        //exit(GetLastError());
+        return false;
+    }
+    return true;
+}
+#else
+#include <stdbool.h>
+#include <unistd.h>
+bool __clove_stream_console_has_ansi_support(__clove_stream_t* stream) {
+    if (isatty(STDOUT_FILENO)) {
+        // standard output is a tty
+        return true;
+    }
+    return false;
+}
+#endif //_WIN32
+
+
+void __clove_stream_console_free(__clove_stream_t* stream) {
+    free(stream);
+}
+
+__clove_stream_file_t* __clove_stream_file_new(const char* file_path) {
+    __clove_stream_file_t* stream = __CLOVE_MEMORY_MALLOC_TYPE(__clove_stream_file_t);
+    stream->base.open = __clove_stream_file_open;
+    stream->base.close = __clove_stream_file_close;
+    stream->base.writef = __clove_stream_file_writef;
+    stream->base.seek = __clove_stream_file_seek;
+    stream->base.has_ansi_support = __clove_stream_file_has_ansi_support;
+    stream->base.free = __clove_stream_file_free;
+    stream->file_path = __clove_string_strdup(file_path);
+    stream->file = NULL;
+    return stream;
+}
+bool __clove_stream_file_open(__clove_stream_t* stream) {
+    __clove_stream_file_t* _this = (__clove_stream_file_t*)stream;
+    _this->file = __clove_file_open(_this->file_path, "wb"); //binary mode so \n will stay \n (and not converted to \r\n on windows)
+    return _this->file != NULL;
+}
+void __clove_stream_file_close(__clove_stream_t* stream) {
+    __clove_stream_file_t* _this = (__clove_stream_file_t*)stream;
+    __clove_file_close(_this->file);
+}
+void __clove_stream_file_writef(__clove_stream_t* stream, const char* format, ...) {
+    __clove_stream_file_t* _this = (__clove_stream_file_t*)stream;
+    va_list args;
+    va_start(args, format);
+    __clove_file_vprintf(_this->file, format, args);
+    va_end(args);
+}
+void __clove_stream_file_seek(__clove_stream_t* stream, long offset, int origin) {
+     __clove_stream_file_t* _this = (__clove_stream_file_t*)stream;
+    fseek(_this->file, offset, origin); //TODO: wrap into __clove_file_seek method
+}
+bool __clove_stream_file_has_ansi_support(struct __clove_stream_t* _this) {
+    return false;
+}
+void __clove_stream_file_free(__clove_stream_t* stream) {
+    __clove_stream_file_t* _this = (__clove_stream_file_t*)stream;
+    _this->file = NULL;
+    free((char*)_this->file_path);
+    free(_this);
+}
+
+//In Memory Stream
+__clove_stream_memory_t* __clove_stream_memory_new() {
+    __clove_stream_memory_t* stream = __CLOVE_MEMORY_MALLOC_TYPE(__clove_stream_memory_t);
+    stream->base.open = __clove_stream_memory_open;
+    stream->base.close = __clove_stream_memory_close;
+    stream->base.writef = __clove_stream_memory_writef;
+    stream->base.seek = __clove_stream_memory_seek;
+    stream->base.has_ansi_support = __clove_stream_memory_has_ansi_support;
+    stream->base.free = __clove_stream_memory_free;
+    __CLOVE_VECTOR_INIT(&stream->lines, char*);
+    return stream;
+}
+bool __clove_stream_memory_open(__clove_stream_t* stream) {
+    return true;
+}
+void __clove_stream_memory_close(__clove_stream_t* stream) { 
+    //nothing todo
+}
+void __clove_stream_memory_writef(__clove_stream_t* stream, const char* format, ...) {
+    va_list args;
+    va_start(args, format);
+    
+    char* line = __CLOVE_MEMORY_CALLOC_TYPE_N(char, 1000); //TODO: Better computing real line size.
+    __clove_string_vsprintf(line, 1000, format, args);
+    __CLOVE_VECTOR_ADD(&((__clove_stream_memory_t*)stream)->lines, char*, line);
+
+    va_end(args);
+}
+void __clove_stream_memory_seek(__clove_stream_t* stream, long offset, int origin) {
+    //nothing todo
+}
+
+bool __clove_stream_memory_has_ansi_support(__clove_stream_t* stream) {
+    return false;
+}
+
+void __clove_stream_memory_free(__clove_stream_t* stream) {
+    __clove_vector_free(&((__clove_stream_memory_t*)stream)->lines);
+    free(stream);
+}
+
+char* __clove_stream_memory_get_line(__clove_stream_memory_t* mem_stream, size_t index) {
+    return (char*)__clove_vector_get(&mem_stream->lines, index);
+}
+
+char* __clove_stream_memory_as_string(__clove_stream_memory_t* mem_stream) {
+    size_t buffer_size = 0;
+    __CLOVE_VECTOR_FOREACH(&mem_stream->lines, char*, line, {
+       buffer_size += __clove_string_length(*line);
+    });
+
+    char* buffer = __CLOVE_MEMORY_CALLOC_TYPE_N(char, buffer_size + 1);
+    __CLOVE_VECTOR_FOREACH(&mem_stream->lines, char*, line, {
+       __clove_string_strcat(buffer, buffer_size + 1, *line);
+    });
+    return buffer;
+}
+#pragma endregion //Stream Impl
 
 #pragma region PRIVATE - Report Impl
 void __clove_test_expr_init(__clove_test_expr_t* expr,  const char* expr_str) {
@@ -2326,6 +2429,7 @@ void __clove_report_pretty_free(__clove_report_t* report) {
 void __clove_report_pretty_start(__clove_report_t* _this, size_t suite_count, size_t test_count) {
     __clove_report_pretty_t* report = (__clove_report_pretty_t*)_this;
     report->start_time = __clove_time_now();
+    report->max_test_digits = (unsigned int)snprintf(NULL, 0U, "%zu", test_count);
 
     bool activated = report->stream->has_ansi_support(report->stream);
     if (activated) {
@@ -2347,7 +2451,7 @@ void __clove_report_pretty_start(__clove_report_t* _this, size_t suite_count, si
 
     report->stream->open(report->stream);
     report->stream->writef(report->stream, "%s Executing Test Runner in 'Verbose' mode\n", report->labels.info);
-    report->stream->writef(report->stream, "%s Suite / Tests found: %zu / %zu \n", report->labels.info, suite_count, test_count);
+    report->stream->writef(report->stream, "%s Suite / Tests found: %zu / %zu\n", report->labels.info, suite_count, test_count);
 }
 void __clove_report_pretty_begin_suite(__clove_report_t* _this, __clove_suite_t* suite, size_t index) {
     //nothing todo
@@ -2373,7 +2477,7 @@ void __clove_report_pretty_end(__clove_report_t* _this, size_t test_count, size_
 void __clove_report_pretty_end_test(__clove_report_t* _this, __clove_suite_t* suite, __clove_test_t* test, size_t test_number) {
     __clove_report_pretty_t* report = (__clove_report_pretty_t*)_this;
     char result[__CLOVE_STRING_LENGTH], strToPad[__CLOVE_TEST_ENTRY_LENGTH];
-    snprintf(strToPad, __CLOVE_TEST_ENTRY_LENGTH, "%zu) %s.%s", test_number, suite->name, test->name);
+    snprintf(strToPad, __CLOVE_TEST_ENTRY_LENGTH, "%0*zu) %s.%s", report->max_test_digits, test_number, suite->name, test->name);
     __clove_report_pretty_pad_right(result, strToPad);
 
     if (test->result == __CLOVE_TEST_RESULT_PASSED) {
@@ -2452,18 +2556,18 @@ void __clove_report_pretty_end_test(__clove_report_t* _this, __clove_suite_t* su
                     __PRETTY_PRINT_FAIL_ASSERT_MSG(msg, sizeof(msg), test->issue.assert, exp, act, "%zu");
                 }
                 __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_FLOAT) {
-                    //const char* non = test->issue.assert == __CLOVE_ASSERT_EQ ? "" : "not ";
                     const float exp = test->issue.expected._float;
                     const float act = test->issue.actual._float;
-                    //__clove_string_sprintf(msg, sizeof(msg), "%sexpected [%f] but was [%f]", non, exp, act);
-                    __PRETTY_PRINT_FAIL_ASSERT_MSG(msg, sizeof(msg), test->issue.assert, exp, act, "%f");
+                    char format[6] = {0}; //Example: %.NNf
+                    __clove_string_sprintf(format, sizeof(format), "%%.%df", test->issue.floating_precision);
+                    __PRETTY_PRINT_FAIL_ASSERT_MSG(msg, sizeof(msg), test->issue.assert, exp, act, format);
                 }
                 __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_DOUBLE) {
-                    const char* non = test->issue.assert == __CLOVE_ASSERT_EQ ? "" : "not ";
                     const double exp = test->issue.expected._double;
                     const double act = test->issue.actual._double;
-                    //__clove_string_sprintf(msg, sizeof(msg), "%sexpected [%f] but was [%f]", non, exp, act);
-                    __PRETTY_PRINT_FAIL_ASSERT_MSG(msg, sizeof(msg), test->issue.assert, exp, act, "%f");
+                    char format[6] = {0}; //Example: %.NNf
+                    __clove_string_sprintf(format, sizeof(format), "%%.%df", test->issue.floating_precision);
+                    __PRETTY_PRINT_FAIL_ASSERT_MSG(msg, sizeof(msg), test->issue.assert, exp, act, format);
                 }
                 __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_STRING) {
                     const char* non = test->issue.assert == __CLOVE_ASSERT_EQ ? "" : "not ";
@@ -2628,9 +2732,9 @@ void __clove_report_run_tests_csv_print_data(__clove_report_run_tests_csv_t* ins
             __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_SIZET)
                 instance->stream->writef(instance->stream, "%zu", data->_sizet);
             __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_FLOAT)
-                instance->stream->writef(instance->stream, "%f", data->_float);
+                instance->stream->writef(instance->stream, "%.*f", test->issue.floating_precision, data->_float);
             __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_DOUBLE)
-                instance->stream->writef(instance->stream, "%f", data->_double);
+                instance->stream->writef(instance->stream, "%.*f", test->issue.floating_precision, data->_double);
             __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_STRING) {
                 char* escaped = __clove_string_csv_escape(data->_string);
                 instance->stream->writef(instance->stream, "%s", escaped);
@@ -2731,9 +2835,9 @@ void __clove_report_json_print_data(__clove_report_json_t* instance, __clove_tes
             __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_SIZET)
                 instance->stream->writef(instance->stream, "%zu", data->_sizet);
             __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_FLOAT)
-                instance->stream->writef(instance->stream, "%f", data->_float);
+                instance->stream->writef(instance->stream, "%.*f", test->issue.floating_precision, data->_float);
             __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_DOUBLE)
-                instance->stream->writef(instance->stream, "%f", data->_double);
+                instance->stream->writef(instance->stream, "%.*f", test->issue.floating_precision, data->_double);
             __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_STRING) {
                 char* escaped = __clove_string_escape(data->_string);
                 instance->stream->writef(instance->stream, "%s", escaped);
@@ -3635,94 +3739,98 @@ void __clove_exec_suite(__clove_suite_t* suite, size_t test_counter, size_t* pas
 #pragma endregion //UTILS
 
 #pragma region PUBLIC - ASSERTS
-#define CLOVE_PASS() __CLOVE_ASSERT_GUARD __clove_assert_pass(_this);
-#define CLOVE_FAIL() __CLOVE_ASSERT_GUARD __clove_assert_fail(_this);
-
-#define CLOVE_IS_TRUE(res) __CLOVE_ASSERT_GUARD __clove_assert_bool(__CLOVE_ASSERT_EQ, true, res, _this);
-#define CLOVE_IS_FALSE(res) __CLOVE_ASSERT_GUARD __clove_assert_bool(__CLOVE_ASSERT_EQ, false, res, _this);
-
-#define CLOVE_CHAR_EQ(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_char(__CLOVE_ASSERT_EQ, exp, res, _this);
-#define CLOVE_CHAR_NE(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_char(__CLOVE_ASSERT_NE, exp, res, _this);
-#define CLOVE_CHAR_GT(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_char(__CLOVE_ASSERT_GT, exp, res, _this);
-#define CLOVE_CHAR_GTE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_char(__CLOVE_ASSERT_GTE, exp, res, _this);
-#define CLOVE_CHAR_LT(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_char(__CLOVE_ASSERT_LT, exp, res, _this);
-#define CLOVE_CHAR_LTE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_char(__CLOVE_ASSERT_LTE, exp, res, _this);
-
-#define CLOVE_INT_EQ(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_int(__CLOVE_ASSERT_EQ, exp, res, _this);
-#define CLOVE_INT_NE(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_int(__CLOVE_ASSERT_NE, exp, res, _this);
-#define CLOVE_INT_GT(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_int(__CLOVE_ASSERT_GT, exp, res, _this);
-#define CLOVE_INT_GTE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_int(__CLOVE_ASSERT_GTE, exp, res, _this);
-#define CLOVE_INT_LT(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_int(__CLOVE_ASSERT_LT, exp, res, _this);
-#define CLOVE_INT_LTE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_int(__CLOVE_ASSERT_LTE, exp, res, _this);
-
-#define CLOVE_UINT_EQ(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_uint(__CLOVE_ASSERT_EQ, exp, res, _this);
-#define CLOVE_UINT_NE(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_uint(__CLOVE_ASSERT_NE, exp, res, _this);
-#define CLOVE_UINT_GT(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_uint(__CLOVE_ASSERT_GT, exp, res, _this);
-#define CLOVE_UINT_GTE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_uint(__CLOVE_ASSERT_GTE, exp, res, _this);
-#define CLOVE_UINT_LT(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_uint(__CLOVE_ASSERT_LT, exp, res, _this);
-#define CLOVE_UINT_LTE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_uint(__CLOVE_ASSERT_LTE, exp, res, _this);
-
-#define CLOVE_LONG_EQ(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_long(__CLOVE_ASSERT_EQ, exp, res, _this);
-#define CLOVE_LONG_NE(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_long(__CLOVE_ASSERT_NE, exp, res, _this);
-#define CLOVE_LONG_GT(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_long(__CLOVE_ASSERT_GT, exp, res, _this);
-#define CLOVE_LONG_GTE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_long(__CLOVE_ASSERT_GTE, exp, res, _this);
-#define CLOVE_LONG_LT(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_long(__CLOVE_ASSERT_LT, exp, res, _this);
-#define CLOVE_LONG_LTE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_long(__CLOVE_ASSERT_LTE, exp, res, _this);
-
-#define CLOVE_ULONG_EQ(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_ulong(__CLOVE_ASSERT_EQ, exp, res, _this);
-#define CLOVE_ULONG_NE(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_ulong(__CLOVE_ASSERT_NE, exp, res, _this);
-#define CLOVE_ULONG_GT(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_ulong(__CLOVE_ASSERT_GT, exp, res, _this);
-#define CLOVE_ULONG_GTE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_ulong(__CLOVE_ASSERT_GTE, exp, res, _this);
-#define CLOVE_ULONG_LT(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_ulong(__CLOVE_ASSERT_LT, exp, res, _this);
-#define CLOVE_ULONG_LTE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_ulong(__CLOVE_ASSERT_LTE, exp, res, _this);
-
-#define CLOVE_LLONG_EQ(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_llong(__CLOVE_ASSERT_EQ, exp, res, _this);
-#define CLOVE_LLONG_NE(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_llong(__CLOVE_ASSERT_NE, exp, res, _this);
-#define CLOVE_LLONG_GT(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_llong(__CLOVE_ASSERT_GT, exp, res, _this);
-#define CLOVE_LLONG_GTE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_llong(__CLOVE_ASSERT_GTE, exp, res, _this);
-#define CLOVE_LLONG_LT(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_llong(__CLOVE_ASSERT_LT, exp, res, _this);
-#define CLOVE_LLONG_LTE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_llong(__CLOVE_ASSERT_LTE, exp, res, _this);
-
-#define CLOVE_ULLONG_EQ(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_ullong(__CLOVE_ASSERT_EQ, exp, res, _this);
-#define CLOVE_ULLONG_NE(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_ullong(__CLOVE_ASSERT_NE, exp, res, _this);
-#define CLOVE_ULLONG_GT(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_ullong(__CLOVE_ASSERT_GT, exp, res, _this);
-#define CLOVE_ULLONG_GTE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_ullong(__CLOVE_ASSERT_GTE, exp, res, _this);
-#define CLOVE_ULLONG_LT(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_ullong(__CLOVE_ASSERT_LT, exp, res, _this);
-#define CLOVE_ULLONG_LTE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_ullong(__CLOVE_ASSERT_LTE, exp, res, _this);
-
-#define CLOVE_SIZET_EQ(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_sizet(__CLOVE_ASSERT_EQ, exp, res, _this);
-#define CLOVE_SIZET_NE(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_sizet(__CLOVE_ASSERT_NE, exp, res, _this);
-#define CLOVE_SIZET_GT(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_sizet(__CLOVE_ASSERT_GT, exp, res, _this);
-#define CLOVE_SIZET_GTE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_sizet(__CLOVE_ASSERT_GTE, exp, res, _this);
-#define CLOVE_SIZET_LT(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_sizet(__CLOVE_ASSERT_LT, exp, res, _this);
-#define CLOVE_SIZET_LTE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_sizet(__CLOVE_ASSERT_LTE, exp, res, _this);
-
-#define CLOVE_FLOAT_EQ(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_EQ, exp, res, _this);
-#define CLOVE_FLOAT_NE(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_NE, exp, res, _this);
-#define CLOVE_FLOAT_GT(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_GT, exp, res, _this);
-#define CLOVE_FLOAT_GTE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_GTE, exp, res, _this);
-#define CLOVE_FLOAT_LT(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_LT, exp, res, _this);
-#define CLOVE_FLOAT_LTE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_LTE, exp, res, _this);
-
-#define CLOVE_DOUBLE_EQ(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_double(__CLOVE_ASSERT_EQ, exp, res, _this);
-#define CLOVE_DOUBLE_NE(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_double(__CLOVE_ASSERT_NE, exp, res, _this);
-#define CLOVE_DOUBLE_GT(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_double(__CLOVE_ASSERT_GT, exp, res, _this);
-#define CLOVE_DOUBLE_GTE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_double(__CLOVE_ASSERT_GTE, exp, res, _this);
-#define CLOVE_DOUBLE_LT(exp, res)  __CLOVE_ASSERT_GUARD __clove_assert_double(__CLOVE_ASSERT_LT, exp, res, _this);
-#define CLOVE_DOUBLE_LTE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_double(__CLOVE_ASSERT_LTE, exp, res, _this);
-
-#define CLOVE_NULL(res) __CLOVE_ASSERT_GUARD __clove_assert_null(__CLOVE_ASSERT_EQ, NULL, (void*)res, _this);
-#define CLOVE_NOT_NULL(res) __CLOVE_ASSERT_GUARD __clove_assert_null(__CLOVE_ASSERT_NE, NULL, (void*)res, _this);
-
-#define CLOVE_PTR_EQ(p1, p2)  __CLOVE_ASSERT_GUARD __clove_assert_ptr(__CLOVE_ASSERT_EQ, (void*)p1, (void*)p2, _this);
-#define CLOVE_PTR_NE(p1, p2)  __CLOVE_ASSERT_GUARD __clove_assert_ptr(__CLOVE_ASSERT_NE, (void*)p1, (void*)p2, _this);
-#define CLOVE_PTR_GT(p1, p2)  __CLOVE_ASSERT_GUARD __clove_assert_ptr(__CLOVE_ASSERT_GT, (void*)p1, (void*)p2, _this);
-#define CLOVE_PTR_GTE(p1, p2) __CLOVE_ASSERT_GUARD __clove_assert_ptr(__CLOVE_ASSERT_GTE, (void*)p1, (void*)p2, _this);
-#define CLOVE_PTR_LT(p1, p2)  __CLOVE_ASSERT_GUARD __clove_assert_ptr(__CLOVE_ASSERT_LT, (void*)p1, (void*)p2, _this);
-#define CLOVE_PTR_LTE(p1, p2) __CLOVE_ASSERT_GUARD __clove_assert_ptr(__CLOVE_ASSERT_LTE, (void*)p1, (void*)p2, _this);
-
-#define CLOVE_STRING_EQ(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_string(__CLOVE_ASSERT_EQ, exp, res, _this);
-#define CLOVE_STRING_NE(exp, res) __CLOVE_ASSERT_GUARD __clove_assert_string(__CLOVE_ASSERT_NE, exp, res, _this);
+#define CLOVE_FAIL()                       do { __CLOVE_ASSERT_GUARD __clove_assert_fail(_this); } while(0)
+#define CLOVE_PASS()                       do { __CLOVE_ASSERT_GUARD __clove_assert_pass(_this); } while(0)
+          
+#define CLOVE_IS_TRUE(res)                 do { __CLOVE_ASSERT_GUARD __clove_assert_bool(__CLOVE_ASSERT_EQ, true, res, _this); } while(0)
+#define CLOVE_IS_FALSE(res)                do { __CLOVE_ASSERT_GUARD __clove_assert_bool(__CLOVE_ASSERT_EQ, false, res, _this);  } while(0)
+          
+#define CLOVE_CHAR_EQ(exp, res)            do { __CLOVE_ASSERT_GUARD __clove_assert_char(__CLOVE_ASSERT_EQ, exp, res, _this); } while(0)
+#define CLOVE_CHAR_NE(exp, res)            do { __CLOVE_ASSERT_GUARD __clove_assert_char(__CLOVE_ASSERT_NE, exp, res, _this); } while(0)
+#define CLOVE_CHAR_GT(exp, res)            do { __CLOVE_ASSERT_GUARD __clove_assert_char(__CLOVE_ASSERT_GT, exp, res, _this); } while(0)
+#define CLOVE_CHAR_GTE(exp, res)           do { __CLOVE_ASSERT_GUARD __clove_assert_char(__CLOVE_ASSERT_GTE, exp, res, _this); } while(0)
+#define CLOVE_CHAR_LT(exp, res)            do { __CLOVE_ASSERT_GUARD __clove_assert_char(__CLOVE_ASSERT_LT, exp, res, _this); } while(0)
+#define CLOVE_CHAR_LTE(exp, res)           do { __CLOVE_ASSERT_GUARD __clove_assert_char(__CLOVE_ASSERT_LTE, exp, res, _this); } while(0)
+          
+#define CLOVE_INT_EQ(exp, res)             do { __CLOVE_ASSERT_GUARD __clove_assert_int(__CLOVE_ASSERT_EQ, exp, res, _this); } while(0)
+#define CLOVE_INT_NE(exp, res)             do { __CLOVE_ASSERT_GUARD __clove_assert_int(__CLOVE_ASSERT_NE, exp, res, _this); } while(0)
+#define CLOVE_INT_GT(exp, res)             do { __CLOVE_ASSERT_GUARD __clove_assert_int(__CLOVE_ASSERT_GT, exp, res, _this); } while(0)
+#define CLOVE_INT_GTE(exp, res)            do { __CLOVE_ASSERT_GUARD __clove_assert_int(__CLOVE_ASSERT_GTE, exp, res, _this); } while(0)
+#define CLOVE_INT_LT(exp, res)             do { __CLOVE_ASSERT_GUARD __clove_assert_int(__CLOVE_ASSERT_LT, exp, res, _this); } while(0)
+#define CLOVE_INT_LTE(exp, res)            do { __CLOVE_ASSERT_GUARD __clove_assert_int(__CLOVE_ASSERT_LTE, exp, res, _this); } while(0)
+          
+#define CLOVE_UINT_EQ(exp, res)            do { __CLOVE_ASSERT_GUARD __clove_assert_uint(__CLOVE_ASSERT_EQ, exp, res, _this); } while(0)
+#define CLOVE_UINT_NE(exp, res)            do { __CLOVE_ASSERT_GUARD __clove_assert_uint(__CLOVE_ASSERT_NE, exp, res, _this); } while(0)
+#define CLOVE_UINT_GT(exp, res)            do { __CLOVE_ASSERT_GUARD __clove_assert_uint(__CLOVE_ASSERT_GT, exp, res, _this); } while(0)
+#define CLOVE_UINT_GTE(exp, res)           do { __CLOVE_ASSERT_GUARD __clove_assert_uint(__CLOVE_ASSERT_GTE, exp, res, _this); } while(0)
+#define CLOVE_UINT_LT(exp, res)            do { __CLOVE_ASSERT_GUARD __clove_assert_uint(__CLOVE_ASSERT_LT, exp, res, _this); } while(0)
+#define CLOVE_UINT_LTE(exp, res)           do { __CLOVE_ASSERT_GUARD __clove_assert_uint(__CLOVE_ASSERT_LTE, exp, res, _this); } while(0)
+          
+#define CLOVE_LONG_EQ(exp, res)            do { __CLOVE_ASSERT_GUARD __clove_assert_long(__CLOVE_ASSERT_EQ, exp, res, _this); } while(0)
+#define CLOVE_LONG_NE(exp, res)            do { __CLOVE_ASSERT_GUARD __clove_assert_long(__CLOVE_ASSERT_NE, exp, res, _this); } while(0)
+#define CLOVE_LONG_GT(exp, res)            do { __CLOVE_ASSERT_GUARD __clove_assert_long(__CLOVE_ASSERT_GT, exp, res, _this); } while(0)
+#define CLOVE_LONG_GTE(exp, res)           do { __CLOVE_ASSERT_GUARD __clove_assert_long(__CLOVE_ASSERT_GTE, exp, res, _this); } while(0)
+#define CLOVE_LONG_LT(exp, res)            do { __CLOVE_ASSERT_GUARD __clove_assert_long(__CLOVE_ASSERT_LT, exp, res, _this); } while(0)
+#define CLOVE_LONG_LTE(exp, res)           do { __CLOVE_ASSERT_GUARD __clove_assert_long(__CLOVE_ASSERT_LTE, exp, res, _this); } while(0)
+       
+#define CLOVE_ULONG_EQ(exp, res)           do { __CLOVE_ASSERT_GUARD __clove_assert_ulong(__CLOVE_ASSERT_EQ, exp, res, _this); } while(0)
+#define CLOVE_ULONG_NE(exp, res)           do { __CLOVE_ASSERT_GUARD __clove_assert_ulong(__CLOVE_ASSERT_NE, exp, res, _this); } while(0)
+#define CLOVE_ULONG_GT(exp, res)           do { __CLOVE_ASSERT_GUARD __clove_assert_ulong(__CLOVE_ASSERT_GT, exp, res, _this); } while(0)
+#define CLOVE_ULONG_GTE(exp, res)          do { __CLOVE_ASSERT_GUARD __clove_assert_ulong(__CLOVE_ASSERT_GTE, exp, res, _this); } while(0)
+#define CLOVE_ULONG_LT(exp, res)           do { __CLOVE_ASSERT_GUARD __clove_assert_ulong(__CLOVE_ASSERT_LT, exp, res, _this); } while(0)
+#define CLOVE_ULONG_LTE(exp, res)          do { __CLOVE_ASSERT_GUARD __clove_assert_ulong(__CLOVE_ASSERT_LTE, exp, res, _this); } while(0)
+       
+#define CLOVE_LLONG_EQ(exp, res)           do { __CLOVE_ASSERT_GUARD __clove_assert_llong(__CLOVE_ASSERT_EQ, exp, res, _this); } while(0)
+#define CLOVE_LLONG_NE(exp, res)           do { __CLOVE_ASSERT_GUARD __clove_assert_llong(__CLOVE_ASSERT_NE, exp, res, _this); } while(0)
+#define CLOVE_LLONG_GT(exp, res)           do { __CLOVE_ASSERT_GUARD __clove_assert_llong(__CLOVE_ASSERT_GT, exp, res, _this); } while(0)
+#define CLOVE_LLONG_GTE(exp, res)          do { __CLOVE_ASSERT_GUARD __clove_assert_llong(__CLOVE_ASSERT_GTE, exp, res, _this); } while(0)
+#define CLOVE_LLONG_LT(exp, res)           do { __CLOVE_ASSERT_GUARD __clove_assert_llong(__CLOVE_ASSERT_LT, exp, res, _this); } while(0)
+#define CLOVE_LLONG_LTE(exp, res)          do { __CLOVE_ASSERT_GUARD __clove_assert_llong(__CLOVE_ASSERT_LTE, exp, res, _this); } while(0)
+       
+#define CLOVE_ULLONG_EQ(exp, res)          do { __CLOVE_ASSERT_GUARD __clove_assert_ullong(__CLOVE_ASSERT_EQ, exp, res, _this); } while(0)
+#define CLOVE_ULLONG_NE(exp, res)          do { __CLOVE_ASSERT_GUARD __clove_assert_ullong(__CLOVE_ASSERT_NE, exp, res, _this); } while(0)
+#define CLOVE_ULLONG_GT(exp, res)          do { __CLOVE_ASSERT_GUARD __clove_assert_ullong(__CLOVE_ASSERT_GT, exp, res, _this); } while(0)
+#define CLOVE_ULLONG_GTE(exp, res)         do { __CLOVE_ASSERT_GUARD __clove_assert_ullong(__CLOVE_ASSERT_GTE, exp, res, _this); } while(0)
+#define CLOVE_ULLONG_LT(exp, res)          do { __CLOVE_ASSERT_GUARD __clove_assert_ullong(__CLOVE_ASSERT_LT, exp, res, _this); } while(0)
+#define CLOVE_ULLONG_LTE(exp, res)         do { __CLOVE_ASSERT_GUARD __clove_assert_ullong(__CLOVE_ASSERT_LTE, exp, res, _this); } while(0)
+       
+#define CLOVE_SIZET_EQ(exp, res)           do { __CLOVE_ASSERT_GUARD __clove_assert_sizet(__CLOVE_ASSERT_EQ, exp, res, _this); } while(0)
+#define CLOVE_SIZET_NE(exp, res)           do { __CLOVE_ASSERT_GUARD __clove_assert_sizet(__CLOVE_ASSERT_NE, exp, res, _this); } while(0)
+#define CLOVE_SIZET_GT(exp, res)           do { __CLOVE_ASSERT_GUARD __clove_assert_sizet(__CLOVE_ASSERT_GT, exp, res, _this); } while(0)
+#define CLOVE_SIZET_GTE(exp, res)          do { __CLOVE_ASSERT_GUARD __clove_assert_sizet(__CLOVE_ASSERT_GTE, exp, res, _this); } while(0)
+#define CLOVE_SIZET_LT(exp, res)           do { __CLOVE_ASSERT_GUARD __clove_assert_sizet(__CLOVE_ASSERT_LT, exp, res, _this); } while(0)
+#define CLOVE_SIZET_LTE(exp, res)          do { __CLOVE_ASSERT_GUARD __clove_assert_sizet(__CLOVE_ASSERT_LTE, exp, res, _this); } while(0)
+       
+#define CLOVE_FLOAT_EQ(exp, res)           CLOVE_FLOAT_EQ_P(exp, res, (unsigned char)6)
+#define CLOVE_FLOAT_NE(exp, res)           CLOVE_FLOAT_NE_P(exp, res, (unsigned char)6)
+#define CLOVE_FLOAT_EQ_P(exp, res, prec)   do { __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_EQ, exp, res, (unsigned char)prec, _this); } while(0)
+#define CLOVE_FLOAT_NE_P(exp, res, prec)   do { __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_NE, exp, res, (unsigned char)prec, _this); } while(0)
+#define CLOVE_FLOAT_GT(exp, res)           do { __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_GT, exp, res, (unsigned char)6, _this); } while(0)
+#define CLOVE_FLOAT_GTE(exp, res)          do {  __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_GTE, exp, res, (unsigned char)6, _this); } while(0)
+#define CLOVE_FLOAT_LT(exp, res)           do { __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_LT, exp, res, (unsigned char)6, _this); } while(0)
+#define CLOVE_FLOAT_LTE(exp, res)          do { __CLOVE_ASSERT_GUARD __clove_assert_float(__CLOVE_ASSERT_LTE, exp, res, (unsigned char)6, _this); } while(0)
+  
+#define CLOVE_DOUBLE_EQ(exp, res)          CLOVE_DOUBLE_EQ_P(exp, res, (unsigned char)15)
+#define CLOVE_DOUBLE_NE(exp, res)          CLOVE_DOUBLE_NE_P(exp, res, (unsigned char)15)
+#define CLOVE_DOUBLE_EQ_P(exp, res, prec)  do { __CLOVE_ASSERT_GUARD __clove_assert_double(__CLOVE_ASSERT_EQ, exp, res, prec, _this); } while(0)
+#define CLOVE_DOUBLE_NE_P(exp, res, prec)  do { __CLOVE_ASSERT_GUARD __clove_assert_double(__CLOVE_ASSERT_NE, exp, res, prec, _this); } while(0)
+#define CLOVE_DOUBLE_GT(exp, res)          do { __CLOVE_ASSERT_GUARD __clove_assert_double(__CLOVE_ASSERT_GT, exp, res, (unsigned char)15, _this); } while(0)
+#define CLOVE_DOUBLE_GTE(exp, res)         do { __CLOVE_ASSERT_GUARD __clove_assert_double(__CLOVE_ASSERT_GTE, exp, res, (unsigned char)15, _this); } while(0)
+#define CLOVE_DOUBLE_LT(exp, res)          do { __CLOVE_ASSERT_GUARD __clove_assert_double(__CLOVE_ASSERT_LT, exp, res, (unsigned char)15, _this); } while(0)
+#define CLOVE_DOUBLE_LTE(exp, res)         do { __CLOVE_ASSERT_GUARD __clove_assert_double(__CLOVE_ASSERT_LTE, exp, res, (unsigned char)15, _this); } while(0)
+       
+#define CLOVE_NULL(res)                    do { __CLOVE_ASSERT_GUARD __clove_assert_null(__CLOVE_ASSERT_EQ, NULL, (void*)res, _this); } while(0)
+#define CLOVE_NOT_NULL(res)                do { __CLOVE_ASSERT_GUARD __clove_assert_null(__CLOVE_ASSERT_NE, NULL, (void*)res, _this); } while(0)
+       
+#define CLOVE_PTR_EQ(p1, p2)               do { __CLOVE_ASSERT_GUARD __clove_assert_ptr(__CLOVE_ASSERT_EQ, (void*)p1, (void*)p2, _this); } while(0)
+#define CLOVE_PTR_NE(p1, p2)               do { __CLOVE_ASSERT_GUARD __clove_assert_ptr(__CLOVE_ASSERT_NE, (void*)p1, (void*)p2, _this); } while(0)
+#define CLOVE_PTR_GT(p1, p2)               do { __CLOVE_ASSERT_GUARD __clove_assert_ptr(__CLOVE_ASSERT_GT, (void*)p1, (void*)p2, _this); } while(0)
+#define CLOVE_PTR_GTE(p1, p2)              do { __CLOVE_ASSERT_GUARD __clove_assert_ptr(__CLOVE_ASSERT_GTE, (void*)p1, (void*)p2, _this); } while(0)
+#define CLOVE_PTR_LT(p1, p2)               do { __CLOVE_ASSERT_GUARD __clove_assert_ptr(__CLOVE_ASSERT_LT, (void*)p1, (void*)p2, _this); } while(0)
+#define CLOVE_PTR_LTE(p1, p2)              do { __CLOVE_ASSERT_GUARD __clove_assert_ptr(__CLOVE_ASSERT_LTE, (void*)p1, (void*)p2, _this); } while(0)
+       
+#define CLOVE_STRING_EQ(exp, res)          do { __CLOVE_ASSERT_GUARD __clove_assert_string(__CLOVE_ASSERT_EQ, exp, res, _this); } while(0)
+#define CLOVE_STRING_NE(exp, res)          do { __CLOVE_ASSERT_GUARD __clove_assert_string(__CLOVE_ASSERT_NE, exp, res, _this); } while(0)
 #pragma endregion //ASSERTS
 
 #pragma region PUBLIC - SUITE

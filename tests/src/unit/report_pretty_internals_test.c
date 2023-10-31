@@ -1,4 +1,4 @@
-#define CLOVE_SUITE_NAME UNIT_ReportConsoleTest
+#define CLOVE_SUITE_NAME UNIT_ReportPrettyInternalsTest
 #include "clove-unit.h"
 
 CLOVE_TEST(SameLengthFirstCharDiff) {
