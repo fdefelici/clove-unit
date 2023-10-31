@@ -10,6 +10,11 @@ and reason for failure. Additionally, it offers a variety of output formats than
 Here is an example of the default report format, which features pretty printing with ANSI support:
 ![Clove test run result](./examples/result.png)
 
+
+> Join the [**discord server**](https://discord.gg/XV8kQg7Q) to stay tuned for updates or to make questions that doesn't require to open an issue. <br/>
+Consider also supporting `CLove-Unit` development becoming a [**sponsor**](https://github.com/users/fdefelici/sponsorship).
+
+
 ## Table of Contents
 
 * [Features](#features)
