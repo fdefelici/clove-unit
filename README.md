@@ -11,7 +11,7 @@ Here is an example of the default report format, which features pretty printing 
 ![Clove test run result](./examples/result.png)
 
 
-> Join the [**discord server**](https://discord.gg/XV8kQg7Q) to stay tuned for updates or to make questions that doesn't require to open an issue. <br/>
+> Join the [**discord server**](https://discord.gg/Mjx4YRQfFt) to stay tuned for updates or to make questions that doesn't require to open an issue. <br/>
 Consider also supporting `CLove-Unit` development becoming a [**sponsor**](https://github.com/users/fdefelici/sponsorship).
 
 
