@@ -13,6 +13,7 @@ jobs:
       name: Build Job
       runs-on: ${{ matrix.os }}
       strategy:
+        fail-fast: false
         matrix:
           os: [macos-latest, ubuntu-latest, windows-latest]
           include:
