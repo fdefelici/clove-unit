@@ -24,7 +24,7 @@ jobs:
               LS_CMD: ls -la
             - label: ubuntu_gcc
               os: ubuntu-latest
-              compiler: {c: gcc, cpp: g++}
+              compiler: {c: gcc, cpp: g++13}
               SHELL: bash
               SEP: /
               LS_CMD: ls -la
