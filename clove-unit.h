@@ -1526,7 +1526,7 @@ void __clove_vector_add_all(__clove_vector_t* vector, __clove_vector_t* other) {
 }
 
 void* __clove_vector_get(const __clove_vector_t* vector, size_t index) {
-    if (index < 0) return NULL;
+    //if (index < 0) return NULL; //can never happen bucause of size_t
     if (index >= vector->count) return NULL;
     size_t byte_index = index * vector->item_size;
     return (void*)&(vector->items[byte_index]);
@@ -3534,7 +3534,16 @@ int __clove_symbols_lixux_dl_callback(struct dl_phdr_info* info, size_t size, vo
 {
     __CLOVE_UNUSED_VAR(size);
 
+    #ifdef __GNUC__
+    #pragma GCC diagnostic push   
+    #pragma GCC diagnostic ignored "-Wpedantic"    //Disable pedantic
+    #endif
+    //Preventing GCC pedantic from emitting warning: "ISO C forbids conversion of function pointer to object pointer type"
     const char* cb = (const char*)&__clove_symbols_lixux_dl_callback;
+    #ifdef __GNUC__
+    #pragma GCC diagnostic pop 
+    #endif 
+
     const char* base = (const char*)info->dlpi_addr;
     const ElfW(Phdr)* first_load = NULL;
 
@@ -3557,6 +3566,7 @@ int __clove_symbols_lixux_dl_callback(struct dl_phdr_info* info, size_t size, vo
     }
     return 0;
 }
+
 
 //uintptr_t __clove_symbols_lixux_base_addr(const char* path)
 uintptr_t __clove_symbols_lixux_base_addr()
