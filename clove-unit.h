@@ -14,7 +14,9 @@
 #define __CLOVE_VERSION "2.4.1"
 
 //Preventing "unknown-pragmas" warning on GCC for '#pragma region' usage
-//NOTE: It seems that GCC v13+ should support '#pragma region' by the way.
+//NOTE1: It seems that GCC v13+ should support '#pragma region' by the way.
+//NOTE2: This workaround doesn't work for G++ version < 13 because of a bug 
+//       that has been addressed only in G++ v13 (https://gcc.gnu.org/bugzilla/show_bug.cgi?id=53431)
 #ifdef __GNUC__ // GNU Unknown Pragma Fix: START
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunknown-pragmas"
