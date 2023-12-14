@@ -742,6 +742,8 @@ typedef struct __clove_symbols_context_t {
 
 typedef struct __clove_symbols_function_t {
     char* name;
+    //Using union just to avoid explicit casting from object ptr to function ptr 'void* to void(*)()'
+    //which emit warning using -Wpedantic flag with GCC compiler.
     union {
         void* obj_ptr;
         void (*fun_ptr)();
@@ -3287,7 +3289,6 @@ void __clove_symbols_function_collect(__clove_symbols_function_t exported_funct,
     }
 
     if (__clove_string_view_strequals(&type_vw, "11")) {
-        //last_suite_temp.fixtures.setup_once = (void (*)())exported_funct.pointer;
         last_suite_temp.fixtures.setup_once = exported_funct.fun_ptr;
     }
     else if (__clove_string_view_strequals(&type_vw, "12")) {
