@@ -742,7 +742,10 @@ typedef struct __clove_symbols_context_t {
 
 typedef struct __clove_symbols_function_t {
     char* name;
-    void* pointer;
+    union {
+        void* obj_ptr;
+        void (*fun_ptr)();
+    };
 } __clove_symbols_function_t;
 
 __CLOVE_EXTERN_C bool __clove_symbols_function_validate(__clove_string_view_t* suite, __clove_string_view_t* type, __clove_string_view_t* name, __clove_symbols_context_t* context);
@@ -3284,16 +3287,17 @@ void __clove_symbols_function_collect(__clove_symbols_function_t exported_funct,
     }
 
     if (__clove_string_view_strequals(&type_vw, "11")) {
-        last_suite_temp.fixtures.setup_once = (void (*)())exported_funct.pointer;
+        //last_suite_temp.fixtures.setup_once = (void (*)())exported_funct.pointer;
+        last_suite_temp.fixtures.setup_once = exported_funct.fun_ptr;
     }
     else if (__clove_string_view_strequals(&type_vw, "12")) {
-        last_suite_temp.fixtures.teardown_once = (void (*)())exported_funct.pointer;
+        last_suite_temp.fixtures.teardown_once = exported_funct.fun_ptr;
     }
     else if (__clove_string_view_strequals(&type_vw, "13")) {
-        last_suite_temp.fixtures.setup = (void (*)())exported_funct.pointer;
+        last_suite_temp.fixtures.setup = exported_funct.fun_ptr;
     }
     else if (__clove_string_view_strequals(&type_vw, "14")) {
-        last_suite_temp.fixtures.teardown = (void (*)())exported_funct.pointer;
+        last_suite_temp.fixtures.teardown = exported_funct.fun_ptr;
     }
     else if (__clove_string_view_strequals(&type_vw, "20")) {
         if (last_suite_temp.test_count == 0) {
@@ -3312,7 +3316,7 @@ void __clove_symbols_function_collect(__clove_symbols_function_t exported_funct,
         //Switched to string allocation to make test structs indipendent from the source memory
         //test->name = test_name + test_separator_length;
         test->name = __clove_string_view_as_string(&name_vw);
-        test->funct = (void (*)(__clove_test_t*))exported_funct.pointer;
+        test->funct = (void (*)(__clove_test_t*))exported_funct.fun_ptr;
         last_suite_ptr->test_count++;
         context->tests_count++;
     }
@@ -3382,7 +3386,9 @@ int __clove_symbols_for_each_function_by_prefix(__clove_symbols_context_t* conte
 
         if (strncmp(prefix, each_name, prefix_length) == 0) {
             if (!match_ongoing) match_ongoing = 1;
-            __clove_symbols_function_t funct = { each_name, each_funct_addr };
+            __clove_symbols_function_t funct;
+            funct.name = each_name;
+            funct.obj_ptr = each_funct_addr;
             action(funct, context);
         }
         else {
@@ -3501,7 +3507,10 @@ int __clove_symbols_for_each_function_by_prefix(__clove_symbols_context_t* conte
             if (!match_ongoing) {
                 match_ongoing = 1;
             }
-            __clove_symbols_function_t funct = { each_name, each_funct_addr };
+            //__clove_symbols_function_t funct = { each_name, each_funct_addr };
+            __clove_symbols_function_t funct;
+            funct.name = each_name;
+            funct.obj_ptr = each_funct_addr;
             action(funct, context);
         }
         else {
@@ -3673,7 +3682,7 @@ int __clove_symbols_for_each_function_by_prefix(__clove_symbols_context_t* conte
             if (!strncmp(sym_name, prefix, prefix_length)) {
                 __clove_symbols_function_t* each_funct = (__clove_symbols_function_t*)__clove_vector_add_slot(&clove_functions);
                 each_funct->name = sym_name;
-                each_funct->pointer = (void*)(module.address + sym->st_value);
+                each_funct->obj_ptr = (void*)(module.address + sym->st_value);
             }
         }
     }
