@@ -3627,7 +3627,7 @@ int __clove_symbols_for_each_function_by_prefix(__clove_symbols_context_t* conte
 
     Elf64_Sym* symbol_table = NULL;
     Elf64_Shdr* symbol_table_section = NULL;
-    for (int i = 0; i < section_count; ++i) {
+    for (size_t i = 0; i < section_count; ++i) {
         if (sections[i].sh_type == SHT_SYMTAB) {
             symbol_table = (Elf64_Sym*)((uint64_t)header + sections[i].sh_offset);
             symbol_table_section = &sections[i];

@@ -4,4 +4,3 @@
 CLOVE_TEST(CppTest) {
     CLOVE_PASS();
 }
-
