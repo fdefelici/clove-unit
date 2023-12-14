@@ -10,22 +10,33 @@ on:
         - '**'
 jobs:
   build:
-      name: Build Job
+      name: Build ${{ matrix.label }}
       runs-on: ${{ matrix.os }}
       strategy:
         fail-fast: false
         matrix:
-          os: [macos-latest, ubuntu-latest, windows-latest]
           include:
-            - os: macos-latest
+            - label: macos_apple-clang
+              os: macos-latest
+              compiler: default
               SHELL: bash
               SEP: /
               LS_CMD: ls -la
-            - os: ubuntu-latest
+            - label: ubuntu_gcc
+              os: ubuntu-latest
+              compiler: {c: gcc, cpp: g++}
               SHELL: bash
               SEP: /
               LS_CMD: ls -la
-            - os: windows-latest
+            - label: ubuntu_clang
+              os: ubuntu-latest
+              compiler: {c: clang, cpp: clang++}
+              SHELL: bash
+              SEP: /
+              LS_CMD: ls -la
+            - label: windows_msvc
+              os: windows-latest
+              compiler: default
               SHELL: cmd
               SEP: \
               LS_CMD: dir /a
@@ -39,6 +50,11 @@ jobs:
           uses: actions/checkout@v3
         - name: List Workspace
           run:  ${{matrix.LS_CMD}} ${{ github.workspace }}
+        - name: Customize Compilers
+          if: ${{ matrix.compiler!='default' }}
+          run: |
+            echo "CC=${{matrix.compiler.c}}" >> "$GITHUB_ENV"
+            echo "CXX=${{matrix.compiler.cpp}}" >> "$GITHUB_ENV"
         - name: Compile
           run: |
             echo "== CMAKE VERSION =="
