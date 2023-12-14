@@ -1,3 +1,6 @@
+cmake_minimum_required(VERSION 3.18)
+project(StrictCloveCpp LANGUAGES CXX)
+
 file(GLOB_RECURSE SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
 add_executable(StrictCloveCpp ${SOURCES} ${HEADERS} ../../../clove-unit.h)
 target_include_directories(StrictCloveCpp PRIVATE ../../../)

@@ -1,3 +1,6 @@
+cmake_minimum_required(VERSION 3.18)
+project(StrictCloveC LANGUAGES C)
+
 file(GLOB_RECURSE SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.c)
 file(GLOB_RECURSE HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/src/*.h)
 
