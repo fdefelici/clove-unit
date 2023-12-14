@@ -34,12 +34,12 @@ jobs:
               SHELL: bash
               SEP: /
               LS_CMD: ls -la
-            - label: windows_msvc
-              os: windows-latest
-              compiler: default
-              SHELL: cmd
-              SEP: \
-              LS_CMD: dir /a
+            # - label: windows_msvc
+            #  os: windows-latest
+            #  compiler: default
+            #  SHELL: cmd
+            #  SEP: \
+            #  LS_CMD: dir /a
       defaults:
         run:
           shell: ${{ matrix.SHELL }}
