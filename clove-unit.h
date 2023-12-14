@@ -3248,8 +3248,8 @@ void __clove_symbols_function_collect(__clove_symbols_function_t exported_funct,
     */
     static const char* end_suite_separator = "___";
     static int end_suite_separator_length = 3;
-    static const char* test_separator = "20_";
-    static int test_separator_length = 3;
+    //static const char* test_separator = "20_";
+    //static int test_separator_length = 3;
 
     static __clove_suite_t last_suite_temp; //just used as temporary data storage
     static __clove_suite_t* last_suite_ptr = NULL;

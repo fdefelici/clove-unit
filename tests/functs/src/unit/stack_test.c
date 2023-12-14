@@ -48,6 +48,8 @@ CLOVE_TEST(PopItems) {
     CLOVE_ULLONG_EQ(10, __clove_stack_pop(&stack));
     CLOVE_IS_TRUE(__clove_stack_is_empty(&stack));
 
-    //poping over 0  
-    CLOVE_ULLONG_EQ(18446744073709551615ULL, __clove_stack_pop(&stack));
+    //extra popping always return 0  
+    CLOVE_ULLONG_EQ(0, __clove_stack_pop(&stack));
+    CLOVE_ULLONG_EQ(0, __clove_stack_pop(&stack));
+    CLOVE_ULLONG_EQ(0, __clove_stack_pop(&stack));
 }
