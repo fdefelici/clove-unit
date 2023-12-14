@@ -51,6 +51,9 @@ __CLOVE_EXTERN_C const char* __clove_get_exec_path();
 #define __CLOVE_SWITCH_DEFAULT() \
     else 
 #define __CLOVE_SWITCH_END() }
+
+//Custom suppressing "unused parameter" warnings for multi-compilers
+#define __CLOVE_UNUSED_VAR(x) (void)(x)
 #pragma endregion // Utils Decl
 
 #pragma region PRIVATE - Math Decl
@@ -961,6 +964,7 @@ bool __clove_memory_memcpy(void* dest, size_t dest_size, const void* src, size_t
 #ifdef _WIN32
     return memcpy_s(dest, dest_size, src, src_size) == 0;
 #else
+    __CLOVE_UNUSED_VAR(dest_size);
     return memcpy(dest, src, src_size) != NULL;
 #endif
 }
@@ -1000,6 +1004,7 @@ bool __clove_string_strcpy(char* dest, size_t dest_size, const char* source) {
 #ifdef _WIN32
     return strcpy_s(dest, dest_size, source) == 0;
 #else
+    __CLOVE_UNUSED_VAR(dest_size);
     return strcpy(dest, source) != NULL;
 #endif
 }
@@ -1008,6 +1013,7 @@ bool __clove_string_strncpy(char* dest, size_t dest_size, const char* source, si
 #ifdef _WIN32
     return strncpy_s(dest, dest_size, source, count) == 0;
 #else
+    __CLOVE_UNUSED_VAR(dest_size);
     return strncpy(dest, source, count) != NULL;
 #endif
 }
@@ -1016,6 +1022,7 @@ bool __clove_string_strcat(char* dest, size_t dest_size, const char* source) {
 #ifdef _WIN32
     return strcat_s(dest, dest_size, source) == 0;
 #else
+    __CLOVE_UNUSED_VAR(dest_size);
     return strcat(dest, source) != NULL;
 #endif
 }
@@ -1024,6 +1031,7 @@ bool __clove_string_strncat(char* dest, size_t dest_size, const char* source, si
 #ifdef _WIN32
     return strncat_s(dest, dest_size, source, count) == 0;
 #else
+    __CLOVE_UNUSED_VAR(dest_size);
     return strncat(dest, source, count) != NULL;
 #endif
 }
@@ -1417,7 +1425,7 @@ void __clove_stack_push(__clove_stack_t* stack, size_t item) {
 }
 
 size_t __clove_stack_pop(__clove_stack_t* stack) {
-    if (stack->count == 0) return -1; //shouldn't happen
+    if (stack->count == 0) return 0; //shouldn't happen
 
     size_t byte_index = (stack->count - 1) * stack->item_size;
     size_t* item_ptr = (size_t*)&(stack->items[byte_index]);
@@ -2191,18 +2199,25 @@ __clove_stream_console_t* __clove_stream_console_new() {
     return stream;
 }
 bool __clove_stream_console_open(__clove_stream_t* stream) {
+    __CLOVE_UNUSED_VAR(stream);
     return true;
 }
 void __clove_stream_console_close(__clove_stream_t* stream) { 
+    __CLOVE_UNUSED_VAR(stream);
     //nothing todo
 }
 void __clove_stream_console_writef(__clove_stream_t* stream, const char* format, ...) {
+    __CLOVE_UNUSED_VAR(stream);
+    
     va_list args;
     va_start(args, format);
     __clove_console_vprintf(format, args);
     va_end(args);
 }
 void __clove_stream_console_seek(__clove_stream_t* stream, long offset, int origin) {
+    __CLOVE_UNUSED_VAR(stream);
+    __CLOVE_UNUSED_VAR(offset);
+    __CLOVE_UNUSED_VAR(origin);
     //nothing todo
 }
 
@@ -2246,6 +2261,8 @@ bool __clove_stream_console_has_ansi_support(__clove_stream_t* stream) {
 #include <stdbool.h>
 #include <unistd.h>
 bool __clove_stream_console_has_ansi_support(__clove_stream_t* stream) {
+    __CLOVE_UNUSED_VAR(stream);
+
     if (isatty(STDOUT_FILENO)) {
         // standard output is a tty
         return true;
@@ -2292,6 +2309,7 @@ void __clove_stream_file_seek(__clove_stream_t* stream, long offset, int origin)
     fseek(_this->file, offset, origin); //TODO: wrap into __clove_file_seek method
 }
 bool __clove_stream_file_has_ansi_support(struct __clove_stream_t* _this) {
+    __CLOVE_UNUSED_VAR(_this);
     return false;
 }
 void __clove_stream_file_free(__clove_stream_t* stream) {
@@ -2314,9 +2332,11 @@ __clove_stream_memory_t* __clove_stream_memory_new() {
     return stream;
 }
 bool __clove_stream_memory_open(__clove_stream_t* stream) {
+    __CLOVE_UNUSED_VAR(stream);
     return true;
 }
 void __clove_stream_memory_close(__clove_stream_t* stream) { 
+    __CLOVE_UNUSED_VAR(stream);
     //nothing todo
 }
 void __clove_stream_memory_writef(__clove_stream_t* stream, const char* format, ...) {
@@ -2330,10 +2350,14 @@ void __clove_stream_memory_writef(__clove_stream_t* stream, const char* format, 
     va_end(args);
 }
 void __clove_stream_memory_seek(__clove_stream_t* stream, long offset, int origin) {
+    __CLOVE_UNUSED_VAR(stream);
+    __CLOVE_UNUSED_VAR(offset);
+    __CLOVE_UNUSED_VAR(origin);
     //nothing todo
 }
 
 bool __clove_stream_memory_has_ansi_support(__clove_stream_t* stream) {
+    __CLOVE_UNUSED_VAR(stream);
     return false;
 }
 
@@ -2454,9 +2478,15 @@ void __clove_report_pretty_start(__clove_report_t* _this, size_t suite_count, si
     report->stream->writef(report->stream, "%s Suite / Tests found: %zu / %zu\n", report->labels.info, suite_count, test_count);
 }
 void __clove_report_pretty_begin_suite(__clove_report_t* _this, __clove_suite_t* suite, size_t index) {
+    __CLOVE_UNUSED_VAR(_this);
+    __CLOVE_UNUSED_VAR(suite);
+    __CLOVE_UNUSED_VAR(index);
     //nothing todo
 }
 void __clove_report_pretty_end_suite(__clove_report_t* _this, __clove_suite_t* suite, size_t index) {
+    __CLOVE_UNUSED_VAR(_this);
+    __CLOVE_UNUSED_VAR(suite);
+    __CLOVE_UNUSED_VAR(index);
     //nothing todo
 }
 void __clove_report_pretty_end(__clove_report_t* _this, size_t test_count, size_t passed, size_t skipped, size_t failed) {
@@ -2671,22 +2701,40 @@ void __clove_report_run_tests_csv_free(__clove_report_t* report) {
 }
 
 void __clove_report_run_tests_csv_start(__clove_report_t* _this, size_t suite_count, size_t test_count) {
+    __CLOVE_UNUSED_VAR(_this);
+    __CLOVE_UNUSED_VAR(suite_count);
+    __CLOVE_UNUSED_VAR(test_count);
+
     __clove_report_run_tests_csv_t* report = (__clove_report_run_tests_csv_t*)_this;
     report->stream->open(report->stream);
     report->stream->writef(report->stream, "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n", "Suite","Test","Status","Duration","File","Line","Assert","Type","Expected","Actual");
 }
 void __clove_report_run_tests_csv_begin_suite(__clove_report_t* _this, __clove_suite_t* suite, size_t index) {
+    __CLOVE_UNUSED_VAR(_this);
+    __CLOVE_UNUSED_VAR(suite);
+    __CLOVE_UNUSED_VAR(index);
+
     //nothing todo
 }
 void __clove_report_run_tests_csv_end_suite(__clove_report_t* _this, __clove_suite_t* suite, size_t index) {
+    __CLOVE_UNUSED_VAR(_this);
+    __CLOVE_UNUSED_VAR(suite);
+    __CLOVE_UNUSED_VAR(index);
     //nothing todo
 }
 void __clove_report_run_tests_csv_end(__clove_report_t* _this, size_t test_count, size_t passed, size_t skipped, size_t failed) {
+    __CLOVE_UNUSED_VAR(test_count);
+    __CLOVE_UNUSED_VAR(passed);
+    __CLOVE_UNUSED_VAR(skipped);
+    __CLOVE_UNUSED_VAR(failed);
+
     __clove_report_run_tests_csv_t* report = (__clove_report_run_tests_csv_t*)_this;
     report->stream->close(report->stream);
 }
 
 void __clove_report_run_tests_csv_end_test(__clove_report_t* _this, __clove_suite_t* suite, __clove_test_t* test, size_t test_number) {
+    __CLOVE_UNUSED_VAR(test_number);
+    
     __clove_report_run_tests_csv_t* report = (__clove_report_run_tests_csv_t*)_this;
 
     ////Suite,Test,Status,Duration,File,Line,Assert,Type,Expected,Actual
@@ -2850,12 +2898,16 @@ void __clove_report_json_print_data(__clove_report_json_t* instance, __clove_tes
 }
 
 void __clove_report_json_begin_suite(__clove_report_t* _this, __clove_suite_t* suite, size_t index) {
+    __CLOVE_UNUSED_VAR(index);
+
     __clove_report_json_t* instance = (__clove_report_json_t*)_this;
    instance->is_first_suite_test = true;
    instance->current_suite = suite;
 }
 
 void __clove_report_json_end_suite(__clove_report_t* _this, __clove_suite_t* suite, size_t index) {
+    __CLOVE_UNUSED_VAR(suite);
+
     __clove_report_json_t* instance = (__clove_report_json_t*)_this;
     
     const char* comma = "";
@@ -2868,6 +2920,8 @@ void __clove_report_json_end_suite(__clove_report_t* _this, __clove_suite_t* sui
 }
 
 void __clove_report_json_end_test(__clove_report_t* _this, __clove_suite_t* suite, __clove_test_t* test, size_t test_number) {
+    __CLOVE_UNUSED_VAR(test_number);
+
     __clove_report_json_t* instance = (__clove_report_json_t*)_this;
     
     if (instance->is_first_suite_test) {
@@ -2956,17 +3010,27 @@ void __clove_report_list_tests_pretty_begin(__clove_report_list_tests_t* _this, 
     }
 }
 void __clove_report_list_tests_pretty_begin_suite(__clove_report_list_tests_t* _this,  __clove_suite_t* suite, size_t index) {
+     __CLOVE_UNUSED_VAR(index);
+
     __clove_report_list_tests_pretty_t* pretty = (__clove_report_list_tests_pretty_t*)_this;
     pretty->is_suite_first_test = true;
     pretty->current_suite = suite;
 }
 void __clove_report_list_tests_pretty_end_suite(__clove_report_list_tests_t* _this,  __clove_suite_t* suite, size_t index) {
+    __CLOVE_UNUSED_VAR(_this);
+    __CLOVE_UNUSED_VAR(suite);
+    __CLOVE_UNUSED_VAR(index);
     //nothing todo
 }
 void __clove_report_list_tests_pretty_begin_test(__clove_report_list_tests_t* _this,  __clove_test_t* test, size_t index) {
+    __CLOVE_UNUSED_VAR(_this);
+    __CLOVE_UNUSED_VAR(test);
+    __CLOVE_UNUSED_VAR(index);
     //nothing todo
 }
 void __clove_report_list_tests_pretty_end_test(__clove_report_list_tests_t* _this,  __clove_test_t* test, size_t index) {
+    __CLOVE_UNUSED_VAR(index);
+
     __clove_report_list_tests_pretty_t* pretty = (__clove_report_list_tests_pretty_t*)_this;
     if (pretty->is_suite_first_test) {
         pretty->stream->writef(pretty->stream, pretty->suite_format, pretty->current_suite->name, test->file_name); 
@@ -2996,6 +3060,8 @@ void __clove_report_list_tests_csv_free(__clove_report_list_tests_t* _this) {
     free((__clove_report_list_tests_csv_t*)_this);
 }
 void __clove_report_list_tests_csv_begin(__clove_report_list_tests_t* _this, size_t suite_count, size_t test_count) {
+    __CLOVE_UNUSED_VAR(test_count);
+
     __clove_report_list_tests_csv_t* csv = (__clove_report_list_tests_csv_t*)_this;
     csv->stream->open(csv->stream);
     if (suite_count > 0) {
@@ -3003,17 +3069,27 @@ void __clove_report_list_tests_csv_begin(__clove_report_list_tests_t* _this, siz
     }
 }
 void __clove_report_list_tests_csv_begin_suite(__clove_report_list_tests_t* _this,  __clove_suite_t* suite, size_t index) {
+    __CLOVE_UNUSED_VAR(index);
+
     __clove_report_list_tests_csv_t* csv = (__clove_report_list_tests_csv_t*)_this;
     csv->current_suite = suite;
 }
 void __clove_report_list_tests_csv_end_suite(__clove_report_list_tests_t* _this,  __clove_suite_t* suite, size_t index) {
+    __CLOVE_UNUSED_VAR(suite);
+    __CLOVE_UNUSED_VAR(index);
+
     __clove_report_list_tests_csv_t* csv = (__clove_report_list_tests_csv_t*)_this;
     csv->current_suite = NULL;
 }
 void __clove_report_list_tests_csv_begin_test(__clove_report_list_tests_t* _this,  __clove_test_t* test, size_t index) {
+    __CLOVE_UNUSED_VAR(_this);
+    __CLOVE_UNUSED_VAR(test);
+    __CLOVE_UNUSED_VAR(index);
     //nothing todo
 }
 void __clove_report_list_tests_csv_end_test(__clove_report_list_tests_t* _this,  __clove_test_t* test, size_t index) {
+    __CLOVE_UNUSED_VAR(index);
+
     __clove_report_list_tests_csv_t* csv = (__clove_report_list_tests_csv_t*)_this;
     csv->stream->writef(csv->stream, "%s,%s,%s,%zu\n", csv->current_suite->name, test->name, test->file_name, test->funct_line);
 }
@@ -3059,11 +3135,15 @@ void __clove_report_list_tests_json_begin(__clove_report_list_tests_t* _this, si
     
 }
 void __clove_report_list_tests_json_begin_suite(__clove_report_list_tests_t* _this,  __clove_suite_t* suite, size_t index) {
+    __CLOVE_UNUSED_VAR(index);
+    
     __clove_report_list_tests_json_t* json = (__clove_report_list_tests_json_t*)_this;
     json->current_suite = suite;
     json->is_suite_first_test = true;
 }
 void __clove_report_list_tests_json_end_suite(__clove_report_list_tests_t* _this,  __clove_suite_t* suite, size_t index) {
+    __CLOVE_UNUSED_VAR(suite);
+
     __clove_report_list_tests_json_t* json = (__clove_report_list_tests_json_t*)_this;
     json->current_suite = NULL;
 
@@ -3075,6 +3155,9 @@ void __clove_report_list_tests_json_end_suite(__clove_report_list_tests_t* _this
     json->stream->writef(json->stream, "\t\t\t}%s\n", comma);
 }
 void __clove_report_list_tests_json_begin_test(__clove_report_list_tests_t* _this,  __clove_test_t* test, size_t index) {
+    __CLOVE_UNUSED_VAR(_this);
+    __CLOVE_UNUSED_VAR(test);
+    __CLOVE_UNUSED_VAR(index);
     //nothing todo
 }
 void __clove_report_list_tests_json_end_test(__clove_report_list_tests_t* _this,  __clove_test_t* test, size_t index) {
@@ -3442,6 +3525,8 @@ typedef struct __clove_symbols_lixux_module_t {
 
 int __clove_symbols_lixux_dl_callback(struct dl_phdr_info* info, size_t size, void* data)
 {
+    __CLOVE_UNUSED_VAR(size);
+
     const char* cb = (const char*)&__clove_symbols_lixux_dl_callback;
     const char* base = (const char*)info->dlpi_addr;
     const ElfW(Phdr)* first_load = NULL;
@@ -3466,7 +3551,8 @@ int __clove_symbols_lixux_dl_callback(struct dl_phdr_info* info, size_t size, vo
     return 0;
 }
 
-uintptr_t __clove_symbols_lixux_base_addr(const char* path)
+//uintptr_t __clove_symbols_lixux_base_addr(const char* path)
+uintptr_t __clove_symbols_lixux_base_addr()
 {
     uintptr_t base_addr;
     dl_iterate_phdr(__clove_symbols_lixux_dl_callback, &base_addr);
@@ -3494,7 +3580,8 @@ int __clove_symbols_lixux_open_module_handle(const char* module_path, __clove_sy
 
     out_module->handle = map;
     out_module->size = st.st_size;
-    out_module->address = __clove_symbols_lixux_base_addr(module_path);
+    //out_module->address = __clove_symbols_lixux_base_addr(module_path);
+    out_module->address = __clove_symbols_lixux_base_addr();
     return 0;
 }
 
