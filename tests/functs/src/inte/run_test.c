@@ -198,6 +198,4 @@ CLOVE_TEST(ReportWithOptRcsvWithFailure) {
 
     //CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "Suite,Test,Status,Duration,File,Line,Expected,Actual"));
     //CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "Prj01Suite01,Test01,PASS"));
-
-    puts(cmd_out);
 }

@@ -60,7 +60,7 @@ jobs:
             echo "== CMAKE VERSION =="
             cmake --version
             echo "== CMAKE CONFIGURE =="
-            cmake -B${{env.BUILD_DIR}} -DCI_TRIGGERED=1
+            cmake -B${{env.BUILD_DIR}} -DCLOVE_CMAKE__CI_TRIGGERED=1
             echo "== CMAKE BUILD =="
             cmake --build ${{env.BUILD_DIR}} --config Release
         - name: List Build
