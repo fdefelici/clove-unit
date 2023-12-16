@@ -41,13 +41,13 @@
 #pragma region PRIVATE - DECLARATION
 #pragma region PRIVATE - Utils Decl
 #include <stdio.h>
-__CLOVE_EXTERN_C void  __clove_utils_empty_funct();
+__CLOVE_EXTERN_C void  __clove_utils_empty_funct(void);
 __CLOVE_EXTERN_C const char* __clove_rel_src(const char* path);
 
 extern char* __clove_exec_path;
 extern char* __clove_exec_base_path;
-__CLOVE_EXTERN_C const char* __clove_get_exec_base_path();
-__CLOVE_EXTERN_C const char* __clove_get_exec_path();
+__CLOVE_EXTERN_C const char* __clove_get_exec_base_path(void);
+__CLOVE_EXTERN_C const char* __clove_get_exec_path(void);
 
 
 //Switch implementation for pointer types
@@ -180,7 +180,7 @@ typedef struct __clove_time_t {
     long long nanos_after_seconds;
 } __clove_time_t;
 
-__CLOVE_EXTERN_C __clove_time_t __clove_time_now();
+__CLOVE_EXTERN_C __clove_time_t __clove_time_now(void);
 __CLOVE_EXTERN_C __clove_time_t __clove_time_sub(__clove_time_t* t1, __clove_time_t* t2);
 __CLOVE_EXTERN_C __clove_time_t __clove_time_sum(__clove_time_t* t1, __clove_time_t* t2);
 __CLOVE_EXTERN_C unsigned long long __clove_time_to_millis(__clove_time_t* t);
@@ -222,7 +222,7 @@ typedef struct __clove_vector_t {
 } __clove_vector_t;
 
 __CLOVE_EXTERN_C __clove_vector_params_t __clove_vector_params_defaulted(size_t item_size);
-__CLOVE_EXTERN_C __clove_vector_t __clove_vector_null();
+__CLOVE_EXTERN_C __clove_vector_t __clove_vector_null(void);
 __CLOVE_EXTERN_C void __clove_vector_init(__clove_vector_t* vector, __clove_vector_params_t* params);
 __CLOVE_EXTERN_C size_t __clove_vector_count(const __clove_vector_t* vector);
 __CLOVE_EXTERN_C bool __clove_vector_is_empty(const __clove_vector_t* vector);
@@ -456,10 +456,10 @@ typedef struct __clove_suite_t {
     __clove_vector_t tests;
     size_t test_count;
     struct {
-        void (*setup_once)();
-        void (*teardown_once)();
-        void (*setup)();
-        void (*teardown)();
+        void (*setup_once)(void);
+        void (*teardown_once)(void);
+        void (*setup)(void);
+        void (*teardown)(void);
     } fixtures;
     struct {
         __clove_time_t duration;
@@ -526,7 +526,7 @@ typedef struct __clove_stream_console_t {
     __clove_stream_t base;
 } __clove_stream_console_t;
 
-__CLOVE_EXTERN_C __clove_stream_console_t* __clove_stream_console_new();
+__CLOVE_EXTERN_C __clove_stream_console_t* __clove_stream_console_new(void);
 __CLOVE_EXTERN_C bool __clove_stream_console_open(__clove_stream_t* stream);
 __CLOVE_EXTERN_C void __clove_stream_console_close(__clove_stream_t* stream);
 __CLOVE_EXTERN_C void __clove_stream_console_writef(__clove_stream_t* stream, const char* format, ...);
@@ -555,7 +555,7 @@ typedef struct __clove_stream_memory_t {
     __clove_vector_t lines;
 } __clove_stream_memory_t;
 
-__CLOVE_EXTERN_C __clove_stream_memory_t* __clove_stream_memory_new();
+__CLOVE_EXTERN_C __clove_stream_memory_t* __clove_stream_memory_new(void);
 __CLOVE_EXTERN_C bool __clove_stream_memory_open(__clove_stream_t* stream);
 __CLOVE_EXTERN_C void __clove_stream_memory_close(__clove_stream_t* stream);
 __CLOVE_EXTERN_C void __clove_stream_memory_writef(__clove_stream_t* stream, const char* format, ...);
@@ -748,7 +748,7 @@ typedef struct __clove_symbols_function_t {
     //which emit warning using -Wpedantic flag with GCC compiler.
     union {
         void* obj_ptr;
-        void (*fun_ptr)();
+        void (*fun_ptr)(void);
     };
 } __clove_symbols_function_t;
 
@@ -805,7 +805,7 @@ __CLOVE_EXTERN_C void __clove_exec_suite(__clove_suite_t* suite, size_t test_cou
 #pragma region PRIVATE - Utils Impl
 #include <string.h>
 #include <stdio.h>
-void __clove_utils_empty_funct() { }
+void __clove_utils_empty_funct(void) { }
 
 //TODO: To be reviewed when working on issue: https://github.com/fdefelici/clove-unit/issues/3
 const char* __clove_rel_src(const char* path) {
@@ -816,11 +816,11 @@ const char* __clove_rel_src(const char* path) {
     return subpath + 1;
 }
 
-const char* __clove_get_exec_base_path() {
+const char* __clove_get_exec_base_path(void) {
     return __clove_exec_base_path;
 }
 
-const char* __clove_get_exec_path() {
+const char* __clove_get_exec_path(void) {
     return __clove_exec_path;
 }
 #pragma endregion // Utils Impl
@@ -1375,7 +1375,7 @@ unsigned long long __clove_time_to_nanos(__clove_time_t* t) {
 #ifdef _WIN32
 #include <windows.h>
 #include <time.h>
-__clove_time_t __clove_time_now() {
+__clove_time_t __clove_time_now(void) {
     static bool first_time = true;
     static LARGE_INTEGER count_per_sec;
     __clove_time_t result;
@@ -1401,7 +1401,7 @@ __clove_time_t __clove_time_now() {
 #else 
 #include <time.h>
 #include <unistd.h>
-__clove_time_t __clove_time_now() {
+__clove_time_t __clove_time_now(void) {
     struct timespec time_data;
     clock_gettime(CLOCK_REALTIME, &time_data);
 
@@ -1469,7 +1469,7 @@ __clove_vector_params_t __clove_vector_params_defaulted(size_t item_size) {
     return params;
 }
 
-__clove_vector_t __clove_vector_null() {
+__clove_vector_t __clove_vector_null(void) {
     __clove_vector_t v;
     v.capacity = 0;
     v.item_size = 0;
@@ -2202,7 +2202,7 @@ void __clove_assert_string(__clove_assert_check_e check_mode, const char* expect
 #pragma endregion // Assert Impl
 
 #pragma region PRIVATE - Stream Impl
-__clove_stream_console_t* __clove_stream_console_new() {
+__clove_stream_console_t* __clove_stream_console_new(void) {
     __clove_stream_console_t* stream = __CLOVE_MEMORY_MALLOC_TYPE(__clove_stream_console_t);
     stream->base.open = __clove_stream_console_open;
     stream->base.close = __clove_stream_console_close;
@@ -2333,7 +2333,7 @@ void __clove_stream_file_free(__clove_stream_t* stream) {
 }
 
 //In Memory Stream
-__clove_stream_memory_t* __clove_stream_memory_new() {
+__clove_stream_memory_t* __clove_stream_memory_new(void) {
     __clove_stream_memory_t* stream = __CLOVE_MEMORY_MALLOC_TYPE(__clove_stream_memory_t);
     stream->base.open = __clove_stream_memory_open;
     stream->base.close = __clove_stream_memory_close;
@@ -3580,7 +3580,7 @@ int __clove_symbols_lixux_dl_callback(struct dl_phdr_info* info, size_t size, vo
 
 
 //uintptr_t __clove_symbols_lixux_base_addr(const char* path)
-uintptr_t __clove_symbols_lixux_base_addr()
+uintptr_t __clove_symbols_lixux_base_addr(void)
 {
     uintptr_t base_addr;
     dl_iterate_phdr(__clove_symbols_lixux_dl_callback, &base_addr);
