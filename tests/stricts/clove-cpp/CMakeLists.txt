@@ -6,7 +6,10 @@ add_executable(StrictCloveCpp ${SOURCES} ${HEADERS} ../../../clove-unit.h)
 target_include_directories(StrictCloveCpp PRIVATE ../../../)
 
 set_property(TARGET StrictCloveCpp PROPERTY CXX_STANDARD 11)
-set_property(TARGET StrictCloveCpp PROPERTY COMPILE_WARNING_AS_ERROR ON)
+
+if (NOT DEFINED CLOVE_CMAKE__CPP_STRICT_WARN_AS_ERROR OR CLOVE_CMAKE__CPP_STRICT_WARN_AS_ERROR EQUAL TRUE)
+    set_property(TARGET StrictCloveCpp PROPERTY COMPILE_WARNING_AS_ERROR ON)
+endif()
 
 # Compiler Options
 if (MSVC)
