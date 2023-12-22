@@ -13,11 +13,11 @@
 #define __CLOVE_VERSION_PATCH 1
 #define __CLOVE_VERSION "2.4.1"
 
-//Preventing "unknown-pragmas" warning on GCC for '#pragma region' usage
-//NOTE1: It seems that GCC v13+ should support '#pragma region' by the way.
-//NOTE2: This workaround doesn't work for G++ version < 13 because of a bug 
+//Preventing "unknown-pragmas" warning on GCC <= 12 for '#pragma region' usage
+//NOTE1: GCC and G++ v13+ support '#pragma region' by the way.
+//NOTE2: This workaround doesn't work for G++ version <= 12 because of a bug 
 //       that has been addressed only in G++ v13 (https://gcc.gnu.org/bugzilla/show_bug.cgi?id=53431)
-#ifdef __GNUC__ // GNU Unknown Pragma Fix: START
+#if defined(__GNUC__) && __GNUC__ <= 12 // GNU Unknown Pragma Fix: START
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunknown-pragmas"
 #endif 
@@ -3963,7 +3963,7 @@ void __clove_exec_suite(__clove_suite_t* suite, size_t test_counter, size_t* pas
 
 #pragma endregion //PUBLIC
 
-#ifdef __GNUC__ // GNU Unknown Pragma Fix: END
+#if defined(__GNUC__) && __GNUC__ <= 12 // GNU Unknown Pragma Fix: END
 #pragma GCC diagnostic pop
 #endif 
 
