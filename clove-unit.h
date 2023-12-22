@@ -2242,6 +2242,8 @@ void __clove_stream_console_seek(__clove_stream_t* stream, long offset, int orig
 #define ENABLE_VIRTUAL_TERMINAL_PROCESSING  0x0004
 #endif
 bool __clove_stream_console_has_ansi_support(__clove_stream_t* stream) {
+    __CLOVE_UNUSED_VAR(stream);
+
     DWORD outMode = 0, inMode = 0;
     HANDLE stdoutHandle = GetStdHandle(STD_OUTPUT_HANDLE);
     HANDLE stdinHandle = GetStdHandle(STD_INPUT_HANDLE);
@@ -2255,9 +2257,6 @@ bool __clove_stream_console_has_ansi_support(__clove_stream_t* stream) {
         //exit(GetLastError());
         return false;
     }
-
-    DWORD outModeInit = outMode;
-    DWORD inModeInit = inMode;
 
     // Enable ANSI escape codes
     outMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
@@ -3339,7 +3338,7 @@ PIMAGE_EXPORT_DIRECTORY __clove_symbols_win_get_export_table_from(HMODULE module
     }
 
     // Get the COFF file header.
-    PIMAGE_FILE_HEADER cfh = &nt_header->FileHeader;
+    //PIMAGE_FILE_HEADER cfh = &nt_header->FileHeader;
 
     // Get the "optional" header (it's not actually optional for executables).
     PIMAGE_OPTIONAL_HEADER oh = &nt_header->OptionalHeader;
@@ -3368,7 +3367,7 @@ int __clove_symbols_for_each_function_by_prefix(__clove_symbols_context_t* conte
     }
 
     PBYTE base_addr = (PBYTE)module;
-    DWORD names_count = export_dir->NumberOfNames;
+    //DWORD names_count = export_dir->NumberOfNames;
     PDWORD names_ptr = (PDWORD)(base_addr + export_dir->AddressOfNames);
     DWORD ordinal_base_number = export_dir->Base;
     PWORD ordinals_ptr = (PWORD)(base_addr + export_dir->AddressOfNameOrdinals); //ordinal offset from base ordinal
