@@ -2070,6 +2070,7 @@ void __clove_cmdline_create_test_expr(__clove_cmdline_t* cmd, const char* opt1, 
         __CLOVE_VECTOR_ADD(expressions, __clove_test_expr_t, expr);
     });
     
+    __clove_vector_free(&values);
 }
 #pragma endregion // CommandLine Impl
 
