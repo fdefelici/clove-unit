@@ -4,7 +4,7 @@
 
 CLOVE_TEST(MapInit) {
     __clove_map_t map;
-   __clove_map_init(&map);
+   __CLOVE_MAP_INIT(&map);
    CLOVE_INT_EQ(0, (int)map.count);
    CLOVE_NOT_NULL(map.hash_funct);
    CLOVE_NOT_NULL(map.hashmap);
@@ -19,7 +19,7 @@ CLOVE_TEST(MapInit) {
 
 CLOVE_TEST(MapPut) {
     __clove_map_t map;
-   __clove_map_init(&map);
+   __CLOVE_MAP_INIT(&map);
    
    int value1 = 1;
    int value2 = 2;
@@ -34,4 +34,24 @@ CLOVE_TEST(MapPut) {
     CLOVE_INT_EQ(2, *value2_ptr);
 
    __clove_map_free(&map);
+}
+
+static int dtor_call_count = 0;
+static void item_dtor(void* item) {
+    dtor_call_count++;
+}
+
+CLOVE_TEST(FreeCustomType) {
+    __clove_map_t map;
+    __clove_map_params_t params = __clove_map_params_defaulted();
+    params.item_dtor = item_dtor;
+    __clove_map_init(&map, &params);
+    
+    int value1 = 1;
+    int value2 = 2;
+    __clove_map_put(&map, "one", &value1);
+    __clove_map_put(&map, "two", &value2);
+    __clove_map_free(&map);
+
+    CLOVE_INT_EQ(2, dtor_call_count);
 }

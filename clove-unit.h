@@ -49,7 +49,6 @@ extern char* __clove_exec_base_path;
 __CLOVE_EXTERN_C const char* __clove_get_exec_base_path(void);
 __CLOVE_EXTERN_C const char* __clove_get_exec_path(void);
 
-
 //Switch implementation for pointer types
 #define __CLOVE_SWITCH_BEG(X) \
     { \
@@ -63,6 +62,9 @@ __CLOVE_EXTERN_C const char* __clove_get_exec_path(void);
 
 //Custom suppressing "unused parameter" warnings for multi-compilers
 #define __CLOVE_UNUSED_VAR(x) (void)(x)
+
+#define __CLOVE_MACRO_COMBINE_INTERNAL(A, B) A##B
+#define __CLOVE_MACRO_COMBINE(A, B) __CLOVE_MACRO_COMBINE_INTERNAL(A, B)
 #pragma endregion // Utils Decl
 
 #pragma region PRIVATE - Math Decl
@@ -235,10 +237,7 @@ __CLOVE_EXTERN_C void __clove_vector_swap(__clove_vector_t* vector, size_t index
 __CLOVE_EXTERN_C size_t __clove_vector_quicksort_partition(__clove_vector_t* vector, int (*comparator)(void*, void*), size_t start_index, size_t end_index);
 __CLOVE_EXTERN_C void __clove_vector_quicksort_iterative(__clove_vector_t* vector, int (*comparator)(void*, void*), size_t start_index, size_t end_index);
 __CLOVE_EXTERN_C void __clove_vector_sort(__clove_vector_t* vector, int (*comparator)(void*, void*));
-
-
-#define __CLOVE_MACRO_COMBINE_INTERNAL(A, B) A##B
-#define __CLOVE_MACRO_COMBINE(A, B) __CLOVE_MACRO_COMBINE_INTERNAL(A, B)
+__CLOVE_EXTERN_C void __clove_vector_collection_dtor(void* vector);
 
 #define __CLOVE_VECTOR_INIT(VECTOR_PTR, TYPE) \
     __clove_vector_params_t __CLOVE_MACRO_COMBINE(params,__LINE__) = __clove_vector_params_defaulted(sizeof(TYPE)); \
@@ -272,20 +271,35 @@ typedef struct __clove_map_node_t {
     struct __clove_map_node_t* next;
 } __clove_map_node_t;
 
+typedef struct __clove_map_params_t {
+    size_t initial_capacity;
+    void (*item_dtor)(void*);
+} __clove_map_params_t;
+
 typedef struct __clove_map_t {
     size_t                   count;
     __clove_map_node_t**     hashmap; 
     size_t                   hashmap_size;
     size_t                   (*hash_funct)(void*, size_t);
+    void (*item_dtor)(void*);
 } __clove_map_t;
 
 size_t __clove_map_hash_djb33x(void *key, size_t keylen);
-void __clove_map_init(__clove_map_t* map);
+__clove_map_params_t __clove_map_params_defaulted(void);
+void __clove_map_init(__clove_map_t* map, __clove_map_params_t* params);
 void __clove_map_free(__clove_map_t* map);
 size_t __clove_map_count(__clove_map_t* map);
 void __clove_map_put(__clove_map_t* dict, const char* key, void* value);
 void* __clove_map_get(__clove_map_t* map, const char* key);
 bool __clove_map_has_key(__clove_map_t* map, const char* key);
+
+#define __CLOVE_MAP_INIT(MAP_PTR) \
+    __clove_map_params_t __CLOVE_MACRO_COMBINE(params,__LINE__) = __clove_map_params_defaulted(); \
+    __clove_map_init(MAP_PTR, &__CLOVE_MACRO_COMBINE(params,__LINE__));
+
+#define __CLOVE_MAP_INIT_PARAMS(MAP_PTR, PARAMS) \
+    __clove_map_params_t __CLOVE_MACRO_COMBINE(params,__LINE__) = PARAMS; \
+    __clove_map_init(MAP_PTR, &__CLOVE_MACRO_COMBINE(params,__LINE__));
 
 #pragma endregion // Map Decl
 
@@ -1652,6 +1666,11 @@ void __clove_vector_sort(__clove_vector_t* vector, int (*comparator)(void*, void
     if (vector->count <= 1) return;
     __clove_vector_quicksort_iterative(vector, comparator, 0, vector->count - 1);
 }
+
+void __clove_vector_collection_dtor(void* vector) {
+    __clove_vector_t* vector_ptr = (__clove_vector_t*)vector;
+    __clove_vector_free(vector_ptr);
+}
 #pragma endregion // Vector Impl
 
 #pragma region PRIVATE - Map Impl
@@ -1666,8 +1685,17 @@ size_t __clove_map_hash_djb33x(void *key, size_t keylen) {
     return hash;
 }
 
-void __clove_map_init(__clove_map_t* map) {
-    map->hashmap_size = 10; //default capacity
+__clove_map_params_t __clove_map_params_defaulted(void) 
+{
+    __clove_map_params_t params;
+    params.initial_capacity = 10;
+    params.item_dtor = NULL;
+    return params;
+}
+
+void __clove_map_init(__clove_map_t* map, __clove_map_params_t* params) {
+    map->item_dtor = params->item_dtor;
+    map->hashmap_size = params->initial_capacity;
     map->hashmap = __CLOVE_MEMORY_CALLOC_TYPE_N(__clove_map_node_t*, map->hashmap_size);
     map->hash_funct = __clove_map_hash_djb33x;
     map->count = 0;
@@ -1677,6 +1705,8 @@ void __clove_map_free(__clove_map_t* map) {
     for(size_t i=0; i < map->hashmap_size; ++i) {
         if (!map->hashmap[i]) continue;
         __clove_map_node_t* node = map->hashmap[i];
+
+        if (map->item_dtor) map->item_dtor(node->value);
         free(node->key);
         free(node);
     }
@@ -1789,7 +1819,10 @@ void __clove_cmdline_init(__clove_cmdline_t* cmd, const char** argv, int argc) {
     cmd->argv = argv;
     cmd->argc = argc;
     cmd->arg_index = 1;
-    __clove_map_init(&(cmd->map));
+    //__CLOVE_MAP_INIT(&(cmd->map));
+    __clove_map_params_t params = __clove_map_params_defaulted();
+    params.item_dtor = __clove_vector_collection_dtor;
+    __clove_map_init(&cmd->map, &params);
 
     const char* opt;
     while(__clove_cmdline_next_opt(cmd, &opt)) {
@@ -1811,9 +1844,8 @@ void __clove_cmdline_add_opt(__clove_cmdline_t* cmd, const char* opt, const char
     if (__clove_map_has_key(&(cmd->map), opt)) {
         values = (__clove_vector_t*)__clove_map_get(&(cmd->map), opt);
     } else {
-        __clove_vector_params_t params = __clove_vector_params_defaulted(sizeof(char*));
         values = __CLOVE_MEMORY_MALLOC_TYPE(__clove_vector_t);
-        __clove_vector_init(values, &params);
+        __CLOVE_VECTOR_INIT(values, char*);
         __clove_map_put(&(cmd->map), opt, values);
     }
     const char* *slot = (const char* *)__clove_vector_add_slot(values);
