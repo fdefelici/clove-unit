@@ -272,8 +272,9 @@ typedef struct __clove_map_node_t {
 } __clove_map_node_t;
 
 typedef struct __clove_map_params_t {
-    size_t initial_capacity;
-    void (*item_dtor)(void*);
+    size_t initial_hash_size;
+    size_t (*hash_funct)(void*, size_t);
+    void   (*item_dtor)(void*);
 } __clove_map_params_t;
 
 typedef struct __clove_map_t {
@@ -281,7 +282,7 @@ typedef struct __clove_map_t {
     __clove_map_node_t**     hashmap; 
     size_t                   hashmap_size;
     size_t                   (*hash_funct)(void*, size_t);
-    void (*item_dtor)(void*);
+    void                     (*item_dtor)(void*);
 } __clove_map_t;
 
 size_t __clove_map_hash_djb33x(void *key, size_t keylen);
@@ -1688,16 +1689,17 @@ size_t __clove_map_hash_djb33x(void *key, size_t keylen) {
 __clove_map_params_t __clove_map_params_defaulted(void) 
 {
     __clove_map_params_t params;
-    params.initial_capacity = 10;
+    params.initial_hash_size = 10;
+    params.hash_funct = __clove_map_hash_djb33x;
     params.item_dtor = NULL;
     return params;
 }
 
 void __clove_map_init(__clove_map_t* map, __clove_map_params_t* params) {
-    map->item_dtor = params->item_dtor;
-    map->hashmap_size = params->initial_capacity;
+    map->hashmap_size = params->initial_hash_size;
     map->hashmap = __CLOVE_MEMORY_CALLOC_TYPE_N(__clove_map_node_t*, map->hashmap_size);
-    map->hash_funct = __clove_map_hash_djb33x;
+    map->hash_funct = params->hash_funct;
+    map->item_dtor = params->item_dtor;
     map->count = 0;
 }
 
@@ -1706,9 +1708,16 @@ void __clove_map_free(__clove_map_t* map) {
         if (!map->hashmap[i]) continue;
         __clove_map_node_t* node = map->hashmap[i];
 
-        if (map->item_dtor) map->item_dtor(node->value);
-        free(node->key);
-        free(node);
+        __clove_map_node_t* current = node;
+        while(current) {
+            __clove_map_node_t* next = current->next;
+
+            free(current->key);
+            if (map->item_dtor) map->item_dtor(current->value);
+            free(current);
+
+            current = next;
+        }
     }
     free(map->hashmap);
     map->hashmap = NULL;
@@ -1735,7 +1744,7 @@ bool __clove_map_has_key(__clove_map_t* map, const char* key) {
 
 void __clove_map_put(__clove_map_t* dict, const char* key, void* value) {
     size_t key_size = __clove_string_length(key);
-    size_t hash = __clove_map_hash_djb33x((void*)key, key_size);
+    size_t hash = dict->hash_funct((void*)key, key_size);
     size_t hash_index = hash % dict->hashmap_size;
     //Scenario 1: hash(Key) not present
     if (!dict->hashmap[hash_index]) {
@@ -1776,7 +1785,7 @@ void __clove_map_put(__clove_map_t* dict, const char* key, void* value) {
 
 void* __clove_map_get(__clove_map_t* map, const char* key) {
     size_t key_size = __clove_string_length(key);
-    size_t hash = __clove_map_hash_djb33x((void*)key, key_size);
+    size_t hash = map->hash_funct((void*)key, key_size);
     size_t hash_index = hash % map->hashmap_size;
 
     __clove_map_node_t* node = map->hashmap[hash_index];
@@ -1819,7 +1828,7 @@ void __clove_cmdline_init(__clove_cmdline_t* cmd, const char** argv, int argc) {
     cmd->argv = argv;
     cmd->argc = argc;
     cmd->arg_index = 1;
-    //__CLOVE_MAP_INIT(&(cmd->map));
+
     __clove_map_params_t params = __clove_map_params_defaulted();
     params.item_dtor = __clove_vector_collection_dtor;
     __clove_map_init(&cmd->map, &params);

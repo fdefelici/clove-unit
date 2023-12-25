@@ -40,10 +40,33 @@ static int dtor_call_count = 0;
 static void item_dtor(void* item) {
     dtor_call_count++;
 }
+CLOVE_TEST(FreeWithCustomDtorWhenNoCollision) {
+    dtor_call_count = 0;
 
-CLOVE_TEST(FreeCustomType) {
     __clove_map_t map;
     __clove_map_params_t params = __clove_map_params_defaulted();
+    params.item_dtor = item_dtor;
+    __clove_map_init(&map, &params);
+    
+    int value1 = 1;
+    int value2 = 2;
+    __clove_map_put(&map, "one", &value1);
+    __clove_map_put(&map, "two", &value2);
+    __clove_map_free(&map);
+
+    CLOVE_INT_EQ(2, dtor_call_count);
+}
+
+size_t const_hash_funct(void *key, size_t keylen) {
+    return 0;
+}
+
+CLOVE_TEST(FreeWithCustomDtorWithCollision) {
+    dtor_call_count = 0;
+
+    __clove_map_t map;
+    __clove_map_params_t params = __clove_map_params_defaulted();
+    params.hash_funct = const_hash_funct;
     params.item_dtor = item_dtor;
     __clove_map_init(&map, &params);
     
