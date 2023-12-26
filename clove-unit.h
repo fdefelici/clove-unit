@@ -2056,24 +2056,32 @@ __clove_cmdline_errno_t __clove_cmdline_handle_list_tests(__clove_cmdline_t* cmd
 }
 
 void __clove_cmdline_create_test_expr(__clove_cmdline_t* cmd, const char* opt1, const char* opt2,  __clove_vector_t* expressions) {
+    *expressions = __clove_vector_null();
+    
+    bool has_opt1 = __clove_cmdline_has_opt(cmd, opt1);
+    bool has_opt2 = __clove_cmdline_has_opt(cmd, opt2);
+    if ( !has_opt1 && !has_opt2) return;
+    
     __clove_vector_t values;
     __CLOVE_VECTOR_INIT(&values, char*);
 
-    if (__clove_cmdline_has_opt(cmd, opt1)) {
+    if (has_opt1) {
         __clove_vector_t* values1 = __clove_cmdline_get_opt_values(cmd, opt1);
         __clove_vector_add_all(&values, values1);
     }
-    if (__clove_cmdline_has_opt(cmd, opt2)) {
+    if (has_opt2) {
         __clove_vector_t* values2 = __clove_cmdline_get_opt_values(cmd, opt2);
          __clove_vector_add_all(&values, values2);
     }
 
+/*
     size_t values_count = __clove_vector_count(&values);
     if (values_count == 0) {
         *expressions = __clove_vector_null();
         return;
     }
-
+*/
+    size_t values_count = __clove_vector_count(&values);
     __CLOVE_VECTOR_INIT_CAPACITY(expressions, __clove_test_expr_t, values_count);
 
     __CLOVE_VECTOR_FOREACH(&values, char*, expr_str, {
