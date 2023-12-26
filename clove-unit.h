@@ -2696,7 +2696,7 @@ void __clove_report_pretty_end_test(__clove_report_t* _this, __clove_suite_t* su
                 }
             __CLOVE_SWITCH_END()
         }
-        report->stream->writef(report->stream, "%s %s%s => %s@%d: %s\n", report->labels.erro, result, report->labels.fail, test->file_name, test->issue.line, msg);
+        report->stream->writef(report->stream, "%s %s%s %s:%d: %s\n", report->labels.erro, result, report->labels.fail, test->file_name, test->issue.line, msg);
     }
     else if (test->result == __CLOVE_TEST_RESULT_SKIPPED) {
         report->stream->writef(report->stream, "%s %s%s\n", report->labels.warn, result, report->labels.skip);

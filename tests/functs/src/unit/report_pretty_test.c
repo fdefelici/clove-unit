@@ -118,7 +118,7 @@ CLOVE_TEST(ReportOneSuiteWithTwoTests) {
     "[INFO] Executing Test Runner in 'Verbose' mode\n"
     "[INFO] Suite / Tests found: 1 / 2\n"
     "[INFO] 1) Suite1.Test11............................................[PASS] (0.000 ms)\n"
-    "[ERRO] 2) Suite1.Test12............................................[FAIL] => test-file.c@8: expected [false] but was [true]\n"
+    "[ERRO] 2) Suite1.Test12............................................[FAIL] test-file.c:8: expected [false] but was [true]\n"
     "[INFO] Total: 2, Passed: 1, Failed: 1, Skipped: 0\n"
     "[INFO] Run duration: 0 ms\n"
     "[ERRO] Run result: FAILURE :_(\n"
