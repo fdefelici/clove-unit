@@ -1,5 +1,5 @@
 #cmake_minimum_required(VERSION 3.18)
-#project(CLoveUnit LANGUAGES C)
+project(CLoveUnitTest LANGUAGES C)
 
 file(GLOB_RECURSE SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.c)
 file(GLOB_RECURSE HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/src/*.h)

@@ -49,7 +49,6 @@ extern char* __clove_exec_base_path;
 __CLOVE_EXTERN_C const char* __clove_get_exec_base_path(void);
 __CLOVE_EXTERN_C const char* __clove_get_exec_path(void);
 
-
 //Switch implementation for pointer types
 #define __CLOVE_SWITCH_BEG(X) \
     { \
@@ -63,6 +62,9 @@ __CLOVE_EXTERN_C const char* __clove_get_exec_path(void);
 
 //Custom suppressing "unused parameter" warnings for multi-compilers
 #define __CLOVE_UNUSED_VAR(x) (void)(x)
+
+#define __CLOVE_MACRO_COMBINE_INTERNAL(A, B) A##B
+#define __CLOVE_MACRO_COMBINE(A, B) __CLOVE_MACRO_COMBINE_INTERNAL(A, B)
 #pragma endregion // Utils Decl
 
 #pragma region PRIVATE - Math Decl
@@ -235,10 +237,7 @@ __CLOVE_EXTERN_C void __clove_vector_swap(__clove_vector_t* vector, size_t index
 __CLOVE_EXTERN_C size_t __clove_vector_quicksort_partition(__clove_vector_t* vector, int (*comparator)(void*, void*), size_t start_index, size_t end_index);
 __CLOVE_EXTERN_C void __clove_vector_quicksort_iterative(__clove_vector_t* vector, int (*comparator)(void*, void*), size_t start_index, size_t end_index);
 __CLOVE_EXTERN_C void __clove_vector_sort(__clove_vector_t* vector, int (*comparator)(void*, void*));
-
-
-#define __CLOVE_MACRO_COMBINE_INTERNAL(A, B) A##B
-#define __CLOVE_MACRO_COMBINE(A, B) __CLOVE_MACRO_COMBINE_INTERNAL(A, B)
+__CLOVE_EXTERN_C void __clove_vector_collection_dtor(void* vector);
 
 #define __CLOVE_VECTOR_INIT(VECTOR_PTR, TYPE) \
     __clove_vector_params_t __CLOVE_MACRO_COMBINE(params,__LINE__) = __clove_vector_params_defaulted(sizeof(TYPE)); \
@@ -272,20 +271,36 @@ typedef struct __clove_map_node_t {
     struct __clove_map_node_t* next;
 } __clove_map_node_t;
 
+typedef struct __clove_map_params_t {
+    size_t initial_hash_size;
+    size_t (*hash_funct)(void*, size_t);
+    void   (*item_dtor)(void*);
+} __clove_map_params_t;
+
 typedef struct __clove_map_t {
     size_t                   count;
     __clove_map_node_t**     hashmap; 
     size_t                   hashmap_size;
     size_t                   (*hash_funct)(void*, size_t);
+    void                     (*item_dtor)(void*);
 } __clove_map_t;
 
 size_t __clove_map_hash_djb33x(void *key, size_t keylen);
-void __clove_map_init(__clove_map_t* map);
+__clove_map_params_t __clove_map_params_defaulted(void);
+void __clove_map_init(__clove_map_t* map, __clove_map_params_t* params);
 void __clove_map_free(__clove_map_t* map);
 size_t __clove_map_count(__clove_map_t* map);
 void __clove_map_put(__clove_map_t* dict, const char* key, void* value);
 void* __clove_map_get(__clove_map_t* map, const char* key);
 bool __clove_map_has_key(__clove_map_t* map, const char* key);
+
+#define __CLOVE_MAP_INIT(MAP_PTR) \
+    __clove_map_params_t __CLOVE_MACRO_COMBINE(params,__LINE__) = __clove_map_params_defaulted(); \
+    __clove_map_init(MAP_PTR, &__CLOVE_MACRO_COMBINE(params,__LINE__));
+
+#define __CLOVE_MAP_INIT_PARAMS(MAP_PTR, PARAMS) \
+    __clove_map_params_t __CLOVE_MACRO_COMBINE(params,__LINE__) = PARAMS; \
+    __clove_map_init(MAP_PTR, &__CLOVE_MACRO_COMBINE(params,__LINE__));
 
 #pragma endregion // Map Decl
 
@@ -1652,6 +1667,11 @@ void __clove_vector_sort(__clove_vector_t* vector, int (*comparator)(void*, void
     if (vector->count <= 1) return;
     __clove_vector_quicksort_iterative(vector, comparator, 0, vector->count - 1);
 }
+
+void __clove_vector_collection_dtor(void* vector) {
+    __clove_vector_t* vector_ptr = (__clove_vector_t*)vector;
+    __clove_vector_free(vector_ptr);
+}
 #pragma endregion // Vector Impl
 
 #pragma region PRIVATE - Map Impl
@@ -1666,10 +1686,20 @@ size_t __clove_map_hash_djb33x(void *key, size_t keylen) {
     return hash;
 }
 
-void __clove_map_init(__clove_map_t* map) {
-    map->hashmap_size = 10; //default capacity
+__clove_map_params_t __clove_map_params_defaulted(void) 
+{
+    __clove_map_params_t params;
+    params.initial_hash_size = 10;
+    params.hash_funct = __clove_map_hash_djb33x;
+    params.item_dtor = NULL;
+    return params;
+}
+
+void __clove_map_init(__clove_map_t* map, __clove_map_params_t* params) {
+    map->hashmap_size = params->initial_hash_size;
     map->hashmap = __CLOVE_MEMORY_CALLOC_TYPE_N(__clove_map_node_t*, map->hashmap_size);
-    map->hash_funct = __clove_map_hash_djb33x;
+    map->hash_funct = params->hash_funct;
+    map->item_dtor = params->item_dtor;
     map->count = 0;
 }
 
@@ -1677,8 +1707,21 @@ void __clove_map_free(__clove_map_t* map) {
     for(size_t i=0; i < map->hashmap_size; ++i) {
         if (!map->hashmap[i]) continue;
         __clove_map_node_t* node = map->hashmap[i];
-        free(node->key);
-        free(node);
+
+        __clove_map_node_t* current = node;
+        while(current) {
+            __clove_map_node_t* next = current->next;
+
+            free(current->key);
+            if (map->item_dtor) {
+                //if dtor set, means map become owner of the item (and its memory)
+                map->item_dtor(current->value);
+                free(current->value);
+            }
+            free(current);
+
+            current = next;
+        }
     }
     free(map->hashmap);
     map->hashmap = NULL;
@@ -1705,7 +1748,7 @@ bool __clove_map_has_key(__clove_map_t* map, const char* key) {
 
 void __clove_map_put(__clove_map_t* dict, const char* key, void* value) {
     size_t key_size = __clove_string_length(key);
-    size_t hash = __clove_map_hash_djb33x((void*)key, key_size);
+    size_t hash = dict->hash_funct((void*)key, key_size);
     size_t hash_index = hash % dict->hashmap_size;
     //Scenario 1: hash(Key) not present
     if (!dict->hashmap[hash_index]) {
@@ -1746,7 +1789,7 @@ void __clove_map_put(__clove_map_t* dict, const char* key, void* value) {
 
 void* __clove_map_get(__clove_map_t* map, const char* key) {
     size_t key_size = __clove_string_length(key);
-    size_t hash = __clove_map_hash_djb33x((void*)key, key_size);
+    size_t hash = map->hash_funct((void*)key, key_size);
     size_t hash_index = hash % map->hashmap_size;
 
     __clove_map_node_t* node = map->hashmap[hash_index];
@@ -1789,7 +1832,10 @@ void __clove_cmdline_init(__clove_cmdline_t* cmd, const char** argv, int argc) {
     cmd->argv = argv;
     cmd->argc = argc;
     cmd->arg_index = 1;
-    __clove_map_init(&(cmd->map));
+
+    __clove_map_params_t params = __clove_map_params_defaulted();
+    params.item_dtor = __clove_vector_collection_dtor;
+    __clove_map_init(&cmd->map, &params);
 
     const char* opt;
     while(__clove_cmdline_next_opt(cmd, &opt)) {
@@ -1811,9 +1857,8 @@ void __clove_cmdline_add_opt(__clove_cmdline_t* cmd, const char* opt, const char
     if (__clove_map_has_key(&(cmd->map), opt)) {
         values = (__clove_vector_t*)__clove_map_get(&(cmd->map), opt);
     } else {
-        __clove_vector_params_t params = __clove_vector_params_defaulted(sizeof(char*));
         values = __CLOVE_MEMORY_MALLOC_TYPE(__clove_vector_t);
-        __clove_vector_init(values, &params);
+        __CLOVE_VECTOR_INIT(values, char*);
         __clove_map_put(&(cmd->map), opt, values);
     }
     const char* *slot = (const char* *)__clove_vector_add_slot(values);
@@ -2011,24 +2056,25 @@ __clove_cmdline_errno_t __clove_cmdline_handle_list_tests(__clove_cmdline_t* cmd
 }
 
 void __clove_cmdline_create_test_expr(__clove_cmdline_t* cmd, const char* opt1, const char* opt2,  __clove_vector_t* expressions) {
+    *expressions = __clove_vector_null();
+    
+    bool has_opt1 = __clove_cmdline_has_opt(cmd, opt1);
+    bool has_opt2 = __clove_cmdline_has_opt(cmd, opt2);
+    if ( !has_opt1 && !has_opt2) return;
+    
     __clove_vector_t values;
     __CLOVE_VECTOR_INIT(&values, char*);
 
-    if (__clove_cmdline_has_opt(cmd, opt1)) {
+    if (has_opt1) {
         __clove_vector_t* values1 = __clove_cmdline_get_opt_values(cmd, opt1);
         __clove_vector_add_all(&values, values1);
     }
-    if (__clove_cmdline_has_opt(cmd, opt2)) {
+    if (has_opt2) {
         __clove_vector_t* values2 = __clove_cmdline_get_opt_values(cmd, opt2);
          __clove_vector_add_all(&values, values2);
     }
 
     size_t values_count = __clove_vector_count(&values);
-    if (values_count == 0) {
-        *expressions = __clove_vector_null();
-        return;
-    }
-
     __CLOVE_VECTOR_INIT_CAPACITY(expressions, __clove_test_expr_t, values_count);
 
     __CLOVE_VECTOR_FOREACH(&values, char*, expr_str, {
@@ -2038,6 +2084,7 @@ void __clove_cmdline_create_test_expr(__clove_cmdline_t* cmd, const char* opt1, 
         __CLOVE_VECTOR_ADD(expressions, __clove_test_expr_t, expr);
     });
     
+    __clove_vector_free(&values);
 }
 #pragma endregion // CommandLine Impl
 

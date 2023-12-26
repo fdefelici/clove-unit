@@ -27,7 +27,7 @@ jobs:
           echo "== CMAKE VERSION =="
           cmake --version
           echo "== CMAKE CONFIGURE =="
-          cmake -B${{env.BUILD_DIR}} -DCLOVE_CMAKE__CI_TRIGGERED=1
+          cmake -B${{env.BUILD_DIR}} -DCLOVE_CMAKE__UC_BUILD=true
           echo "== CMAKE BUILD =="
           cmake --build ${{env.BUILD_DIR}} --config Release
       - name: List Build
@@ -55,7 +55,7 @@ jobs:
           echo "== CMAKE VERSION =="
           cmake --version
           echo "== CMAKE CONFIGURE =="
-          cmake -B${{env.BUILD_DIR}} -DCLOVE_CMAKE__CI_TRIGGERED=1
+          cmake -B${{env.BUILD_DIR}} -DCLOVE_CMAKE__UC_BUILD=true
           echo "== CMAKE BUILD =="
           cmake --build ${{env.BUILD_DIR}} --config Release
       - name: List Build
@@ -109,7 +109,7 @@ jobs:
             echo "== CMAKE VERSION =="
             cmake --version
             echo "== CMAKE CONFIGURE =="
-            cmake -B${{env.BUILD_DIR}} -DCLOVE_CMAKE__CI_TRIGGERED=1 -DCLOVE_CMAKE__CPP_STRICT_WARN_AS_ERROR=${{matrix.compiler.strict}}
+            cmake -B${{env.BUILD_DIR}} -DCLOVE_CMAKE__UC_BUILD=true -DCLOVE_CMAKE__CPP_STRICT_WARN_AS_ERROR=${{matrix.compiler.strict}}
             echo "== CMAKE BUILD =="
             cmake --build ${{env.BUILD_DIR}} --config Release
         - name: List Build
@@ -119,3 +119,31 @@ jobs:
             cd ${{env.BUILD_DIR}}
             ctest -C Release -T test --output-on-failure
             cd ${{ github.workspace }}
+  sanity_check:
+    name: Sanity Check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    env:
+      BUILD_DIR: ${{ github.workspace }}/build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: List Workspace
+        run:  ls -la ${{ github.workspace }}
+      - name: Compile
+        run: |
+          echo "== CMAKE VERSION =="
+          cmake --version
+          echo "== CMAKE CONFIGURE =="
+          cmake -B${{env.BUILD_DIR}} -DCLOVE_CMAKE__UC_SANITY=true
+          echo "== CMAKE BUILD =="
+          cmake --build ${{env.BUILD_DIR}} --config Release
+      - name: List Build
+        run:  ls -la ${{env.BUILD_DIR}}
+      - name: Sanity
+        run: |
+          cd ${{env.BUILD_DIR}}
+          ctest -C Release -T test --output-on-failure
+          cd ${{ github.workspace }}
