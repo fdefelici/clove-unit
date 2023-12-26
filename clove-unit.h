@@ -1713,7 +1713,11 @@ void __clove_map_free(__clove_map_t* map) {
             __clove_map_node_t* next = current->next;
 
             free(current->key);
-            if (map->item_dtor) map->item_dtor(current->value);
+            if (map->item_dtor) {
+                //if dtor set, means map become owner of the item (and its memory)
+                map->item_dtor(current->value);
+                free(current->value);
+            }
             free(current);
 
             current = next;

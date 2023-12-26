@@ -48,10 +48,10 @@ CLOVE_TEST(FreeWithCustomDtorWhenNoCollision) {
     params.item_dtor = item_dtor;
     __clove_map_init(&map, &params);
     
-    int value1 = 1;
-    int value2 = 2;
-    __clove_map_put(&map, "one", &value1);
-    __clove_map_put(&map, "two", &value2);
+    int* value1 = __CLOVE_MEMORY_MALLOC_TYPE(int);
+    int* value2 = __CLOVE_MEMORY_MALLOC_TYPE(int);
+    __clove_map_put(&map, "one", value1);
+    __clove_map_put(&map, "two", value2);
     __clove_map_free(&map);
 
     CLOVE_INT_EQ(2, dtor_call_count);
@@ -70,10 +70,10 @@ CLOVE_TEST(FreeWithCustomDtorWithCollision) {
     params.item_dtor = item_dtor;
     __clove_map_init(&map, &params);
     
-    int value1 = 1;
-    int value2 = 2;
-    __clove_map_put(&map, "one", &value1);
-    __clove_map_put(&map, "two", &value2);
+    int* value1 = __CLOVE_MEMORY_MALLOC_TYPE(int);
+    int* value2 = __CLOVE_MEMORY_MALLOC_TYPE(int);
+    __clove_map_put(&map, "one", value1);
+    __clove_map_put(&map, "two", value2);
     __clove_map_free(&map);
 
     CLOVE_INT_EQ(2, dtor_call_count);
