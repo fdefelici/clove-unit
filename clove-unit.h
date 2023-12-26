@@ -2074,13 +2074,6 @@ void __clove_cmdline_create_test_expr(__clove_cmdline_t* cmd, const char* opt1, 
          __clove_vector_add_all(&values, values2);
     }
 
-/*
-    size_t values_count = __clove_vector_count(&values);
-    if (values_count == 0) {
-        *expressions = __clove_vector_null();
-        return;
-    }
-*/
     size_t values_count = __clove_vector_count(&values);
     __CLOVE_VECTOR_INIT_CAPACITY(expressions, __clove_test_expr_t, values_count);
 
