@@ -35,12 +35,12 @@ static __clove_test_t create_test_fail(const char* name) {
 
 static __clove_report_pretty_t* report;
 static __clove_stream_memory_t* stream;
+static __clove_report_params_t params;
 
 CLOVE_SUITE_SETUP() {
     stream = __clove_stream_memory_new();
-    __clove_report_params_t params;
     params.tests_base_path = "abs";
-    report = __clove_report_pretty_new((__clove_stream_t*)stream, params);
+    report = __clove_report_pretty_new((__clove_stream_t*)stream, &params);
 }
 
 CLOVE_SUITE_TEARDOWN() {

@@ -4,11 +4,14 @@
 
 static __clove_report_json_t* report;
 static __clove_stream_file_t* stream;
+static __clove_report_params_t params;
+
 
 CLOVE_SUITE_SETUP() {
     char* file_path = __clove_path_rel_to_abs_exec_path("clove_report.json");
     stream = __clove_stream_file_new(file_path);
-    report = __clove_report_json_new((__clove_stream_t*)stream);
+    params.tests_base_path = "";
+    report = __clove_report_json_new((__clove_stream_t*)stream, &params);
 }
 
 CLOVE_SUITE_TEARDOWN() {
