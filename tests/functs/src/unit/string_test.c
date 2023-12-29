@@ -43,6 +43,10 @@ CLOVE_TEST(StringStartsWith) {
     const char* str3 = NULL;
     result = __clove_string_startswith(str3, prefix);
     CLOVE_IS_FALSE(result);
+
+    const char* str4 = "hello";
+    result = __clove_string_startswith(str3, "");
+    CLOVE_IS_FALSE(result);
 }
 
 CLOVE_TEST(StringCsvEscape) {
