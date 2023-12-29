@@ -883,7 +883,7 @@ char*  __clove_path_concat(const char separator, const char* path1, const char* 
 
 const char* __clove_path_relative(const char* abs_path, const char* base_path) {
     if (!__clove_string_startswith(abs_path, base_path)) return abs_path;
-    
+
     size_t base_path_length = __clove_string_length(base_path);
     const char* result = abs_path + base_path_length;
     if (__clove_string_startswith(result, __CLOVE_PATH_SEPARATOR_STR)) {
@@ -1027,7 +1027,13 @@ bool __clove_string_equal(const char* str1, const char* str2) {
 
 bool __clove_string_startswith(const char* str1, const char* prefix) {
     if (!str1 || !prefix) return false;
-    return strncmp(str1, prefix, __clove_string_length(prefix)) == 0;
+    size_t prefix_len = __clove_string_length(prefix);
+    if (prefix_len == 0) {
+        size_t str_len = __clove_string_length(str1);
+        if (str_len == 0) return true;
+        else return false;
+    }
+    return strncmp(str1, prefix, prefix_len) == 0;
 }
 
 bool __clove_string_endswith(const char* str, const char* suffix) {

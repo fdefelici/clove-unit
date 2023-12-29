@@ -31,22 +31,9 @@ CLOVE_TEST(StringEscaping) {
 }
 
 CLOVE_TEST(StringStartsWith) {
-    const char* str1 = "-v";
-    const char* prefix = "-";
-    bool result = __clove_string_startswith(str1, prefix);
-    CLOVE_IS_TRUE(result);
-
-    const char* str2 = "";
-    result = __clove_string_startswith(str2, prefix);
-    CLOVE_IS_FALSE(result);
-
-    const char* str3 = NULL;
-    result = __clove_string_startswith(str3, prefix);
-    CLOVE_IS_FALSE(result);
-
-    const char* str4 = "hello";
-    result = __clove_string_startswith(str3, "");
-    CLOVE_IS_FALSE(result);
+    CLOVE_IS_TRUE(__clove_string_startswith("-v", "-"));
+    CLOVE_IS_FALSE(__clove_string_startswith("-v", ""));
+    CLOVE_IS_FALSE(__clove_string_startswith("-v", NULL));
 }
 
 CLOVE_TEST(StringCsvEscape) {
