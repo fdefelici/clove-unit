@@ -66,3 +66,17 @@ CLOVE_TEST(PathToOsMixed) {
     __clove_path_to_os(provided);
     CLOVE_STRING_EQ(expected, provided);
 }
+
+CLOVE_TEST(GetRelativePathFromAbsPath) {
+    //TODO: Eventually macro with VARGS to concatenate string and build an os path in one line
+    char abs_path[]  = "/my/abs/path/file.c";
+    char base_path[] = "/my/abs";
+    char expected[]  = "path/file.c";
+
+    __clove_path_to_os(abs_path);
+    __clove_path_to_os(base_path);
+    __clove_path_to_os(expected);
+
+    const char* result = __clove_path_relative(abs_path, base_path);
+    CLOVE_STRING_EQ(expected, result);
+}

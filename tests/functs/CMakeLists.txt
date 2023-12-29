@@ -13,11 +13,22 @@ add_subdirectory(resources/prj01)
 
 # Resource project configuration
 if(MSVC)
+    macro(to_win_path_escaped path_in_out)
+        string(REGEX REPLACE "/" "\\\\\\\\" ${path_in_out} "${${path_in_out}}")
+    endmacro()
+
     set(RES_PRJ01_EXEC_PATH \"${CMAKE_CURRENT_BINARY_DIR}/resources/prj01/${CMAKE_BUILD_TYPE_INIT}/CLoveUnitResourcePrj01.exe\")
+    set(RES_PRJ01_TEST_PATH \"${CMAKE_CURRENT_SOURCE_DIR}/resources/prj01\")
+    to_win_path_escaped(RES_PRJ01_TEST_PATH)
+    #cmake_path(SET RES_PRJ01_TEST_PATH \"${CMAKE_CURRENT_SOURCE_DIR}/resources/prj01\")
+    #cmake_path(NATIVE_PATH RES_PRJ01_TEST_PATH RES_PRJ01_TEST_PATH)
+    #message(STATUS "RES_PRJ01_TEST_PATH=${RES_PRJ01_TEST_PATH}") 
 else()
     set(RES_PRJ01_EXEC_PATH \"${CMAKE_CURRENT_BINARY_DIR}/resources/prj01/CLoveUnitResourcePrj01\")
+    set(RES_PRJ01_TEST_PATH \"${CMAKE_CURRENT_SOURCE_DIR}/resources/prj01\")
 endif()
 add_compile_definitions(RES_PRJ01_EXEC_PATH=${RES_PRJ01_EXEC_PATH})
+add_compile_definitions(RES_PRJ01_TEST_PATH=${RES_PRJ01_TEST_PATH})
 
 # Compiler Options
 #[[

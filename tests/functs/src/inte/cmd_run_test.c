@@ -170,11 +170,27 @@ CLOVE_TEST(DefaultReportWithOptRunTests) {
     CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "Total: 3, Passed: 2, Failed: 1, Skipped: 0"));
 }
 
+CLOVE_TEST(DefaultReportWithOptTestsBasePath) {
+    const char* cmd;
+    int cmd_code;
+    
+    cmd = RES_PRJ01_EXEC_PATH" -b "RES_PRJ01_TEST_PATH;
+    cmd_code = exec_cmd(cmd, &cmd_out);
+    CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_OK, cmd_code);
+    CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "[FAIL] src"__CLOVE_PATH_SEPARATOR_STR"prj01_test1.c:9: A FAIL assertion was met!"));
+
+    cmd = RES_PRJ01_EXEC_PATH" --base-path "RES_PRJ01_TEST_PATH;
+    cmd_code = exec_cmd(cmd, &cmd_out);
+    CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_OK, cmd_code);
+    CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "[FAIL] src"__CLOVE_PATH_SEPARATOR_STR"prj01_test1.c:9: A FAIL assertion was met!"));
+}
 
 CLOVE_TEST(ReportWithOptRcsvWithFailure) {
     const char* cmd = RES_PRJ01_EXEC_PATH" -r csv";
     int cmd_code = exec_cmd(cmd, &cmd_out);
     CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_OK, cmd_code);
+
+    puts(RES_PRJ01_TEST_PATH);
 
     __clove_vector_t lines;
     str_split(cmd_out, '\n', &lines);
@@ -191,11 +207,12 @@ CLOVE_TEST(ReportWithOptRcsvWithFailure) {
     //line2
     CLOVE_IS_TRUE(__clove_string_startswith(line2, "Prj01Suite01,Test01,PASS,"));
     //line3
-    CLOVE_STRING_EQ("Prj01Suite01,Test02,FAIL,,src"_SEP_"prj01_test1.c,9,FAIL,,,", line3);
+    CLOVE_STRING_EQ("Prj01Suite01,Test02,FAIL,,"RES_PRJ01_TEST_PATH _SEP_ "src"_SEP_"prj01_test1.c,9,FAIL,,,", line3);
     //line4
     CLOVE_IS_TRUE(__clove_string_startswith(line4, "Prj01Suite02,Test21,PASS,"));
 
 
     //CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "Suite,Test,Status,Duration,File,Line,Expected,Actual"));
     //CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "Prj01Suite01,Test01,PASS"));
+
 }

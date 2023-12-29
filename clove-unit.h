@@ -42,7 +42,6 @@
 #pragma region PRIVATE - Utils Decl
 #include <stdio.h>
 __CLOVE_EXTERN_C void  __clove_utils_empty_funct(void);
-__CLOVE_EXTERN_C const char* __clove_rel_src(const char* path);
 
 extern char* __clove_exec_path;
 extern char* __clove_exec_base_path;
@@ -86,6 +85,7 @@ __CLOVE_EXTERN_C double __clove_math_decimald(unsigned char precision);
 #endif //_WIN32
 
 __CLOVE_EXTERN_C char* __clove_path_concat(const char separator, const char* path1, const char* path2);
+__CLOVE_EXTERN_C const char* __clove_path_relative(const char* abs_path, const char* base_path);
 __CLOVE_EXTERN_C char* __clove_path_rel_to_abs_exec_path(const char* rel_path);
 __CLOVE_EXTERN_C bool __clove_path_is_relative(const char* path);
 __CLOVE_EXTERN_C void __clove_path_to_os(char* path);
@@ -489,8 +489,8 @@ __CLOVE_EXTERN_C void __clove_vector_suite_dtor(void* suite_ptr);
 #pragma region PRIVATE - Assert Decl
 #define __CLOVE_ASSERT_GUARD \
     if (_this->result == __CLOVE_TEST_RESULT_FAILED) { return; }\
-    if (_this->file_name == NULL) _this->file_name = __clove_rel_src(__FILE__); \
-    _this->issue.line=__LINE__;
+    if (_this->file_name == NULL) _this->file_name = __FILE__; \
+    _this->issue.line = __LINE__;
 
 #define __CLOVE_ASSERT_INTEGER_CHECK(mode, exp, act, type, field, test) \
     bool pass_scenario = false;\
@@ -596,6 +596,10 @@ typedef struct __clove_test_expr_t {
     __clove_string_view_t test_view;
 } __clove_test_expr_t;
 
+typedef struct __clove_report_params_t {
+    const char* tests_base_path;
+} __clove_report_params_t;
+
 __CLOVE_EXTERN_C void __clove_test_expr_init(__clove_test_expr_t* expr,  const char* expr_str);
 __CLOVE_EXTERN_C bool __clove_test_expr_validate_vw(const __clove_string_view_t* match, const __clove_string_view_t* view);
 __CLOVE_EXTERN_C bool __clove_test_expr_validate(__clove_test_expr_t* expr, const __clove_string_view_t* suite, const __clove_string_view_t* test);
@@ -606,6 +610,7 @@ __CLOVE_EXTERN_C bool __clove_test_expr_validate(__clove_test_expr_t* expr, cons
 typedef struct __clove_report_pretty_t {
     __clove_report_t base;
     __clove_stream_t* stream;
+    __clove_report_params_t params;
     __clove_time_t start_time;
     unsigned int max_test_digits;
     struct {
@@ -617,7 +622,7 @@ typedef struct __clove_report_pretty_t {
         const char* fail;
     } labels;
 } __clove_report_pretty_t;
-__clove_report_pretty_t* __clove_report_pretty_new(__clove_stream_t* stream);
+__clove_report_pretty_t* __clove_report_pretty_new(__clove_stream_t* stream, const __clove_report_params_t params);
 __CLOVE_EXTERN_C void __clove_report_pretty_free(__clove_report_t* report);
 __CLOVE_EXTERN_C void __clove_report_pretty_start(__clove_report_t* _this, size_t suite_count, size_t test_count);
 __CLOVE_EXTERN_C void __clove_report_pretty_begin_suite(__clove_report_t* _this, __clove_suite_t* suite, size_t index);
@@ -805,7 +810,7 @@ __CLOVE_EXTERN_C void __clove_exec_suite(__clove_suite_t* suite, size_t test_cou
 #define __CLOVE_TEST_AUTO(title) \
     __CLOVE_SUITE_METHOD_INTERNAL_DECL_1( CLOVE_SUITE_NAME, 21_ ## title, __clove_test_t *_this); \
     __CLOVE_SUITE_METHOD_DECL_1( CLOVE_SUITE_NAME, 20_ ## title, __clove_test_t *_this) {\
-        _this->file_name = __clove_rel_src(__FILE__); \
+        _this->file_name = __FILE__; \
         _this->funct_line = __LINE__; \
         if (_this->dry_run) return; \
         __CLOVE_SUITE_METHOD_INTERNAL_INVOKE_1(CLOVE_SUITE_NAME, 21_ ## title, _this); \
@@ -821,15 +826,6 @@ __CLOVE_EXTERN_C void __clove_exec_suite(__clove_suite_t* suite, size_t test_cou
 #include <string.h>
 #include <stdio.h>
 void __clove_utils_empty_funct(void) { }
-
-//TODO: To be reviewed when working on issue: https://github.com/fdefelici/clove-unit/issues/3
-const char* __clove_rel_src(const char* path) {
-    //https://stackoverflow.com/questions/9834067/difference-between-char-and-const-char
-    const char* subpath = __clove_string_strstr(path, __CLOVE_PATH_SEPARATOR_STR"src");
-    if (subpath == NULL) subpath = __clove_string_strstr(path, "tests");
-    if (subpath == NULL) return path;
-    return subpath + 1;
-}
 
 const char* __clove_get_exec_base_path(void) {
     return __clove_exec_base_path;
@@ -865,7 +861,7 @@ double __clove_math_decimald(unsigned char precision) {
 #include <string.h>
 #include <stdbool.h>
 #include <stdlib.h>
-char* __clove_path_concat(const char separator, const char* path1, const char* path2) {
+char*  __clove_path_concat(const char separator, const char* path1, const char* path2) {
     size_t count = __clove_string_length(path1) + 1 + __clove_string_length(path2) + 1;
     char* path = __CLOVE_MEMORY_CALLOC_TYPE_N(char, count);
 
@@ -877,6 +873,17 @@ char* __clove_path_concat(const char separator, const char* path1, const char* p
     __clove_string_replace_char(path, '\\', separator);
 
     return path;
+}
+
+const char* __clove_path_relative(const char* abs_path, const char* base_path) {
+    if (!__clove_string_startswith(abs_path, base_path)) return abs_path;
+    
+    size_t base_path_length = __clove_string_length(base_path);
+    const char* result = abs_path + base_path_length;
+    if (__clove_string_startswith(result, __CLOVE_PATH_SEPARATOR_STR)) {
+        result += 1;
+    }
+    return result;
 }
 
 char* __clove_path_rel_to_abs_exec_path(const char* rel_path) {
@@ -1915,14 +1922,18 @@ __clove_cmdline_errno_t __clove_cmdline_handle_version(__clove_cmdline_t* cmd) {
 }
 
 __clove_cmdline_errno_t __clove_cmdline_handle_run_tests(__clove_cmdline_t* cmd) {
+    //TODO: rename in __clove_cmdline_has_any_opt
     if (!__clove_cmdline_has_one_opt(cmd, "t", "run-tests")) return __CLOVE_CMD_ERRNO_UNMANAGED;
-
+    
+    //TODO: rename in __clove_cmdline_get_any_opt
     const char* r_type = __clove_cmdline_get_one_opt_value(cmd, "r", "report");
     if (!r_type) {
         r_type = "pretty";
     }
 
     //Select Output Type
+
+    //refactor to ____clove_cmdline_get_one_opt_with_default(cmd, "o", "output", "pretty");
     const char* out = "stdout"; //default output is console
     if (__clove_cmdline_has_one_opt(cmd, "o", "output")) {
         out = __clove_cmdline_get_one_opt_value(cmd, "o", "output");
@@ -1942,14 +1953,28 @@ __clove_cmdline_errno_t __clove_cmdline_handle_run_tests(__clove_cmdline_t* cmd)
     }
 
     //Select Report Format
+    __clove_report_params_t report_params;
+    const char* base_path_opt = ""; 
+    if (__clove_cmdline_has_one_opt(cmd, "b", "base-path")) {
+        base_path_opt = __clove_cmdline_get_one_opt_value(cmd, "b", "base-path");
+    }
+    //ensure base path is in os format
+    char* base_path_fixed = __clove_string_strdup(base_path_opt);
+    __clove_path_to_os(base_path_fixed);
+    report_params.tests_base_path = base_path_fixed;
+
     __clove_report_t* report;
     if (__clove_string_equal("json", r_type)) {
         report = (__clove_report_t*)__clove_report_json_new(stream);
     } else if (__clove_string_equal("pretty", r_type)) {
-        report = (__clove_report_t*)__clove_report_pretty_new(stream);
+        report = (__clove_report_t*)__clove_report_pretty_new(stream, report_params); //TODO: rename in run_tests
     } else if (__clove_string_equal("csv", r_type)) {
         report = (__clove_report_t*)__clove_report_run_tests_csv_new(stream);
     } else {
+        //TODO:
+        //NOTE: leak for stream and base_path_fixed in this case
+        //      option1: free them also here
+        //      option2: validate all cmd options at the beginning and avoid this error check
         return __CLOVE_CMD_ERRNO_INVALID_PARAM;
     }
 
@@ -1967,6 +1992,8 @@ __clove_cmdline_errno_t __clove_cmdline_handle_run_tests(__clove_cmdline_t* cmd)
 
     __clove_vector_free(&includes);
     __clove_vector_free(&excludes);
+
+    free(base_path_fixed);
 
     if (run_result == 1) return __CLOVE_CMD_ERRNO_GENERIC;
     if (run_result == 2 && enable_error_in_case_of_test_failure) return __CLOVE_CMD_ERRNO_GENERIC;
@@ -2494,7 +2521,7 @@ bool __clove_test_expr_validate(__clove_test_expr_t* expr, const __clove_string_
 
 #pragma region PRIVATE - RunTests Report Pretty Impl
 #include <stdio.h>
-__clove_report_pretty_t* __clove_report_pretty_new(__clove_stream_t* stream) {
+__clove_report_pretty_t* __clove_report_pretty_new(__clove_stream_t* stream, const __clove_report_params_t params) {
     __clove_report_pretty_t* result = __CLOVE_MEMORY_MALLOC_TYPE(__clove_report_pretty_t);
     result->base.start = __clove_report_pretty_start;
     result->base.begin_suite = __clove_report_pretty_begin_suite;
@@ -2503,6 +2530,7 @@ __clove_report_pretty_t* __clove_report_pretty_new(__clove_stream_t* stream) {
     result->base.end_test = __clove_report_pretty_end_test;
     result->base.free = __clove_report_pretty_free;
     result->stream = stream;
+    result->params = params;
     return result;
 }
 
@@ -2696,7 +2724,13 @@ void __clove_report_pretty_end_test(__clove_report_t* _this, __clove_suite_t* su
                 }
             __CLOVE_SWITCH_END()
         }
-        report->stream->writef(report->stream, "%s %s%s %s:%d: %s\n", report->labels.erro, result, report->labels.fail, test->file_name, test->issue.line, msg);
+
+        const char* file_path = test->file_name;
+        if (report->params.tests_base_path) {
+            file_path = __clove_path_relative(test->file_name, report->params.tests_base_path);
+        }
+    
+        report->stream->writef(report->stream, "%s %s%s %s:%d: %s\n", report->labels.erro, result, report->labels.fail, file_path, test->issue.line, msg);
     }
     else if (test->result == __CLOVE_TEST_RESULT_SKIPPED) {
         report->stream->writef(report->stream, "%s %s%s\n", report->labels.warn, result, report->labels.skip);
