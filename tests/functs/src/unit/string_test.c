@@ -41,3 +41,10 @@ CLOVE_TEST(StringCsvEscape) {
     CLOVE_STRING_EQ("\"\"", __clove_string_csv_escape("\""));
     CLOVE_STRING_EQ("\\n\\t", __clove_string_csv_escape("\n\t"));
 }
+
+CLOVE_TEST(StringIsEqualsAny) {
+    CLOVE_IS_TRUE(__clove_string_equal_any("mystring", 1, "mystring"));
+    CLOVE_IS_FALSE(__clove_string_equal_any("mystring", 1, "one"));
+    CLOVE_IS_TRUE(__clove_string_equal_any("mystring", 3, "one", "two", "mystring"));
+    CLOVE_IS_FALSE(__clove_string_equal_any("mystring", 2, "one", "two"));
+}
