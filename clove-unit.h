@@ -1937,12 +1937,13 @@ __clove_cmdline_errno_t __clove_cmdline_handle_help(__clove_cmdline_t* cmd) {
     printf("%*s<executable> [options]\n", 3," ");
     printf("where options are:\n");
     printf("%*s%-*s%*s%s\n", 3," ", 30,"<no-options>",             5," ", "Run all tests producing a 'pretty' print report (default behaviour).");
+    printf("%*s%-*s%*s%s\n", 3," ", 30,"-b, --base-path",          5," ", "Base path for test sources. Allow to shorten test file paths when running/listing tests.");
     printf("%*s%-*s%*s%s\n", 3," ", 30,"-e, --exclude <expr>",     5," ", "Suite/Test expression to be excluded. Works when running/listing tests.");
     printf("%*s%-*s%*s%s\n", 3," ", 30,"-h, --help",               5," ", "Display usage information.");
     printf("%*s%-*s%*s%s\n", 3," ", 30,"-i, --include <expr>",     5," ", "Suite/Test expression to be included. Works when running/listing tests.");
     printf("%*s%-*s%*s%s\n", 3," ", 30,"-l, --list-tests",         5," ", "List all/matching test cases in 'pretty' format (default).");
     printf("%*s%-*s%*s%s\n", 3," ", 30,"-o, --output <stream>",    5," ", "Specify output stream for a report: 'stdout' (default) or <file path>.");
-    printf("%*s%-*s%*s%s\n", 3," ", 30,"-r, --report <format>",    5," ", "Specify report format when running tests: 'pretty', 'csv', 'json'. ");
+    printf("%*s%-*s%*s%s\n", 3," ", 30,"-r, --report <format>",    5," ", "Specify report format when running tests: 'pretty', 'csv', 'json'.");
     printf("%*s%-*s%*s%s\n", 3," ", 30,"-t, --run-tests",          5," ", "Execute all/matching test cases (same as <no-options>).");
     printf("%*s%-*s%*s%s\n", 3," ", 30,"-v, --version",            5," ", "Show CLove-Unit version.");
     printf("%*s%-*s%*s%s\n", 3," ", 30,"-x, --error-on-test-fail", 5," ", "Test run process will end with error in case of test failure. Default is to end the process succesfully.");
