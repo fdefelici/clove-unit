@@ -250,6 +250,7 @@ A binary built with the `CLove-Unit` library supports a number of command line o
 | Options                     | Description                                                                                                                       |
 |-----------------------------|-----------------------------------------------------------------------------------------------------------------------------------|
 | \<no-option\>               | Running executable with no args will execute tests <br />producing a report in `pretty` format (default)                          |
+| `-b` `--base-path`          | Base path for test sources. Allow to shorten test file paths when running/listing tests.                                          |
 | `-e` `--exclude <expr>`     | Exclude tests is run/listed<br /> (can be repeated more than once)<br /> [[read here for more details](#test-inclusionexclusion)] |
 | `-h` `--help`               | Display usage information.                                                                                                        |
 | `-i` `--include <expr>`     | Include tests is run/listed<br /> (can be repeated more than once)<br /> [[read here for more details](#test-inclusionexclusion)] |

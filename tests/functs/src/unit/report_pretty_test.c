@@ -9,21 +9,38 @@ static __clove_suite_t create_suite(const char* name, size_t test_count) {
 }
 
 static __clove_test_t create_test(const char* name) {
-     __clove_test_t test;
+    __clove_test_t test;
     test.name = (char*)name; //remove const just to avoid build warnings
-    test.file_name = "test_file.c";
+    test.file_name = "abs"__CLOVE_PATH_SEPARATOR_STR"test_file.c";
     test.result = __CLOVE_TEST_RESULT_PASSED;
     test.duration.seconds = 0;
     test.duration.nanos_after_seconds = 100;
     return test;
 }
 
+static __clove_test_t create_test_fail(const char* name) {
+    __clove_test_t test;
+    test.name = (char*)name; //remove const just to avoid build warnings
+    test.file_name = "abs"__CLOVE_PATH_SEPARATOR_STR"test_file.c";
+    test.result = __CLOVE_TEST_RESULT_FAILED;
+    test.duration.seconds = 0;
+    test.duration.nanos_after_seconds = 100;
+    test.issue.line = 8;
+    test.issue.assert = __CLOVE_ASSERT_EQ;
+    test.issue.data_type = __CLOVE_GENERIC_BOOL;
+    test.issue.expected._bool = false;
+    test.issue.actual._bool = true;
+    return test;
+}
+
 static __clove_report_pretty_t* report;
 static __clove_stream_memory_t* stream;
+static __clove_report_params_t params;
 
 CLOVE_SUITE_SETUP() {
     stream = __clove_stream_memory_new();
-    report = __clove_report_pretty_new((__clove_stream_t*)stream);
+    params.tests_base_path = "abs";
+    report = __clove_report_pretty_new((__clove_stream_t*)stream, &params);
 }
 
 CLOVE_SUITE_TEARDOWN() {
@@ -50,16 +67,8 @@ CLOVE_TEST(EmptyReport) {
 }
 
 CLOVE_TEST(ReportOneSuiteWithOnePassedTest) {
-    __clove_suite_t suite;
-    suite.name = "Suite1";
-    suite.test_count = 1;
-
-    __clove_test_t test11;
-    test11.name = "Test11";
-    test11.file_name = "test-file.c";
-    test11.result = __CLOVE_TEST_RESULT_PASSED;
-    test11.duration.seconds = 0;
-    test11.duration.nanos_after_seconds = 100;
+    __clove_suite_t suite = create_suite("Suite1", 1); 
+    __clove_test_t test11 = create_test("Test11");
    
     __clove_report_t* base = (__clove_report_t*)report;
     base->start(base, 1, 1);
@@ -83,28 +92,9 @@ CLOVE_TEST(ReportOneSuiteWithOnePassedTest) {
 }
 
 CLOVE_TEST(ReportOneSuiteWithTwoTests) {
-    __clove_suite_t suite;
-    suite.name = "Suite1";
-    suite.test_count = 2;
-
-    __clove_test_t test11;
-    test11.name = "Test11";
-    test11.file_name = "test-file.c";
-    test11.result = __CLOVE_TEST_RESULT_PASSED;
-    test11.duration.seconds = 0;
-    test11.duration.nanos_after_seconds = 100;
-
-    __clove_test_t test12;
-    test12.name = "Test12";
-    test12.file_name = "test-file.c";
-    test12.result = __CLOVE_TEST_RESULT_FAILED;
-    test12.duration.seconds = 0;
-    test12.duration.nanos_after_seconds = 100;
-    test12.issue.line = 8;
-    test12.issue.assert = __CLOVE_ASSERT_EQ;
-    test12.issue.data_type = __CLOVE_GENERIC_BOOL;
-    test12.issue.expected._bool = false;
-    test12.issue.actual._bool = true;
+    __clove_suite_t suite = create_suite("Suite1", 2);
+    __clove_test_t test11 = create_test("Test11");
+    __clove_test_t test12 = create_test_fail("Test12");
 
     __clove_report_t* base = (__clove_report_t*)report;
     base->start(base, 1, 2);
@@ -118,7 +108,7 @@ CLOVE_TEST(ReportOneSuiteWithTwoTests) {
     "[INFO] Executing Test Runner in 'Verbose' mode\n"
     "[INFO] Suite / Tests found: 1 / 2\n"
     "[INFO] 1) Suite1.Test11............................................[PASS] (0.000 ms)\n"
-    "[ERRO] 2) Suite1.Test12............................................[FAIL] test-file.c:8: expected [false] but was [true]\n"
+    "[ERRO] 2) Suite1.Test12............................................[FAIL] test_file.c:8: expected [false] but was [true]\n"
     "[INFO] Total: 2, Passed: 1, Failed: 1, Skipped: 0\n"
     "[INFO] Run duration: 0 ms\n"
     "[ERRO] Run result: FAILURE :_(\n"

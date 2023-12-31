@@ -5,6 +5,9 @@ on:
       branches: 
         - '**'
         - '!master'
+      paths-ignore: 
+        - '**/*.md'
+        - '**/*.png'
   pull_request:
       branches:
         - '**'
