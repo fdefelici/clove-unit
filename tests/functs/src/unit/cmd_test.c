@@ -31,7 +31,7 @@ CLOVE_TEST(InitWithMultipleOpt) {
     CLOVE_STRING_EQ("json", __clove_cmdline_get_opt_value(&cmd, "r"));
     CLOVE_IS_TRUE(__clove_cmdline_has_opt(&cmd, "i"));
 
-    __clove_vector_t* values = __clove_cmdline_get_opt_values(&cmd, "i");
+    const __clove_vector_t* values = __clove_cmdline_get_opt_values(&cmd, "i");
     CLOVE_INT_EQ(2, (int)__clove_vector_count(values));
     CLOVE_STRING_EQ("one", *(char**)__clove_vector_get(values, 0));
     CLOVE_STRING_EQ("two", *(char**)__clove_vector_get(values, 1));
