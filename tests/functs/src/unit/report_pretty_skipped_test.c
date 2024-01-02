@@ -10,7 +10,7 @@ CLOVE_SUITE_SETUP() {
     stream = __clove_stream_memory_new();
     params.tests_base_path = "abs";
     params.report_detail = __CLOVE_REPORT_DETAIL__FAILED_SKIPPED;
-    report = __clove_report_pretty_new((__clove_stream_t*)stream, &params);
+    report = __clove_report_run_tests_pretty_new((__clove_stream_t*)stream, &params);
 }
 
 CLOVE_SUITE_TEARDOWN() {

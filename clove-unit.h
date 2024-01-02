@@ -632,7 +632,7 @@ typedef struct __clove_report_pretty_t {
         const char* fail;
     } labels;
 } __clove_report_pretty_t;
-__clove_report_pretty_t* __clove_report_pretty_new(__clove_stream_t* stream, __clove_report_params_t* params);
+__clove_report_pretty_t* __clove_report_run_tests_pretty_new(__clove_stream_t* stream, __clove_report_params_t* params);
 __CLOVE_EXTERN_C void __clove_report_pretty_free(__clove_report_t* report);
 __CLOVE_EXTERN_C void __clove_report_pretty_start(__clove_report_t* _this, size_t suite_count, size_t test_count);
 __CLOVE_EXTERN_C void __clove_report_pretty_begin_suite(__clove_report_t* _this, __clove_suite_t* suite, size_t index);
@@ -2019,7 +2019,7 @@ __clove_cmdline_errno_t __clove_cmdline_handle_run_tests(__clove_cmdline_t* cmd)
     if (__clove_string_equal("json", opt_report)) {
         report = (__clove_report_t*)__clove_report_json_new(stream, &report_params);
     } else if (__clove_string_equal("pretty", opt_report)) {
-        report = (__clove_report_t*)__clove_report_pretty_new(stream, &report_params); //TODO: rename in run_tests
+        report = (__clove_report_t*)__clove_report_run_tests_pretty_new(stream, &report_params);
     } else if (__clove_string_equal("csv", opt_report)) {
         report = (__clove_report_t*)__clove_report_run_tests_csv_new(stream, &report_params);
     } else {
@@ -2568,7 +2568,7 @@ bool __clove_test_expr_validate(__clove_test_expr_t* expr, const __clove_string_
 
 #pragma region PRIVATE - RunTests Report Pretty Impl
 #include <stdio.h>
-__clove_report_pretty_t* __clove_report_pretty_new(__clove_stream_t* stream, __clove_report_params_t* params) {
+__clove_report_pretty_t* __clove_report_run_tests_pretty_new(__clove_stream_t* stream, __clove_report_params_t* params) {
     __clove_report_pretty_t* result = __CLOVE_MEMORY_MALLOC_TYPE(__clove_report_pretty_t);
     result->base.start = __clove_report_pretty_start;
     result->base.begin_suite = __clove_report_pretty_begin_suite;
@@ -2915,10 +2915,28 @@ void __clove_report_run_tests_csv_end_test(__clove_report_t* _this, __clove_suit
     
     __clove_report_run_tests_csv_t* report = (__clove_report_run_tests_csv_t*)_this;
 
+    bool print_passed = false;
+    bool print_failed = false;
+    bool print_skipped = false;
+    if (report->params->report_detail == __CLOVE_REPORT_DETAIL__PASSED_FAILED_SKIPPED) {
+        print_passed = true;
+        print_failed = true;
+        print_skipped = true;
+    } else if (report->params->report_detail == __CLOVE_REPORT_DETAIL__FAILED) {
+        print_passed = false;
+        print_failed = true;
+        print_skipped = false;
+    } else if (report->params->report_detail == __CLOVE_REPORT_DETAIL__FAILED_SKIPPED) {
+        print_passed = false;
+        print_failed = true;
+        print_skipped = true;
+    }
+
     ////Suite,Test,Status,Duration,File,Line,Assert,Type,Expected,Actual
-    if (test->result == __CLOVE_TEST_RESULT_PASSED) {
+    if (print_passed && test->result == __CLOVE_TEST_RESULT_PASSED) {
         report->stream->writef(report->stream, "%s,%s,%s,%llu,%s,%s,%s,%s,%s,%s\n", suite->name, test->name, test->result, __clove_time_to_nanos(&(test->duration)),"","","","","","");
-    } else if (test->result == __CLOVE_TEST_RESULT_FAILED) {
+    } 
+    else if (print_failed && test->result == __CLOVE_TEST_RESULT_FAILED) {
         const char* data_type = (test->issue.assert == __CLOVE_ASSERT_FAIL) ? "" : test->issue.data_type;
         const char* file_name = __clove_path_relative(test->file_name, report->params->tests_base_path);
       
@@ -2930,7 +2948,7 @@ void __clove_report_run_tests_csv_end_test(__clove_report_t* _this, __clove_suit
         __clove_report_run_tests_csv_print_data(report, test, &test->issue.actual);
         report->stream->writef(report->stream, "\n");
     }
-    else if (test->result == __CLOVE_TEST_RESULT_SKIPPED) {
+    else if (print_skipped && test->result == __CLOVE_TEST_RESULT_SKIPPED) {
         report->stream->writef(report->stream, "%s,%s,%s,%s,%s,%s,%s,%s\n", suite->name, test->name, test->result,"","","","","","","");
     }
 }

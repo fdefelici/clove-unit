@@ -246,7 +246,7 @@ CLOVE_TEST(DefaultReportWithOptRunTests) {
     CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "Total: 3, Passed: 2, Failed: 1, Skipped: 0"));
 }
 
-CLOVE_TEST(ReportWithOptRcsvWithFailure) {
+CLOVE_TEST(CsvReportWithOptRcsvWithFailure) {
     const char* cmd = RES_PRJ01_EXEC_PATH" -r csv";
     int cmd_code = exec_cmd(cmd, &cmd_out);
     CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_OK, cmd_code);
@@ -303,4 +303,30 @@ CLOVE_TEST(CsvReportWithBasepathOpt) {
     CLOVE_ULLONG_EQ(4, __clove_vector_count(&lines));
     line3 = *(char**)__clove_vector_get(&lines, 2);
     CLOVE_STRING_EQ("Prj01Suite01,Test02,FAIL,,src"_SEP_"prj01_test1.c,9,FAIL,,,", line3);
+}
+
+CLOVE_TEST(CsvReportWithDetailOpt) {
+    const char* cmd;
+    int cmd_code;
+    __clove_vector_t lines;
+    const char* line2;
+
+    //With basepath option -d
+    cmd = RES_PRJ01_EXEC_PATH" -r csv -d 1";
+    cmd_code = exec_cmd(cmd, &cmd_out);
+   
+    CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_OK, cmd_code);
+    str_split(cmd_out, '\n', &lines);
+    CLOVE_ULLONG_EQ(2, __clove_vector_count(&lines));
+    line2 = *(char**)__clove_vector_get(&lines, 1);
+    CLOVE_STRING_EQ("Prj01Suite01,Test02,FAIL,,"_TBP_"src"_SEP_"prj01_test1.c,9,FAIL,,,", line2);
+
+    //With basepath option --base-path
+    cmd = RES_PRJ01_EXEC_PATH" -r csv --report-run-detail 1";
+    cmd_code = exec_cmd(cmd, &cmd_out);
+    CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_OK, cmd_code);
+    str_split(cmd_out, '\n', &lines);
+    CLOVE_ULLONG_EQ(2, __clove_vector_count(&lines));
+    line2 = *(char**)__clove_vector_get(&lines, 1);
+    CLOVE_STRING_EQ("Prj01Suite01,Test02,FAIL,,"_TBP_"src"_SEP_"prj01_test1.c,9,FAIL,,,", line2);
 }
