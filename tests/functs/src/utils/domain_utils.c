@@ -4,7 +4,21 @@ __clove_suite_t create_suite(const char* name, size_t test_count) {
     __clove_suite_t suite;
     suite.name = (char*)name; //remove const just to avoid build warnings
     suite.test_count = test_count;
+    __CLOVE_VECTOR_INIT(&suite.tests, __clove_test_t);
+    suite.issue.passed_count = 0;
+    suite.issue.failed_count = 0;
+    suite.issue.skipped_count = 0;
     return suite;
+}
+
+void suite_add_test(__clove_suite_t* suite, __clove_test_t* test) 
+{
+    suite->test_count++;
+    __CLOVE_VECTOR_ADD(&suite->tests, __clove_test_t, *test);
+
+    if (test->result == __CLOVE_TEST_RESULT_PASSED) suite->issue.passed_count++;
+    else if (test->result == __CLOVE_TEST_RESULT_FAILED) suite->issue.failed_count++;
+    else if (test->result == __CLOVE_TEST_RESULT_SKIPPED) suite->issue.skipped_count++;
 }
 
 __clove_test_t create_test(const char* name) {
