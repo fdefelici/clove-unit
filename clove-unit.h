@@ -1953,6 +1953,7 @@ __clove_cmdline_errno_t __clove_cmdline_handle_help(__clove_cmdline_t* cmd) {
     printf("where options are:\n");
     printf("%*s%-*s%*s%s\n", 3," ", 30,"<no-options>",             5," ", "Run all tests producing a 'pretty' print report (default behaviour).");
     printf("%*s%-*s%*s%s\n", 3," ", 30,"-b, --base-path",          5," ", "Base path for test sources. Allow to shorten test file paths when running/listing tests.");
+    printf("%*s%-*s%*s%s\n", 3," ", 30,"-d, --run-detail <level>", 5," ", "Control Run Tests report detail level: '1' (failed), '2' (failed+skipped), '3' (passed+failed+skipped). Default is '3'.");
     printf("%*s%-*s%*s%s\n", 3," ", 30,"-e, --exclude <expr>",     5," ", "Suite/Test expression to be excluded. Works when running/listing tests.");
     printf("%*s%-*s%*s%s\n", 3," ", 30,"-h, --help",               5," ", "Display usage information.");
     printf("%*s%-*s%*s%s\n", 3," ", 30,"-i, --include <expr>",     5," ", "Suite/Test expression to be included. Works when running/listing tests.");
@@ -1961,9 +1962,9 @@ __clove_cmdline_errno_t __clove_cmdline_handle_help(__clove_cmdline_t* cmd) {
     printf("%*s%-*s%*s%s\n", 3," ", 30,"-r, --report <format>",    5," ", "Specify report format when running tests: 'pretty', 'csv', 'json'.");
     printf("%*s%-*s%*s%s\n", 3," ", 30,"-t, --run-tests",          5," ", "Execute all/matching test cases (same as <no-options>).");
     printf("%*s%-*s%*s%s\n", 3," ", 30,"-v, --version",            5," ", "Show CLove-Unit version.");
-    printf("%*s%-*s%*s%s\n", 3," ", 30,"-x, --error-on-test-fail", 5," ", "Test run process will end with error in case of test failure. Default is to end the process succesfully.");
+    printf("%*s%-*s%*s%s\n", 3," ", 30,"-x, --error-on-test-fail", 5," ", "Run Tests process will end with error in case of test failure. Default is to end the process succesfully.");
     printf("\n");
-    printf("For detailed usage please read look at the README in https://github.com/fdefelici/clove-unit.\n");
+    printf("For detailed usage please look at the README in https://github.com/fdefelici/clove-unit.\n");
     return __CLOVE_CMD_ERRNO_OK;
 }
 
@@ -1979,7 +1980,7 @@ __clove_cmdline_errno_t __clove_cmdline_handle_run_tests(__clove_cmdline_t* cmd)
     const char* opt_report = __clove_cmdline_get_any_opt_value_defaulted(cmd, "r", "report", "pretty");
     if (!__clove_string_equal_any(opt_report, 3, "pretty", "json", "csv")) return __CLOVE_CMD_ERRNO_INVALID_PARAM;
     
-    const char* opt_detail = __clove_cmdline_get_any_opt_value_defaulted(cmd, "d", "report-run-detail", "3");
+    const char* opt_detail = __clove_cmdline_get_any_opt_value_defaulted(cmd, "d", "run-detail", "3");
     if (!__clove_string_equal_any(opt_detail, 3, "1", "2", "3")) return __CLOVE_CMD_ERRNO_INVALID_PARAM;    
     
     const char* opt_out = __clove_cmdline_get_any_opt_value_defaulted(cmd, "o", "output", "stdout");

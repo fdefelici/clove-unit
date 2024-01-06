@@ -48,7 +48,7 @@ CLOVE_TEST(EmptyReport) {
     CLOVE_STRING_EQ(expected, actual);
 }
 
-CLOVE_TEST(A_ReportOneSuiteWithOnePassedTest) {
+CLOVE_TEST(ReportOneSuiteWithOnePassedTest) {
     __clove_suite_t suite = create_suite("Suite1", 0);
     __clove_test_t test11 = create_test("Test11");
     suite_add_test(&suite, &test11);

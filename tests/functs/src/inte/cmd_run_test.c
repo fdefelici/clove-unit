@@ -178,7 +178,7 @@ CLOVE_TEST(PrettyReportWithDetailOpt) {
     CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "2) Prj01Suite01.Test02"));
     CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "Total: 3, Passed: 2, Failed: 1, Skipped: 0"));
 
-    cmd = RES_PRJ01_EXEC_PATH" -r pretty -report-run-detail 1";
+    cmd = RES_PRJ01_EXEC_PATH" -r pretty -run-detail 1";
     cmd_code = exec_cmd(cmd, &cmd_out);
     CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_OK, cmd_code);
     CLOVE_IS_TRUE(__clove_string_contains(cmd_out, "Suites / Tests found: 2 / 3"));
@@ -322,7 +322,7 @@ CLOVE_TEST(CsvReportWithDetailOpt) {
     CLOVE_STRING_EQ("Prj01Suite01,Test02,FAIL,,"_TBP_"src"_SEP_"prj01_test1.c,9,FAIL,,,", line2);
 
     //With basepath option --base-path
-    cmd = RES_PRJ01_EXEC_PATH" -r csv --report-run-detail 1";
+    cmd = RES_PRJ01_EXEC_PATH" -r csv --run-detail 1";
     cmd_code = exec_cmd(cmd, &cmd_out);
     CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_OK, cmd_code);
     str_split(cmd_out, '\n', &lines);

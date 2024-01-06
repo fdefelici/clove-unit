@@ -48,7 +48,7 @@ CLOVE_TEST(EmptyReport) {
     CLOVE_STRING_EQ(expected, actual);
 }
 
-CLOVE_TEST(A_ReportOneSuiteWithOnePassedTest) {
+CLOVE_TEST(ReportOneSuiteWithOnePassedTest) {
     __clove_suite_t suite = create_suite("Suite1", 0);
     __clove_test_t test11 = create_test("Test11");
     suite_add_test(&suite, &test11);
@@ -98,7 +98,7 @@ CLOVE_TEST(ReportOneSuiteWithTwoTests) {
 
     const char* file_path = stream->file_path;
     const char* actual = read_file(file_path);
-    puts(actual);
+    
     const char* expected = 
     "{\n"
     "\t\"clove_version\" : \""__CLOVE_VERSION"\",\n"
