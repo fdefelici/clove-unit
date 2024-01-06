@@ -89,6 +89,37 @@ CLOVE_TEST(ReportOneSuiteWithTwoTests) {
     CLOVE_STRING_EQ(expected, actual);
 }
 
+CLOVE_TEST(ReportOneSuiteWithThreeTests) {
+    __clove_suite_t suite = create_suite("Suite1", 3);
+    __clove_test_t test11 = create_test("Test11");
+    __clove_test_t test12 = create_test_fail("Test12");
+    __clove_test_t test13 = create_test_skip("Test13");
+
+    __clove_report_t* base = (__clove_report_t*)report;
+    base->start(base, 1, 3);
+    base->begin_suite(base, &suite, 0);
+    base->end_test(base, &suite, &test11, 1);
+    base->end_test(base, &suite, &test12, 2);
+    base->end_test(base, &suite, &test13, 3);
+    base->end_suite(base, &suite, 0);
+    base->end(base, 3, 1, 1, 1);
+
+    const char* expected = 
+    "[INFO] Executing Test Runner with detail level: 'Full'\n"
+    "[INFO] Suites / Tests found: 1 / 3\n"
+    "[INFO] 1) Suite1.Test11............................................[PASS] (0.000 ms)\n"
+    "[ERRO] 2) Suite1.Test12............................................[FAIL] test_file.c:8: expected [false] but was [true]\n"
+    "[WARN] 3) Suite1.Test13............................................[SKIP] test_file.c:4: Missing assertion!\n"
+    "[INFO] Total: 3, Passed: 1, Failed: 1, Skipped: 1\n"
+    "[INFO] Run duration: 0 ms\n"
+    "[ERRO] Run result: FAILURE :_(\n"
+    ;
+
+    char* actual = __clove_stream_memory_as_string(stream);
+
+    CLOVE_STRING_EQ(expected, actual);
+}
+
 CLOVE_TEST(ReportTwoSuitesWithTenTests) {
     __clove_suite_t suite1 = create_suite("Suite 1", 1);
     __clove_test_t test11 = create_test("Test11");

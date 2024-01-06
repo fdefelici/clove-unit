@@ -50,6 +50,7 @@ __clove_test_t create_test_skip(const char* name) {
     __clove_test_t test;
     test.name = (char*)name; //remove const just to avoid build warnings
     test.file_name = "abs"__CLOVE_PATH_SEPARATOR_STR"test_file.c";
+    test.funct_line = 4;
     test.result = __CLOVE_TEST_RESULT_SKIPPED;
     return test;
 }

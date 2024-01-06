@@ -2811,11 +2811,12 @@ void __clove_report_pretty_end_test(__clove_report_t* _this, __clove_suite_t* su
             __CLOVE_SWITCH_END()
         }
 
+        //Dublication
         const char* file_path = test->file_name;
         if (report->params->tests_base_path) {
             file_path = __clove_path_relative(test->file_name, report->params->tests_base_path);
         }
-    
+        //Dublication
         char result[__CLOVE_STRING_LENGTH], strToPad[__CLOVE_TEST_ENTRY_LENGTH];
         snprintf(strToPad, __CLOVE_TEST_ENTRY_LENGTH, "%0*zu) %s.%s", report->max_test_digits, test_number, suite->name, test->name);
         __clove_report_pretty_pad_right(result, strToPad);
@@ -2823,11 +2824,18 @@ void __clove_report_pretty_end_test(__clove_report_t* _this, __clove_suite_t* su
         report->stream->writef(report->stream, "%s %s%s %s:%d: %s\n", report->labels.erro, result, report->labels.fail, file_path, test->issue.line, msg);
     }
     else if (print_skipped && test->result == __CLOVE_TEST_RESULT_SKIPPED) {
+        
+        //Dublication
+        const char* file_path = test->file_name;
+        if (report->params->tests_base_path) {
+            file_path = __clove_path_relative(test->file_name, report->params->tests_base_path);
+        }
+        //Dublication
         char result[__CLOVE_STRING_LENGTH], strToPad[__CLOVE_TEST_ENTRY_LENGTH];
         snprintf(strToPad, __CLOVE_TEST_ENTRY_LENGTH, "%0*zu) %s.%s", report->max_test_digits, test_number, suite->name, test->name);
         __clove_report_pretty_pad_right(result, strToPad);
 
-        report->stream->writef(report->stream, "%s %s%s\n", report->labels.warn, result, report->labels.skip);
+        report->stream->writef(report->stream, "%s %s%s %s:%zu: %s\n", report->labels.warn, result, report->labels.skip, file_path, test->funct_line, "Missing assertion!");
     }
 }
 
