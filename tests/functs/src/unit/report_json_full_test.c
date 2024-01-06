@@ -90,6 +90,49 @@ CLOVE_TEST(ReportOneSuiteWithOnePassedTest) {
     CLOVE_STRING_EQ(expected, actual);
 }
 
+CLOVE_TEST(ReportOneSuiteWithOneSkippedTest) {
+    __clove_suite_t suite = create_suite("Suite1", 0);
+    __clove_test_t test11 = create_test_skip("Test11");
+    suite_add_test(&suite, &test11);
+    
+    __clove_report_t* base = (__clove_report_t*)report;
+    base->start(base, 1, 1);
+    base->begin_suite(base, &suite, 0);
+    base->end_test(base, &suite, &test11, 1);
+    base->end_suite(base, &suite, 0);
+    base->end(base, 1, 0, 1, 0);
+
+    const char* file_path = stream->file_path;
+    const char* actual = read_file(file_path);
+
+    const char* expected =
+    "{\n"
+    "\t\"clove_version\" : \""__CLOVE_VERSION"\",\n"
+    "\t\"json_schema\" : \"1.0\",\n"
+    "\t\"result\" : {\n"
+    "\t\t\"suite_count\" : 1,\n"
+    "\t\t\"test_count\" : 1,\n"
+    "\t\t\"suites\" : {\n"
+    "\t\t\t\"Suite1\" : {\n"
+    "\t\t\t\t\"file\" : \"test_file.c\",\n"
+    "\t\t\t\t\"tests\" : {\n"
+    "\t\t\t\t\t\"Test11\" : {\n"
+    "\t\t\t\t\t\t\"status\" : \"SKIP\",\n"
+    "\t\t\t\t\t\t\"duration\" : 50,\n"
+    "\t\t\t\t\t\t\"line\" : 4\n"
+    "\t\t\t\t\t}\n"
+    "\t\t\t\t}\n"
+    "\t\t\t}\n"
+    "\t\t},\n"
+    "\t\t\"test_passed\" : 0,\n"
+    "\t\t\"test_skipped\" : 1,\n"
+    "\t\t\"test_failed\" : 0,\n"
+    "\t\t\"status\" : \"SKIP\"\n"
+    "\t}\n"
+    "}";
+    CLOVE_STRING_EQ(expected, actual);
+}
+
 CLOVE_TEST(ReportOneSuiteWithTwoTests) {
     __clove_suite_t suite = create_suite("Suite1", 0);
     __clove_test_t test11 = create_test("Test11");

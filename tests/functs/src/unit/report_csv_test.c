@@ -56,6 +56,27 @@ CLOVE_TEST(ReportOneSuiteWithOnePassedTest) {
     CLOVE_STRING_EQ(expected, actual);
 }
 
+CLOVE_TEST(ReportOneSuiteWithOneSkippedTest) {
+    __clove_suite_t suite = create_suite("Suite1", 1);
+    __clove_test_t test11 = create_test_skip("Test11");
+    
+    __clove_report_t* base = (__clove_report_t*)report;
+    base->start(base, 1, 1);
+    base->begin_suite(base, &suite, 0);
+    base->end_test(base, &suite, &test11, 1);
+    base->end_suite(base, &suite, 0);
+    base->end(base, 1, 0, 1, 0);
+
+    const char* file_path = stream->file_path;
+    const char* actual = read_file(file_path);
+
+    const char* expected = 
+    "Suite,Test,Status,Duration,File,Line,Assert,Type,Expected,Actual\n"
+    "Suite1,Test11,SKIP,,test_file.c,4,,,,\n"    
+    ;
+    CLOVE_STRING_EQ(expected, actual);
+}
+
 CLOVE_TEST(ReportOneSuiteWithTwoTests) {
     __clove_suite_t suite = create_suite("Suite1", 2);
     __clove_test_t test11 = create_test("Test11");

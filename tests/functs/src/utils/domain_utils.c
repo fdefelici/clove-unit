@@ -51,5 +51,8 @@ __clove_test_t create_test_skip(const char* name) {
     test.name = (char*)name; //remove const just to avoid build warnings
     test.file_name = "abs"__CLOVE_PATH_SEPARATOR_STR"test_file.c";
     test.result = __CLOVE_TEST_RESULT_SKIPPED;
+    test.duration.nanos_after_seconds = 50;
+    test.duration.seconds = 0;
+    test.funct_line = 4;
     return test;
 }
