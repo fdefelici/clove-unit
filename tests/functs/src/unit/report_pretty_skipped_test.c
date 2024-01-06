@@ -80,7 +80,7 @@ CLOVE_TEST(ReportOneSuiteWithTwoTests) {
     "[INFO] Executing Test Runner with detail level: 'Failed + Skipped'\n"
     "[INFO] Suites / Tests found: 1 / 3\n"
     "[ERRO] 2) Suite1.Test12............................................[FAIL] test_file.c:8: expected [false] but was [true]\n"
-    "[WARN] 3) Suite1.Test13............................................[SKIP]\n"
+    "[WARN] 3) Suite1.Test13............................................[SKIP] test_file.c:4: Missing assertion!\n"
     "[INFO] Total: 3, Passed: 1, Failed: 1, Skipped: 1\n"
     "[INFO] Run duration: 0 ms\n"
     "[ERRO] Run result: FAILURE :_(\n"

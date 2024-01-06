@@ -2953,7 +2953,8 @@ void __clove_report_run_tests_csv_end_test(__clove_report_t* _this, __clove_suit
 
     ////Suite,Test,Status,Duration,File,Line,Assert,Type,Expected,Actual
     if (print_passed && test->result == __CLOVE_TEST_RESULT_PASSED) {
-        report->stream->writef(report->stream, "%s,%s,%s,%llu,%s,%s,%s,%s,%s,%s\n", suite->name, test->name, test->result, __clove_time_to_nanos(&(test->duration)),"","","","","","");
+        report->stream->writef(report->stream, "%s,%s,%s,%llu,%s,%s,%s,%s,%s,%s\n", 
+            suite->name, test->name, test->result, __clove_time_to_nanos(&(test->duration)),"","","","","","");
     } 
     else if (print_failed && test->result == __CLOVE_TEST_RESULT_FAILED) {
         const char* data_type = (test->issue.assert == __CLOVE_ASSERT_FAIL) ? "" : test->issue.data_type;
@@ -2968,7 +2969,10 @@ void __clove_report_run_tests_csv_end_test(__clove_report_t* _this, __clove_suit
         report->stream->writef(report->stream, "\n");
     }
     else if (print_skipped && test->result == __CLOVE_TEST_RESULT_SKIPPED) {
-        report->stream->writef(report->stream, "%s,%s,%s,%s,%s,%s,%s,%s\n", suite->name, test->name, test->result,"","","","","","","");
+        const char* file_name = __clove_path_relative(test->file_name, report->params->tests_base_path);
+
+        report->stream->writef(report->stream, "%s,%s,%s,%s,%s,%zu,%s,%s,%s,%s\n", 
+            suite->name, test->name, test->result,"",file_name,test->funct_line,"","","","");
     }
 }
 
