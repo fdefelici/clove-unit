@@ -1,14 +1,18 @@
 #define CLOVE_SUITE_NAME UNIT_ReportCsvTest
 #include "clove-unit.h"
 #include "utils/utils.h"
+#include "utils/domain_utils.h"
 
 static __clove_report_run_tests_csv_t* report;
 static __clove_stream_file_t* stream;
+static __clove_report_params_t params;
 
 CLOVE_SUITE_SETUP() {
     char* file_path = __clove_path_rel_to_abs_exec_path("clove_report.csv");
     stream = __clove_stream_file_new(file_path);
-    report = __clove_report_run_tests_csv_new((__clove_stream_t*)stream);
+    params.tests_base_path = "abs";
+    params.report_detail = __CLOVE_REPORT_DETAIL__PASSED_FAILED_SKIPPED;
+    report = __clove_report_run_tests_csv_new((__clove_stream_t*)stream, &params);
 }
 
 CLOVE_SUITE_TEARDOWN() {
@@ -32,17 +36,9 @@ CLOVE_TEST(EmptyReport) {
 }
 
 CLOVE_TEST(ReportOneSuiteWithOnePassedTest) {
-    __clove_suite_t suite;
-    suite.name = "Suite1";
-    suite.test_count = 1;
-
-    __clove_test_t test11;
-    test11.name = "Test11";
-    test11.file_name = "test-file.c";
-    test11.result = __CLOVE_TEST_RESULT_PASSED;
-    test11.duration.seconds = 0;
-    test11.duration.nanos_after_seconds = 100;
-   
+    __clove_suite_t suite = create_suite("Suite1", 1);
+    __clove_test_t test11 = create_test("Test11");
+    
     __clove_report_t* base = (__clove_report_t*)report;
     base->start(base, 1, 1);
     base->begin_suite(base, &suite, 0);
@@ -60,29 +56,31 @@ CLOVE_TEST(ReportOneSuiteWithOnePassedTest) {
     CLOVE_STRING_EQ(expected, actual);
 }
 
+CLOVE_TEST(ReportOneSuiteWithOneSkippedTest) {
+    __clove_suite_t suite = create_suite("Suite1", 1);
+    __clove_test_t test11 = create_test_skip("Test11");
+    
+    __clove_report_t* base = (__clove_report_t*)report;
+    base->start(base, 1, 1);
+    base->begin_suite(base, &suite, 0);
+    base->end_test(base, &suite, &test11, 1);
+    base->end_suite(base, &suite, 0);
+    base->end(base, 1, 0, 1, 0);
+
+    const char* file_path = stream->file_path;
+    const char* actual = read_file(file_path);
+
+    const char* expected = 
+    "Suite,Test,Status,Duration,File,Line,Assert,Type,Expected,Actual\n"
+    "Suite1,Test11,SKIP,,test_file.c,4,,,,\n"    
+    ;
+    CLOVE_STRING_EQ(expected, actual);
+}
+
 CLOVE_TEST(ReportOneSuiteWithTwoTests) {
-    __clove_suite_t suite;
-    suite.name = "Suite1";
-    suite.test_count = 2;
-
-    __clove_test_t test11;
-    test11.name = "Test11";
-    test11.file_name = "test-file.c";
-    test11.result = __CLOVE_TEST_RESULT_PASSED;
-    test11.duration.seconds = 0;
-    test11.duration.nanos_after_seconds = 100;
-
-    __clove_test_t test12;
-    test12.name = "Test12";
-    test12.file_name = "test-file.c";
-    test12.result = __CLOVE_TEST_RESULT_FAILED;
-    test12.duration.seconds = 0;
-    test12.duration.nanos_after_seconds = 100;
-    test12.issue.line = 8;
-    test12.issue.assert = __CLOVE_ASSERT_EQ;
-    test12.issue.data_type = __CLOVE_GENERIC_BOOL;
-    test12.issue.expected._bool = false;
-    test12.issue.actual._bool = true;
+    __clove_suite_t suite = create_suite("Suite1", 2);
+    __clove_test_t test11 = create_test("Test11");
+    __clove_test_t test12 = create_test_fail("Test12");
 
     __clove_report_t* base = (__clove_report_t*)report;
     base->start(base, 1, 2);
@@ -98,34 +96,18 @@ CLOVE_TEST(ReportOneSuiteWithTwoTests) {
     const char* expected = 
     "Suite,Test,Status,Duration,File,Line,Assert,Type,Expected,Actual\n"
     "Suite1,Test11,PASS,100,,,,,,\n"
-    "Suite1,Test12,FAIL,,test-file.c,8,EQ,BOOL,false,true\n"
+    "Suite1,Test12,FAIL,,test_file.c,8,EQ,BOOL,false,true\n"
     ;
     CLOVE_STRING_EQ(expected, actual);
 }
 
 CLOVE_TEST(ReportTwoSuitesWithOnePassedTestEach) {
-    __clove_suite_t suite;
-    suite.name = "Suite1";
-    suite.test_count = 1;
+    __clove_suite_t suite = create_suite("Suite1", 1);
+    __clove_test_t test11 = create_test("Test11");
 
-    __clove_test_t test11;
-    test11.name = "Test11";
-    test11.file_name = "test-file.c";
-    test11.result = __CLOVE_TEST_RESULT_PASSED;
-    test11.duration.seconds = 0;
-    test11.duration.nanos_after_seconds = 100;
-
-    __clove_suite_t suite2;
-    suite2.name = "Suite2";
-    suite2.test_count = 1;
-
-    __clove_test_t test21;
-    test21.name = "Test21";
-    test21.file_name = "test-file2.c";
-    test21.result = __CLOVE_TEST_RESULT_PASSED;
-    test21.duration.seconds = 0;
-    test21.duration.nanos_after_seconds = 100;
-   
+    __clove_suite_t suite2 = create_suite("Suite2", 1);
+    __clove_test_t test21 = create_test("Test21");
+    
     __clove_report_t* base = (__clove_report_t*)report;
     base->start(base, 2, 2);
     base->begin_suite(base, &suite, 0);
@@ -147,10 +129,8 @@ CLOVE_TEST(ReportTwoSuitesWithOnePassedTestEach) {
 }
 
 CLOVE_TEST(ReportOneSuiteWithOneTestFailedWithString) {
-    __clove_suite_t suite;
-    suite.name = "Suite1";
-    suite.test_count = 1;
-
+    __clove_suite_t suite  = create_suite("Suite1", 1);
+   
     __clove_test_t test12;
     test12.name = "Test12";
     test12.file_name = "test-file.c";
@@ -181,9 +161,7 @@ CLOVE_TEST(ReportOneSuiteWithOneTestFailedWithString) {
 }
 
 CLOVE_TEST(ReportOneSuiteWithOneTestFailedWithFail) {
-    __clove_suite_t suite;
-    suite.name = "Suite1";
-    suite.test_count = 1;
+    __clove_suite_t suite = create_suite("Suite1", 1);
 
     __clove_test_t test12;
     test12.name = "Test12";

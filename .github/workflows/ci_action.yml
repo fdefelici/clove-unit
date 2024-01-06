@@ -5,52 +5,148 @@ on:
       branches: 
         - '**'
         - '!master'
+      paths-ignore: 
+        - '**/*.md'
+        - '**/*.png'
   pull_request:
       branches:
         - '**'
 jobs:
-  build:
-      name: Build Job
-      runs-on: ${{ matrix.os }}
+  build_windows:
+    name: Build windows_msvc
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: cmd
+    env:
+      BUILD_DIR: ${{ github.workspace }}\build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: List Workspace
+        run:  dir /a ${{ github.workspace }}
+      - name: Compile
+        run: |
+          echo "== CMAKE VERSION =="
+          cmake --version
+          echo "== CMAKE CONFIGURE =="
+          cmake -B${{env.BUILD_DIR}} -DCLOVE_CMAKE__UC_BUILD=true
+          echo "== CMAKE BUILD =="
+          cmake --build ${{env.BUILD_DIR}} --config Release
+      - name: List Build
+        run:  dir /a ${{env.BUILD_DIR}}
+      - name: Test
+        run: |
+          cd ${{env.BUILD_DIR}}
+          ctest -C Release -T test --output-on-failure
+          cd ${{ github.workspace }}
+  build_macos:
+    name: Build macos_apple-clang
+    runs-on: macos-latest
+    defaults:
+      run:
+        shell: bash
+    env:
+      BUILD_DIR: ${{ github.workspace }}/build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: List Workspace
+        run:  ls -la ${{ github.workspace }}
+      - name: Compile
+        run: |
+          echo "== CMAKE VERSION =="
+          cmake --version
+          echo "== CMAKE CONFIGURE =="
+          cmake -B${{env.BUILD_DIR}} -DCLOVE_CMAKE__UC_BUILD=true
+          echo "== CMAKE BUILD =="
+          cmake --build ${{env.BUILD_DIR}} --config Release
+      - name: List Build
+        run:  ls -la ${{env.BUILD_DIR}}
+      - name: Test
+        run: |
+          cd ${{env.BUILD_DIR}}
+          ctest -C Release -T test --output-on-failure
+          cd ${{ github.workspace }}
+  build_ubuntu:
+      name: Build ubuntu_${{matrix.compiler.c}}-${{matrix.compiler.v}}
+      runs-on: ubuntu-latest
       strategy:
+        fail-fast: false
         matrix:
-          os: [macos-latest, ubuntu-latest, windows-latest]
-          include:
-            - os: macos-latest
-              SHELL: bash
-              SEP: /
-              LS_CMD: ls -la
-            - os: ubuntu-latest
-              SHELL: bash
-              SEP: /
-              LS_CMD: ls -la
-            - os: windows-latest
-              SHELL: cmd
-              SEP: \
-              LS_CMD: dir /a
+          compiler: 
+            - {c: gcc, cpp: g++, v: 11, strict: false}
+            - {c: gcc, cpp: g++, v: 12, strict: false}
+            - {c: gcc, cpp: g++, v: 13, strict: true}
+            - {c: clang, cpp: clang++, v: 13, strict: true}
+            - {c: clang, cpp: clang++, v: 14, strict: true}
+            - {c: clang, cpp: clang++, v: 15, strict: true}
+            - {c: clang, cpp: clang++, v: 16, strict: true}
+            - {c: clang, cpp: clang++, v: 17, strict: true}
       defaults:
         run:
-          shell: ${{ matrix.SHELL }}
+          shell: bash
       env:
-        BUILD_DIR: ${{ github.workspace }}${{ matrix.SEP }}build
+        BUILD_DIR: ${{ github.workspace }}/build
       steps:
         - name: Checkout
           uses: actions/checkout@v3
         - name: List Workspace
-          run:  ${{matrix.LS_CMD}} ${{ github.workspace }}
+          run:  ls -la ${{ github.workspace }}
+        - name: Install Clang (if needed)
+          uses: KyleMayes/install-llvm-action@v1
+          if: ${{ matrix.compiler.c == 'clang' && matrix.compiler.v > 15 }}
+          with:
+            version: "${{ matrix.compiler.v }}"
+            env: true  # set CC / CXX variable
+        - name: Set Compiler # only if CC / CXX are not already set from new installation
+          run: |
+            if [ -z "${CC}" ]; then
+              echo "CC=${{matrix.compiler.c}}-${{matrix.compiler.v}}" >> "$GITHUB_ENV"
+              echo "CXX=${{matrix.compiler.cpp}}-${{matrix.compiler.v}}" >> "$GITHUB_ENV"
+            fi
+            echo CC=$CC
+            echo CXX=$CXX
         - name: Compile
           run: |
             echo "== CMAKE VERSION =="
             cmake --version
             echo "== CMAKE CONFIGURE =="
-            cmake -B${{env.BUILD_DIR}} -DCI_TRIGGERED=1
+            cmake -B${{env.BUILD_DIR}} -DCLOVE_CMAKE__UC_BUILD=true -DCLOVE_CMAKE__CPP_STRICT_WARN_AS_ERROR=${{matrix.compiler.strict}}
             echo "== CMAKE BUILD =="
             cmake --build ${{env.BUILD_DIR}} --config Release
         - name: List Build
-          run:  ${{matrix.LS_CMD}} ${{env.BUILD_DIR}}
+          run:  ls -la ${{env.BUILD_DIR}}
         - name: Test
           run: |
             cd ${{env.BUILD_DIR}}
             ctest -C Release -T test --output-on-failure
             cd ${{ github.workspace }}
-            
+  sanity_check:
+    name: Sanity Check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    env:
+      BUILD_DIR: ${{ github.workspace }}/build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: List Workspace
+        run:  ls -la ${{ github.workspace }}
+      - name: Compile
+        run: |
+          echo "== CMAKE VERSION =="
+          cmake --version
+          echo "== CMAKE CONFIGURE =="
+          cmake -B${{env.BUILD_DIR}} -DCLOVE_CMAKE__UC_SANITY=true
+          echo "== CMAKE BUILD =="
+          cmake --build ${{env.BUILD_DIR}} --config Release
+      - name: List Build
+        run:  ls -la ${{env.BUILD_DIR}}
+      - name: Sanity
+        run: |
+          cd ${{env.BUILD_DIR}}
+          ctest -C Release -T test --output-on-failure
+          cd ${{ github.workspace }}

@@ -1,29 +1,16 @@
 #define CLOVE_SUITE_NAME UNIT_ReportPrettyTest
 #include "clove-unit.h"
-
-static __clove_suite_t create_suite(const char* name, size_t test_count) {
-    __clove_suite_t suite;
-    suite.name = (char*)name; //remove const just to avoid build warnings
-    suite.test_count = test_count;
-    return suite;
-}
-
-static __clove_test_t create_test(const char* name) {
-     __clove_test_t test;
-    test.name = (char*)name; //remove const just to avoid build warnings
-    test.file_name = "test_file.c";
-    test.result = __CLOVE_TEST_RESULT_PASSED;
-    test.duration.seconds = 0;
-    test.duration.nanos_after_seconds = 100;
-    return test;
-}
+#include "utils/domain_utils.h"
 
 static __clove_report_pretty_t* report;
 static __clove_stream_memory_t* stream;
+static __clove_report_params_t params;
 
 CLOVE_SUITE_SETUP() {
     stream = __clove_stream_memory_new();
-    report = __clove_report_pretty_new((__clove_stream_t*)stream);
+    params.tests_base_path = "abs";
+    params.report_detail = __CLOVE_REPORT_DETAIL__PASSED_FAILED_SKIPPED;
+    report = __clove_report_run_tests_pretty_new((__clove_stream_t*)stream, &params);
 }
 
 CLOVE_SUITE_TEARDOWN() {
@@ -37,8 +24,8 @@ CLOVE_TEST(EmptyReport) {
     base->end(base, 0, 0, 0, 0);
 
     const char* expected = 
-    "[INFO] Executing Test Runner in 'Verbose' mode\n"
-    "[INFO] Suite / Tests found: 0 / 0\n"
+    "[INFO] Executing Test Runner with detail level: 'Full'\n"
+    "[INFO] Suites / Tests found: 0 / 0\n"
     "[INFO] Total: 0, Passed: 0, Failed: 0, Skipped: 0\n"
     "[INFO] Run duration: 0 ms\n"
     "[INFO] Run result: SUCCESS :-)\n"
@@ -50,16 +37,8 @@ CLOVE_TEST(EmptyReport) {
 }
 
 CLOVE_TEST(ReportOneSuiteWithOnePassedTest) {
-    __clove_suite_t suite;
-    suite.name = "Suite1";
-    suite.test_count = 1;
-
-    __clove_test_t test11;
-    test11.name = "Test11";
-    test11.file_name = "test-file.c";
-    test11.result = __CLOVE_TEST_RESULT_PASSED;
-    test11.duration.seconds = 0;
-    test11.duration.nanos_after_seconds = 100;
+    __clove_suite_t suite = create_suite("Suite1", 1); 
+    __clove_test_t test11 = create_test("Test11");
    
     __clove_report_t* base = (__clove_report_t*)report;
     base->start(base, 1, 1);
@@ -69,8 +48,8 @@ CLOVE_TEST(ReportOneSuiteWithOnePassedTest) {
     base->end(base, 1, 1, 0, 0);
 
     const char* expected = 
-    "[INFO] Executing Test Runner in 'Verbose' mode\n"
-    "[INFO] Suite / Tests found: 1 / 1\n"
+    "[INFO] Executing Test Runner with detail level: 'Full'\n"
+    "[INFO] Suites / Tests found: 1 / 1\n"
     "[INFO] 1) Suite1.Test11............................................[PASS] (0.000 ms)\n"
     "[INFO] Total: 1, Passed: 1, Failed: 0, Skipped: 0\n"
     "[INFO] Run duration: 0 ms\n"
@@ -83,28 +62,9 @@ CLOVE_TEST(ReportOneSuiteWithOnePassedTest) {
 }
 
 CLOVE_TEST(ReportOneSuiteWithTwoTests) {
-    __clove_suite_t suite;
-    suite.name = "Suite1";
-    suite.test_count = 2;
-
-    __clove_test_t test11;
-    test11.name = "Test11";
-    test11.file_name = "test-file.c";
-    test11.result = __CLOVE_TEST_RESULT_PASSED;
-    test11.duration.seconds = 0;
-    test11.duration.nanos_after_seconds = 100;
-
-    __clove_test_t test12;
-    test12.name = "Test12";
-    test12.file_name = "test-file.c";
-    test12.result = __CLOVE_TEST_RESULT_FAILED;
-    test12.duration.seconds = 0;
-    test12.duration.nanos_after_seconds = 100;
-    test12.issue.line = 8;
-    test12.issue.assert = __CLOVE_ASSERT_EQ;
-    test12.issue.data_type = __CLOVE_GENERIC_BOOL;
-    test12.issue.expected._bool = false;
-    test12.issue.actual._bool = true;
+    __clove_suite_t suite = create_suite("Suite1", 2);
+    __clove_test_t test11 = create_test("Test11");
+    __clove_test_t test12 = create_test_fail("Test12");
 
     __clove_report_t* base = (__clove_report_t*)report;
     base->start(base, 1, 2);
@@ -115,11 +75,42 @@ CLOVE_TEST(ReportOneSuiteWithTwoTests) {
     base->end(base, 2, 1, 0, 1);
 
     const char* expected = 
-    "[INFO] Executing Test Runner in 'Verbose' mode\n"
-    "[INFO] Suite / Tests found: 1 / 2\n"
+    "[INFO] Executing Test Runner with detail level: 'Full'\n"
+    "[INFO] Suites / Tests found: 1 / 2\n"
     "[INFO] 1) Suite1.Test11............................................[PASS] (0.000 ms)\n"
-    "[ERRO] 2) Suite1.Test12............................................[FAIL] => test-file.c@8: expected [false] but was [true]\n"
+    "[ERRO] 2) Suite1.Test12............................................[FAIL] test_file.c:8: expected [false] but was [true]\n"
     "[INFO] Total: 2, Passed: 1, Failed: 1, Skipped: 0\n"
+    "[INFO] Run duration: 0 ms\n"
+    "[ERRO] Run result: FAILURE :_(\n"
+    ;
+
+    char* actual = __clove_stream_memory_as_string(stream);
+
+    CLOVE_STRING_EQ(expected, actual);
+}
+
+CLOVE_TEST(ReportOneSuiteWithThreeTests) {
+    __clove_suite_t suite = create_suite("Suite1", 3);
+    __clove_test_t test11 = create_test("Test11");
+    __clove_test_t test12 = create_test_fail("Test12");
+    __clove_test_t test13 = create_test_skip("Test13");
+
+    __clove_report_t* base = (__clove_report_t*)report;
+    base->start(base, 1, 3);
+    base->begin_suite(base, &suite, 0);
+    base->end_test(base, &suite, &test11, 1);
+    base->end_test(base, &suite, &test12, 2);
+    base->end_test(base, &suite, &test13, 3);
+    base->end_suite(base, &suite, 0);
+    base->end(base, 3, 1, 1, 1);
+
+    const char* expected = 
+    "[INFO] Executing Test Runner with detail level: 'Full'\n"
+    "[INFO] Suites / Tests found: 1 / 3\n"
+    "[INFO] 1) Suite1.Test11............................................[PASS] (0.000 ms)\n"
+    "[ERRO] 2) Suite1.Test12............................................[FAIL] test_file.c:8: expected [false] but was [true]\n"
+    "[WARN] 3) Suite1.Test13............................................[SKIP] test_file.c:4: Missing assertion!\n"
+    "[INFO] Total: 3, Passed: 1, Failed: 1, Skipped: 1\n"
     "[INFO] Run duration: 0 ms\n"
     "[ERRO] Run result: FAILURE :_(\n"
     ;
@@ -163,8 +154,8 @@ CLOVE_TEST(ReportTwoSuitesWithTenTests) {
     base->end(base, 2, 10, 0, 0);
 
     const char* expected = 
-    "[INFO] Executing Test Runner in 'Verbose' mode\n"
-    "[INFO] Suite / Tests found: 2 / 10\n"
+    "[INFO] Executing Test Runner with detail level: 'Full'\n"
+    "[INFO] Suites / Tests found: 2 / 10\n"
     "[INFO] 01) Suite 1.Test11..........................................[PASS] (0.000 ms)\n"
     "[INFO] 02) Suite 2.Test21..........................................[PASS] (0.000 ms)\n"
     "[INFO] 03) Suite 2.Test22..........................................[PASS] (0.000 ms)\n"

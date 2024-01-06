@@ -247,18 +247,20 @@ A binary built with the `CLove-Unit` library supports a number of command line o
 
 > `<executable> [options]`
 
-| Options                     | Description                                                                                                                       |
-|-----------------------------|-----------------------------------------------------------------------------------------------------------------------------------|
-| \<no-option\>               | Running executable with no args will execute tests <br />producing a report in `pretty` format (default)                          |
-| `-e` `--exclude <expr>`     | Exclude tests is run/listed<br /> (can be repeated more than once)<br /> [[read here for more details](#test-inclusionexclusion)] |
-| `-h` `--help`               | Display usage information.                                                                                                        |
-| `-i` `--include <expr>`     | Include tests is run/listed<br /> (can be repeated more than once)<br /> [[read here for more details](#test-inclusionexclusion)] |
-| `-l` `--list-tests`         | List all/matching test cases in `pretty` format (default).<br />Accepts inclusion/exclusion expression.                           |
-| `-o` `--output <stream>`    | Specify output stream for a report. <br />Possible options: `stdout` (default) or `<file path>`                                   |
-| `-r` `--report <format>`    | Specify report format when running/listing tests. <br />Possible options: `pretty` `csv` `json`                                   |
-| `-t` `--run-tests`          | Execute all/matching test cases (same as \<no-option\> scenario).<br />Accepts inclusion/exclusion expression.                    |
-| `-v` `--version`            | Show CLove-Unit version.                                                                                                          |
-| `-x` `--error-on-test-fail` | Test run process will end with error in case of test failure. <br />Default is to end the process successfully.                   |
+| Options                     | Description                                                                                                                                               |
+|-----------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| \<no-option\>               | Running executable with no args will execute tests <br />producing a report in `pretty` format (default).                                                 |
+| `-b` `--base-path`          | Base path for test sources. Allow to shorten test file paths when running/listing tests.                                                                  |
+| `-d` `--run-detail <level>` | Control Run Tests report detail level in terms of tests listed: '1' (failed), '2' (failed+skipped), '3' (passed+failed+skipped). Default is '3'.          |
+| `-e` `--exclude <expr>`     | Exclude tests is run/listed (can be repeated more than once).<br /> [[read here for more details](#test-inclusionexclusion)]                         |
+| `-h` `--help`               | Display usage information.                                                                                                                                |
+| `-i` `--include <expr>`     | Include tests is run/listed (can be repeated more than once).<br /> [[read here for more details](#test-inclusionexclusion)]                         |
+| `-l` `--list-tests`         | List all/matching test cases in `pretty` format (default).<br />Accepts inclusion/exclusion expression.                                                   |
+| `-o` `--output <stream>`    | Specify output stream for a report. <br />Possible options: `stdout` (default) or `<file path>`                                                           |
+| `-r` `--report <format>`    | Specify report format when running/listing tests. <br />Possible options: `pretty` `csv` `json`                                                           |
+| `-t` `--run-tests`          | Execute all/matching test cases (same as \<no-option\> scenario).<br />Accepts inclusion/exclusion expression.                                            |
+| `-v` `--version`            | Show CLove-Unit version.                                                                                                                                  |
+| `-x` `--error-on-test-fail` | Run Tests process will end with error in case of test failure. <br />Default is to end the process successfully.                                           |
 
 ### Test Inclusion/Exclusion
 

@@ -31,7 +31,7 @@ CLOVE_TEST(InitWithMultipleOpt) {
     CLOVE_STRING_EQ("json", __clove_cmdline_get_opt_value(&cmd, "r"));
     CLOVE_IS_TRUE(__clove_cmdline_has_opt(&cmd, "i"));
 
-    __clove_vector_t* values = __clove_cmdline_get_opt_values(&cmd, "i");
+    const __clove_vector_t* values = __clove_cmdline_get_opt_values(&cmd, "i");
     CLOVE_INT_EQ(2, (int)__clove_vector_count(values));
     CLOVE_STRING_EQ("one", *(char**)__clove_vector_get(values, 0));
     CLOVE_STRING_EQ("two", *(char**)__clove_vector_get(values, 1));
@@ -98,9 +98,9 @@ CLOVE_TEST(HasOneOpt) {
     __clove_cmdline_t cmd;
     __clove_cmdline_init(&cmd, argv, argc);
 
-    CLOVE_IS_TRUE(__clove_cmdline_has_one_opt(&cmd, "o", "output"));
-    CLOVE_IS_TRUE(__clove_cmdline_has_one_opt(&cmd, "a", "unexistent"));
-    CLOVE_IS_FALSE(__clove_cmdline_has_one_opt(&cmd, "unexistent", "unexistent"));
+    CLOVE_IS_TRUE(__clove_cmdline_has_any_opt(&cmd, "o", "output"));
+    CLOVE_IS_TRUE(__clove_cmdline_has_any_opt(&cmd, "a", "unexistent"));
+    CLOVE_IS_FALSE(__clove_cmdline_has_any_opt(&cmd, "unexistent", "unexistent"));
 
     __clove_cmdline_free(&cmd);
 }
@@ -111,11 +111,11 @@ CLOVE_TEST(GetOneOptValue) {
     __clove_cmdline_t cmd;
     __clove_cmdline_init(&cmd, argv, argc);
 
-    CLOVE_STRING_EQ("value1", __clove_cmdline_get_one_opt_value(&cmd, "o", "output"));
-    CLOVE_STRING_EQ("value2", __clove_cmdline_get_one_opt_value(&cmd, "output", "o"));
-    CLOVE_STRING_EQ("value3", __clove_cmdline_get_one_opt_value(&cmd, "a", "unexistent"));
-    CLOVE_STRING_EQ("value3", __clove_cmdline_get_one_opt_value(&cmd, "unexistent", "a"));
-    CLOVE_NULL( __clove_cmdline_get_one_opt_value(&cmd, "unexistent", "unexistent"));
+    CLOVE_STRING_EQ("value1", __clove_cmdline_get_any_opt_value(&cmd, "o", "output"));
+    CLOVE_STRING_EQ("value2", __clove_cmdline_get_any_opt_value(&cmd, "output", "o"));
+    CLOVE_STRING_EQ("value3", __clove_cmdline_get_any_opt_value(&cmd, "a", "unexistent"));
+    CLOVE_STRING_EQ("value3", __clove_cmdline_get_any_opt_value(&cmd, "unexistent", "a"));
+    CLOVE_NULL( __clove_cmdline_get_any_opt_value(&cmd, "unexistent", "unexistent"));
 
     __clove_cmdline_free(&cmd);
 }
