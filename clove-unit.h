@@ -3243,6 +3243,9 @@ void __clove_report_json_end_test(__clove_report_t* _this, __clove_suite_t* suit
         } else {
             instance->stream->writef(instance->stream, "\n");
         }
+    } else if (test->result == __CLOVE_TEST_RESULT_SKIPPED) {
+        instance->stream->writef(instance->stream, ",\n");
+        instance->stream->writef(instance->stream, "\t\t\t\t\t\t\"line\" : %zu\n", test->funct_line);
     } else {
         instance->stream->writef(instance->stream, "\n");
     }
