@@ -258,8 +258,8 @@ __CLOVE_EXTERN_C void __clove_vector_collection_dtor(void* vector);
     *__CLOVE_MACRO_COMBINE(__vector_slot,__LINE__) = ITEM;
 
 #define __CLOVE_VECTOR_FOREACH(VECTOR_PTR, TYPE, NAME, BODY) \
-    for(size_t vector_index=0; vector_index < __clove_vector_count(VECTOR_PTR); ++vector_index) { \
-        TYPE* NAME = (TYPE*)__clove_vector_get(VECTOR_PTR, vector_index); \
+    for(size_t __CLOVE_MACRO_COMBINE(vector_index,__LINE__)=0; __CLOVE_MACRO_COMBINE(vector_index,__LINE__) < __clove_vector_count(VECTOR_PTR); ++__CLOVE_MACRO_COMBINE(vector_index,__LINE__)) { \
+        TYPE* NAME = (TYPE*)__clove_vector_get(VECTOR_PTR, __CLOVE_MACRO_COMBINE(vector_index,__LINE__)); \
         BODY \
     }
 #pragma endregion // Vector Decl
@@ -480,6 +480,9 @@ typedef struct __clove_suite_t {
     } fixtures;
     struct {
         __clove_time_t duration;
+        size_t passed_count;
+        size_t failed_count;
+        size_t skipped_count;
     } issue;
 
 } __clove_suite_t;
@@ -598,8 +601,16 @@ typedef struct __clove_test_expr_t {
     __clove_string_view_t test_view;
 } __clove_test_expr_t;
 
+typedef enum __clove_report_detail_e {
+    __CLOVE_REPORT_DETAIL__NONE = 0,
+    __CLOVE_REPORT_DETAIL__FAILED = 1,
+    __CLOVE_REPORT_DETAIL__FAILED_SKIPPED = 2,
+    __CLOVE_REPORT_DETAIL__PASSED_FAILED_SKIPPED = 3,
+} __clove_report_detail_e;
+
 typedef struct __clove_report_params_t {
     const char* tests_base_path;
+    __clove_report_detail_e report_detail;
 } __clove_report_params_t;
 
 __CLOVE_EXTERN_C void __clove_test_expr_init(__clove_test_expr_t* expr,  const char* expr_str);
@@ -624,7 +635,7 @@ typedef struct __clove_report_pretty_t {
         const char* fail;
     } labels;
 } __clove_report_pretty_t;
-__clove_report_pretty_t* __clove_report_pretty_new(__clove_stream_t* stream, __clove_report_params_t* params);
+__clove_report_pretty_t* __clove_report_run_tests_pretty_new(__clove_stream_t* stream, __clove_report_params_t* params);
 __CLOVE_EXTERN_C void __clove_report_pretty_free(__clove_report_t* report);
 __CLOVE_EXTERN_C void __clove_report_pretty_start(__clove_report_t* _this, size_t suite_count, size_t test_count);
 __CLOVE_EXTERN_C void __clove_report_pretty_begin_suite(__clove_report_t* _this, __clove_suite_t* suite, size_t index);
@@ -675,10 +686,14 @@ typedef struct __clove_report_json_t {
     __clove_suite_t* current_suite;
     bool is_first_suite_test;
     size_t test_count;
+    size_t suite_tests_number;
     size_t suite_count;
+    __clove_vector_t cached_suites;
+    bool is_realtime_scenario;
+    bool is_reporting_enabled;
 } __clove_report_json_t;
 
-__CLOVE_EXTERN_C __clove_report_json_t* __clove_report_json_new(__clove_stream_t* stream, __clove_report_params_t* params);
+__CLOVE_EXTERN_C __clove_report_json_t* __clove_report_run_tests_json_new(__clove_stream_t* stream, __clove_report_params_t* params);
 __CLOVE_EXTERN_C void __clove_report_json_free(__clove_report_t* report);
 __CLOVE_EXTERN_C void __clove_report_json_start(__clove_report_t* _this, size_t suite_count, size_t test_count);
 __CLOVE_EXTERN_C void __clove_report_json_begin_suite(__clove_report_t* _this, __clove_suite_t* suite, size_t index);
@@ -1938,6 +1953,7 @@ __clove_cmdline_errno_t __clove_cmdline_handle_help(__clove_cmdline_t* cmd) {
     printf("where options are:\n");
     printf("%*s%-*s%*s%s\n", 3," ", 30,"<no-options>",             5," ", "Run all tests producing a 'pretty' print report (default behaviour).");
     printf("%*s%-*s%*s%s\n", 3," ", 30,"-b, --base-path",          5," ", "Base path for test sources. Allow to shorten test file paths when running/listing tests.");
+    printf("%*s%-*s%*s%s\n", 3," ", 30,"-d, --run-detail <level>", 5," ", "Control Run Tests report detail level: '1' (failed), '2' (failed+skipped), '3' (passed+failed+skipped). Default is '3'.");
     printf("%*s%-*s%*s%s\n", 3," ", 30,"-e, --exclude <expr>",     5," ", "Suite/Test expression to be excluded. Works when running/listing tests.");
     printf("%*s%-*s%*s%s\n", 3," ", 30,"-h, --help",               5," ", "Display usage information.");
     printf("%*s%-*s%*s%s\n", 3," ", 30,"-i, --include <expr>",     5," ", "Suite/Test expression to be included. Works when running/listing tests.");
@@ -1946,9 +1962,9 @@ __clove_cmdline_errno_t __clove_cmdline_handle_help(__clove_cmdline_t* cmd) {
     printf("%*s%-*s%*s%s\n", 3," ", 30,"-r, --report <format>",    5," ", "Specify report format when running tests: 'pretty', 'csv', 'json'.");
     printf("%*s%-*s%*s%s\n", 3," ", 30,"-t, --run-tests",          5," ", "Execute all/matching test cases (same as <no-options>).");
     printf("%*s%-*s%*s%s\n", 3," ", 30,"-v, --version",            5," ", "Show CLove-Unit version.");
-    printf("%*s%-*s%*s%s\n", 3," ", 30,"-x, --error-on-test-fail", 5," ", "Test run process will end with error in case of test failure. Default is to end the process succesfully.");
+    printf("%*s%-*s%*s%s\n", 3," ", 30,"-x, --error-on-test-fail", 5," ", "Run Tests process will end with error in case of test failure. Default is to end the process succesfully.");
     printf("\n");
-    printf("For detailed usage please read look at the README in https://github.com/fdefelici/clove-unit.\n");
+    printf("For detailed usage please look at the README in https://github.com/fdefelici/clove-unit.\n");
     return __CLOVE_CMD_ERRNO_OK;
 }
 
@@ -1962,7 +1978,10 @@ __clove_cmdline_errno_t __clove_cmdline_handle_run_tests(__clove_cmdline_t* cmd)
     if (!__clove_cmdline_has_any_opt(cmd, "t", "run-tests")) return __CLOVE_CMD_ERRNO_UNMANAGED;
     
     const char* opt_report = __clove_cmdline_get_any_opt_value_defaulted(cmd, "r", "report", "pretty");
-    if (!__clove_string_equal_any(opt_report, 3, "pretty", "json", "csv")) return __CLOVE_CMD_ERRNO_INVALID_PARAM;    
+    if (!__clove_string_equal_any(opt_report, 3, "pretty", "json", "csv")) return __CLOVE_CMD_ERRNO_INVALID_PARAM;
+    
+    const char* opt_detail = __clove_cmdline_get_any_opt_value_defaulted(cmd, "d", "run-detail", "3");
+    if (!__clove_string_equal_any(opt_detail, 3, "1", "2", "3")) return __CLOVE_CMD_ERRNO_INVALID_PARAM;    
     
     const char* opt_out = __clove_cmdline_get_any_opt_value_defaulted(cmd, "o", "output", "stdout");
     const char* opt_base_path = __clove_cmdline_get_any_opt_value_defaulted(cmd, "b", "base-path", "");
@@ -1994,14 +2013,21 @@ __clove_cmdline_errno_t __clove_cmdline_handle_run_tests(__clove_cmdline_t* cmd)
     
     //ensure base path is in os format
     char* base_path_fixed = __clove_string_strdup(opt_base_path);
-    __clove_path_to_os(base_path_fixed);
+    __clove_path_to_os(base_path_fixed);    
     report_params.tests_base_path = base_path_fixed;
+
+    if (__clove_string_equal(opt_detail, "1")) 
+        report_params.report_detail = __CLOVE_REPORT_DETAIL__FAILED;
+    else if (__clove_string_equal(opt_detail, "2"))
+        report_params.report_detail = __CLOVE_REPORT_DETAIL__FAILED_SKIPPED;
+    else if (__clove_string_equal(opt_detail, "3"))
+        report_params.report_detail = __CLOVE_REPORT_DETAIL__PASSED_FAILED_SKIPPED;
 
     __clove_report_t* report;
     if (__clove_string_equal("json", opt_report)) {
-        report = (__clove_report_t*)__clove_report_json_new(stream, &report_params);
+        report = (__clove_report_t*)__clove_report_run_tests_json_new(stream, &report_params);
     } else if (__clove_string_equal("pretty", opt_report)) {
-        report = (__clove_report_t*)__clove_report_pretty_new(stream, &report_params); //TODO: rename in run_tests
+        report = (__clove_report_t*)__clove_report_run_tests_pretty_new(stream, &report_params);
     } else if (__clove_string_equal("csv", opt_report)) {
         report = (__clove_report_t*)__clove_report_run_tests_csv_new(stream, &report_params);
     } else {
@@ -2180,6 +2206,9 @@ void __clove_vector_suite_ctor(void* suite_ptr) {
 
     suite->issue.duration.seconds = 0;
     suite->issue.duration.nanos_after_seconds = 0;
+    suite->issue.passed_count = 0;
+    suite->issue.failed_count = 0;
+    suite->issue.skipped_count = 0;
 }
 
 void __clove_vector_suite_dtor(void* suite_ptr) {
@@ -2550,7 +2579,7 @@ bool __clove_test_expr_validate(__clove_test_expr_t* expr, const __clove_string_
 
 #pragma region PRIVATE - RunTests Report Pretty Impl
 #include <stdio.h>
-__clove_report_pretty_t* __clove_report_pretty_new(__clove_stream_t* stream, __clove_report_params_t* params) {
+__clove_report_pretty_t* __clove_report_run_tests_pretty_new(__clove_stream_t* stream, __clove_report_params_t* params) {
     __clove_report_pretty_t* result = __CLOVE_MEMORY_MALLOC_TYPE(__clove_report_pretty_t);
     result->base.start = __clove_report_pretty_start;
     result->base.begin_suite = __clove_report_pretty_begin_suite;
@@ -2590,9 +2619,18 @@ void __clove_report_pretty_start(__clove_report_t* _this, size_t suite_count, si
         report->labels.fail = "[FAIL]";
     }
 
+    const char* level_str = "<unknown>";
+    if (report->params->report_detail == __CLOVE_REPORT_DETAIL__PASSED_FAILED_SKIPPED) {
+        level_str = "Full";
+    } else if (report->params->report_detail == __CLOVE_REPORT_DETAIL__FAILED) {
+        level_str = "Failed only";
+    } else if (report->params->report_detail == __CLOVE_REPORT_DETAIL__FAILED_SKIPPED) {
+        level_str = "Failed + Skipped";
+    }
+
     report->stream->open(report->stream);
-    report->stream->writef(report->stream, "%s Executing Test Runner in 'Verbose' mode\n", report->labels.info);
-    report->stream->writef(report->stream, "%s Suite / Tests found: %zu / %zu\n", report->labels.info, suite_count, test_count);
+    report->stream->writef(report->stream, "%s Executing Test Runner with detail level: '%s'\n", report->labels.info, level_str);
+    report->stream->writef(report->stream, "%s Suites / Tests found: %zu / %zu\n", report->labels.info, suite_count, test_count);
 }
 void __clove_report_pretty_begin_suite(__clove_report_t* _this, __clove_suite_t* suite, size_t index) {
     __CLOVE_UNUSED_VAR(_this);
@@ -2618,21 +2656,40 @@ void __clove_report_pretty_end(__clove_report_t* _this, size_t test_count, size_
     else if (failed > 0) { report->stream->writef(report->stream, "%s Run result: FAILURE :_(\n", report->labels.erro); }
     else if (skipped > 0) { report->stream->writef(report->stream, "%s Run result: OK, but some test has been skipped!\n", report->labels.warn); }
 
-     report->stream->close(report->stream);
+    report->stream->close(report->stream);
 }
 
 void __clove_report_pretty_end_test(__clove_report_t* _this, __clove_suite_t* suite, __clove_test_t* test, size_t test_number) {
     __clove_report_pretty_t* report = (__clove_report_pretty_t*)_this;
-    char result[__CLOVE_STRING_LENGTH], strToPad[__CLOVE_TEST_ENTRY_LENGTH];
-    snprintf(strToPad, __CLOVE_TEST_ENTRY_LENGTH, "%0*zu) %s.%s", report->max_test_digits, test_number, suite->name, test->name);
-    __clove_report_pretty_pad_right(result, strToPad);
+    
+    bool print_passed = false;
+    bool print_failed = false;
+    bool print_skipped = false;
+    if (report->params->report_detail == __CLOVE_REPORT_DETAIL__PASSED_FAILED_SKIPPED) {
+        print_passed = true;
+        print_failed = true;
+        print_skipped = true;
+    } else if (report->params->report_detail == __CLOVE_REPORT_DETAIL__FAILED) {
+        print_passed = false;
+        print_failed = true;
+        print_skipped = false;
+    } else if (report->params->report_detail == __CLOVE_REPORT_DETAIL__FAILED_SKIPPED) {
+        print_passed = false;
+        print_failed = true;
+        print_skipped = true;
+    }
 
-    if (test->result == __CLOVE_TEST_RESULT_PASSED) {
+    if (print_passed && test->result == __CLOVE_TEST_RESULT_PASSED) {
         float millis = (float)(__clove_time_to_nanos(&(test->duration))) / (float)__CLOVE_TIME_TRASL_NANOS_PER_MILLIS;
         int decimal = millis > 1.f ? 0 : 3;
+
+        char result[__CLOVE_STRING_LENGTH], strToPad[__CLOVE_TEST_ENTRY_LENGTH];
+        snprintf(strToPad, __CLOVE_TEST_ENTRY_LENGTH, "%0*zu) %s.%s", report->max_test_digits, test_number, suite->name, test->name);
+        __clove_report_pretty_pad_right(result, strToPad);
+
         report->stream->writef(report->stream, "%s %s%s (%.*f ms)\n", report->labels.info, result, report->labels.pass, decimal, millis);
     }
-    else if (test->result == __CLOVE_TEST_RESULT_FAILED) {
+    else if (print_failed && test->result == __CLOVE_TEST_RESULT_FAILED) {
         char msg[__CLOVE_STRING_LENGTH] = "FAILURE but NO MESSAGE!!!";
 
         if (test->issue.assert == __CLOVE_ASSERT_FAIL) {
@@ -2759,9 +2816,17 @@ void __clove_report_pretty_end_test(__clove_report_t* _this, __clove_suite_t* su
             file_path = __clove_path_relative(test->file_name, report->params->tests_base_path);
         }
     
+        char result[__CLOVE_STRING_LENGTH], strToPad[__CLOVE_TEST_ENTRY_LENGTH];
+        snprintf(strToPad, __CLOVE_TEST_ENTRY_LENGTH, "%0*zu) %s.%s", report->max_test_digits, test_number, suite->name, test->name);
+        __clove_report_pretty_pad_right(result, strToPad);
+
         report->stream->writef(report->stream, "%s %s%s %s:%d: %s\n", report->labels.erro, result, report->labels.fail, file_path, test->issue.line, msg);
     }
-    else if (test->result == __CLOVE_TEST_RESULT_SKIPPED) {
+    else if (print_skipped && test->result == __CLOVE_TEST_RESULT_SKIPPED) {
+        char result[__CLOVE_STRING_LENGTH], strToPad[__CLOVE_TEST_ENTRY_LENGTH];
+        snprintf(strToPad, __CLOVE_TEST_ENTRY_LENGTH, "%0*zu) %s.%s", report->max_test_digits, test_number, suite->name, test->name);
+        __clove_report_pretty_pad_right(result, strToPad);
+
         report->stream->writef(report->stream, "%s %s%s\n", report->labels.warn, result, report->labels.skip);
     }
 }
@@ -2861,10 +2926,28 @@ void __clove_report_run_tests_csv_end_test(__clove_report_t* _this, __clove_suit
     
     __clove_report_run_tests_csv_t* report = (__clove_report_run_tests_csv_t*)_this;
 
+    bool print_passed = false;
+    bool print_failed = false;
+    bool print_skipped = false;
+    if (report->params->report_detail == __CLOVE_REPORT_DETAIL__PASSED_FAILED_SKIPPED) {
+        print_passed = true;
+        print_failed = true;
+        print_skipped = true;
+    } else if (report->params->report_detail == __CLOVE_REPORT_DETAIL__FAILED) {
+        print_passed = false;
+        print_failed = true;
+        print_skipped = false;
+    } else if (report->params->report_detail == __CLOVE_REPORT_DETAIL__FAILED_SKIPPED) {
+        print_passed = false;
+        print_failed = true;
+        print_skipped = true;
+    }
+
     ////Suite,Test,Status,Duration,File,Line,Assert,Type,Expected,Actual
-    if (test->result == __CLOVE_TEST_RESULT_PASSED) {
+    if (print_passed && test->result == __CLOVE_TEST_RESULT_PASSED) {
         report->stream->writef(report->stream, "%s,%s,%s,%llu,%s,%s,%s,%s,%s,%s\n", suite->name, test->name, test->result, __clove_time_to_nanos(&(test->duration)),"","","","","","");
-    } else if (test->result == __CLOVE_TEST_RESULT_FAILED) {
+    } 
+    else if (print_failed && test->result == __CLOVE_TEST_RESULT_FAILED) {
         const char* data_type = (test->issue.assert == __CLOVE_ASSERT_FAIL) ? "" : test->issue.data_type;
         const char* file_name = __clove_path_relative(test->file_name, report->params->tests_base_path);
       
@@ -2876,7 +2959,7 @@ void __clove_report_run_tests_csv_end_test(__clove_report_t* _this, __clove_suit
         __clove_report_run_tests_csv_print_data(report, test, &test->issue.actual);
         report->stream->writef(report->stream, "\n");
     }
-    else if (test->result == __CLOVE_TEST_RESULT_SKIPPED) {
+    else if (print_skipped && test->result == __CLOVE_TEST_RESULT_SKIPPED) {
         report->stream->writef(report->stream, "%s,%s,%s,%s,%s,%s,%s,%s\n", suite->name, test->name, test->result,"","","","","","","");
     }
 }
@@ -2925,7 +3008,7 @@ void __clove_report_run_tests_csv_print_data(__clove_report_run_tests_csv_t* ins
 #pragma region PRIVATE - Report Json Impl
 #include <stdio.h>
 #include <stdlib.h>
-__clove_report_json_t* __clove_report_json_new(__clove_stream_t* stream, __clove_report_params_t* params) {
+__clove_report_json_t* __clove_report_run_tests_json_new(__clove_stream_t* stream, __clove_report_params_t* params) {
     __clove_report_json_t* result = __CLOVE_MEMORY_MALLOC_TYPE(__clove_report_json_t);
     result->base.start = __clove_report_json_start;
     result->base.begin_suite = __clove_report_json_begin_suite;
@@ -2939,17 +3022,31 @@ __clove_report_json_t* __clove_report_json_new(__clove_stream_t* stream, __clove
     result->json_schema = "1.0";
     result->current_suite = NULL;
     result->test_count = 0;
+    result->suite_tests_number = 0;
+
     result->suite_count = 0;
     result->is_first_suite_test = false;
+    //Full report is the main usage scenario, so report will be computed during tests execution,
+    //instead, for detail Failed (or Failed+Skipped) need to cache suites (and related test) and only compute 
+    //the report at end of tests executions
+    result->is_realtime_scenario = params->report_detail == __CLOVE_REPORT_DETAIL__PASSED_FAILED_SKIPPED;
+    result->is_reporting_enabled = result->is_realtime_scenario;
+    result->cached_suites = __clove_vector_null();
     return result;
 }
 
 void __clove_report_json_free(__clove_report_t* report) {
+    __clove_report_json_t* instance = (__clove_report_json_t*)report;
+    __clove_vector_free(&instance->cached_suites);
     free(report);
 }
 
 void __clove_report_json_start(__clove_report_t* _this, size_t suite_count, size_t test_count) {
     __clove_report_json_t* instance = (__clove_report_json_t*)_this;
+
+    if (!instance->is_realtime_scenario) {
+        __CLOVE_VECTOR_INIT_CAPACITY(&instance->cached_suites, __clove_suite_t*, suite_count);
+    }
 
     instance->suite_count = suite_count;
 
@@ -2968,7 +3065,49 @@ void __clove_report_json_start(__clove_report_t* _this, size_t suite_count, size
 
 void __clove_report_json_end(__clove_report_t* _this, size_t test_count, size_t passed, size_t skipped, size_t failed) {
     __clove_report_json_t* instance = (__clove_report_json_t*)_this;
+    
+    if (!instance->is_reporting_enabled) {
+        instance->is_reporting_enabled = true;
+    
+        size_t suite_count = __clove_vector_count(&instance->cached_suites);
+        size_t test_number = 0;
+        
+        bool report_failed = false;
+        bool report_skipped = false;
+        if (instance->params->report_detail == __CLOVE_REPORT_DETAIL__FAILED) {
+            report_failed = true;
+            report_skipped = false;
+        } else if (instance->params->report_detail == __CLOVE_REPORT_DETAIL__FAILED_SKIPPED) {
+            report_failed = true;
+            report_skipped = true;
+        }
 
+        for(size_t suite_index=0; suite_index < suite_count; ++suite_index) {
+            __clove_suite_t* suite = *(__clove_suite_t**)__clove_vector_get(&instance->cached_suites, suite_index);
+            bool has_failed = report_failed && suite->issue.failed_count > 0;
+            bool has_skipped = report_skipped && suite->issue.skipped_count > 0;
+            if (!has_failed && !has_skipped) continue; 
+
+            instance->suite_tests_number = 0;
+            if (has_failed) instance->suite_tests_number += suite->issue.failed_count;
+            if (has_skipped) instance->suite_tests_number += suite->issue.skipped_count;
+
+            __clove_report_json_begin_suite(_this, suite, suite_index);
+
+            for(size_t test_index=0; test_index < __clove_vector_count(&suite->tests); ++test_index) { 
+                __clove_test_t* test = (__clove_test_t*)__clove_vector_get(&suite->tests, test_index);
+                bool failed_case = report_failed && test->result == __CLOVE_TEST_RESULT_FAILED;
+                bool skipped_case = report_skipped && test->result == __CLOVE_TEST_RESULT_SKIPPED;
+                if (!failed_case && !skipped_case) continue;
+
+                __clove_report_json_end_test(_this, suite, test, ++test_number);
+            }
+
+            __clove_report_json_end_suite(_this, suite, suite_index);
+        }
+    }
+
+    //Write overall results
     const char* status = "UNKNOWN";
     if (passed == test_count) status = __CLOVE_TEST_RESULT_PASSED;
     else if (failed > 0) status = __CLOVE_TEST_RESULT_FAILED;
@@ -3027,15 +3166,21 @@ void __clove_report_json_begin_suite(__clove_report_t* _this, __clove_suite_t* s
     __CLOVE_UNUSED_VAR(index);
 
     __clove_report_json_t* instance = (__clove_report_json_t*)_this;
-   instance->is_first_suite_test = true;
-   instance->current_suite = suite;
+    if (instance->is_reporting_enabled) {
+        instance->is_first_suite_test = true;
+        instance->current_suite = suite;
+    }
 }
 
 void __clove_report_json_end_suite(__clove_report_t* _this, __clove_suite_t* suite, size_t index) {
-    __CLOVE_UNUSED_VAR(suite);
+    __CLOVE_UNUSED_VAR(index);
 
     __clove_report_json_t* instance = (__clove_report_json_t*)_this;
-    
+    if (!instance->is_reporting_enabled) {
+        __CLOVE_VECTOR_ADD(&instance->cached_suites, __clove_suite_t*, suite);
+        return;
+    } 
+
     const char* comma = "";
     if (index < instance->suite_count-1) {
         comma = ",";
@@ -3049,17 +3194,18 @@ void __clove_report_json_end_test(__clove_report_t* _this, __clove_suite_t* suit
     __CLOVE_UNUSED_VAR(test_number);
 
     __clove_report_json_t* instance = (__clove_report_json_t*)_this;
+    if (!instance->is_reporting_enabled) return;
     
     if (instance->is_first_suite_test) {
         const char* file_path = __clove_path_relative(test->file_name, instance->params->tests_base_path);
         char* escaped_file = __clove_string_strdup(file_path);
         __clove_string_replace_char(escaped_file, '\\', '/');
-
+        
         instance->stream->writef(instance->stream, "\t\t\t\"%s\" : {\n", instance->current_suite->name);
         instance->stream->writef(instance->stream, "\t\t\t\t\"file\" : \"%s\",\n", escaped_file);
         instance->stream->writef(instance->stream, "\t\t\t\t\"tests\" : {\n");
         instance->test_count = 0;
-
+   
         free(escaped_file);
         instance->is_first_suite_test = false;
     }
@@ -3090,8 +3236,11 @@ void __clove_report_json_end_test(__clove_report_t* _this, __clove_suite_t* suit
     }
     instance->stream->writef(instance->stream, "\t\t\t\t\t}");
 
+    size_t suite_total_tests = suite->test_count; //realtime scenario
+    if (!instance->is_realtime_scenario) suite_total_tests = instance->suite_tests_number;
 
-    if (instance->test_count < suite->test_count) {
+    //if (instance->test_count < suite->test_count) {
+    if (instance->test_count < suite_total_tests) {
         instance->stream->writef(instance->stream, ",\n");
     }
     else {
@@ -3943,9 +4092,9 @@ void __clove_exec_suite(__clove_suite_t* suite, size_t test_counter, size_t* pas
         each_test->duration = __clove_time_sub(&test_end, &test_start);
 
         __CLOVE_SWITCH_BEG(each_test->result) 
-            __CLOVE_SWITCH_CASE(__CLOVE_TEST_RESULT_PASSED)  { (*passed)++; }
-            __CLOVE_SWITCH_CASE(__CLOVE_TEST_RESULT_FAILED)  { (*failed)++; }
-            __CLOVE_SWITCH_CASE(__CLOVE_TEST_RESULT_SKIPPED) { (*skipped)++;}
+            __CLOVE_SWITCH_CASE(__CLOVE_TEST_RESULT_PASSED)  { (*passed)++;  suite->issue.passed_count++; }
+            __CLOVE_SWITCH_CASE(__CLOVE_TEST_RESULT_FAILED)  { (*failed)++;  suite->issue.failed_count++; }
+            __CLOVE_SWITCH_CASE(__CLOVE_TEST_RESULT_SKIPPED) { (*skipped)++; suite->issue.skipped_count++;}
         __CLOVE_SWITCH_END()
 
         report->end_test(report, suite, each_test, test_counter + i);

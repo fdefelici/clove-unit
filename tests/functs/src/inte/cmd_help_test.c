@@ -43,6 +43,7 @@ CLOVE_TEST(RunHelpFullCheck) {
     "where options are:\n"
     "   <no-options>                       Run all tests producing a 'pretty' print report (default behaviour).\n"
     "   -b, --base-path                    Base path for test sources. Allow to shorten test file paths when running/listing tests.\n"
+    "   -d, --run-detail <level>           Control Run Tests report detail level: '1' (failed), '2' (failed+skipped), '3' (passed+failed+skipped). Default is '3'.\n"
     "   -e, --exclude <expr>               Suite/Test expression to be excluded. Works when running/listing tests.\n"
     "   -h, --help                         Display usage information.\n"
     "   -i, --include <expr>               Suite/Test expression to be included. Works when running/listing tests.\n"
@@ -51,9 +52,9 @@ CLOVE_TEST(RunHelpFullCheck) {
     "   -r, --report <format>              Specify report format when running tests: 'pretty', 'csv', 'json'.\n"
     "   -t, --run-tests                    Execute all/matching test cases (same as <no-options>).\n"
     "   -v, --version                      Show CLove-Unit version.\n"
-    "   -x, --error-on-test-fail           Test run process will end with error in case of test failure. Default is to end the process succesfully.\n"
+    "   -x, --error-on-test-fail           Run Tests process will end with error in case of test failure. Default is to end the process succesfully.\n"
     "\n"
-    "For detailed usage please read look at the README in https://github.com/fdefelici/clove-unit.\n"
+    "For detailed usage please look at the README in https://github.com/fdefelici/clove-unit.\n"
     ;
     CLOVE_STRING_EQ(expected, cmd_out);
 }
