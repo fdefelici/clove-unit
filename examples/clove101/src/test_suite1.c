@@ -32,13 +32,15 @@ CLOVE_TEST(LongfamilyTest) {
 }
 
 CLOVE_TEST(FloatTest) {
+    //By default two floats are equals if their diff is less then E-6
     CLOVE_FLOAT_NE(1.0f, 1.0001f);
-    CLOVE_FLOAT_EQ(1.0f, 1.000001f); //Two float are equals if their diff is <= 0.000001f 
+    CLOVE_FLOAT_EQ(1.0f, 1.0001f); 
 }
 
 CLOVE_TEST(DoubleTest) {
+    //By default two double are equals if their diff is less then E-15
     CLOVE_DOUBLE_NE(1.0, 1.0001);
-    CLOVE_DOUBLE_EQ(1.0, 1.000001); //Two double are equals if their diff is <= 0.000001f 
+    CLOVE_DOUBLE_EQ(1.0, 1.000000000000001); 
 }
 
 CLOVE_TEST(StringTest) {
