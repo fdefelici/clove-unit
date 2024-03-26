@@ -17,31 +17,24 @@ if(MSVC)
         string(REGEX REPLACE "/" "\\\\\\\\" ${path_in_out} "${${path_in_out}}")
     endmacro()
 
-    set(RES_PRJ01_EXEC_PATH \"${CMAKE_CURRENT_BINARY_DIR}/resources/prj01/${CMAKE_BUILD_TYPE_INIT}/CLoveUnitResourcePrj01.exe\")
-    set(RES_PRJ01_TEST_PATH \"${CMAKE_CURRENT_SOURCE_DIR}/resources/prj01\")
-    set(RES_PRJ01_TEST_PATH_UNIX ${RES_PRJ01_TEST_PATH})
-    to_win_path_escaped(RES_PRJ01_EXEC_PATH)
+    #NOTE: CMAKE_BUILD_TYPE_INIT is truly populated during cmake build (by default is debug during cmake configuration)
+    #set(RES_PRJ01_EXEC_PATH \"${CMAKE_CURRENT_BINARY_DIR}/resources/prj01/${CMAKE_BUILD_TYPE_INIT}/CLoveUnitResourcePrj01.exe\")
+    set(RES_PRJ01_BASE_EXEC_PATH "${CMAKE_CURRENT_BINARY_DIR}/resources/prj01")
+    set(RES_PRJ01_TEST_PATH "${CMAKE_CURRENT_SOURCE_DIR}/resources/prj01")
+    to_win_path_escaped(RES_PRJ01_BASE_EXEC_PATH)
     to_win_path_escaped(RES_PRJ01_TEST_PATH)
-    #cmake_path(SET RES_PRJ01_TEST_PATH \"${CMAKE_CURRENT_SOURCE_DIR}/resources/prj01\")
-    #cmake_path(NATIVE_PATH RES_PRJ01_TEST_PATH RES_PRJ01_TEST_PATH)
-    #message(STATUS "RES_PRJ01_TEST_PATH=${RES_PRJ01_TEST_PATH}") 
-else()
-    set(RES_PRJ01_EXEC_PATH \"${CMAKE_CURRENT_BINARY_DIR}/resources/prj01/CLoveUnitResourcePrj01\")
-    set(RES_PRJ01_TEST_PATH \"${CMAKE_CURRENT_SOURCE_DIR}/resources/prj01\")
-    set(RES_PRJ01_TEST_PATH_UNIX ${RES_PRJ01_TEST_PATH})
-endif()
-add_compile_definitions(RES_PRJ01_EXEC_PATH=${RES_PRJ01_EXEC_PATH})
-add_compile_definitions(RES_PRJ01_TEST_PATH=${RES_PRJ01_TEST_PATH})
-add_compile_definitions(RES_PRJ01_TEST_PATH_UNIX=${RES_PRJ01_TEST_PATH_UNIX})
 
-# Compiler Options
-#[[
-if (MSVC)
-    target_compile_options(CLoveUnitTest PRIVATE /W4)
-else() # GCC and CLANG
-    target_compile_options(CLoveUnitTest PRIVATE -Wall -Wextra -Wpedantic)
+    add_compile_definitions(RES_PRJ01_EXEC_PATH="${RES_PRJ01_BASE_EXEC_PATH}\\\\$<CONFIG>\\\\$<TARGET_FILE_NAME:CLoveUnitResourcePrj01>")
+    add_compile_definitions(RES_PRJ01_TEST_PATH="${RES_PRJ01_TEST_PATH}")
+    add_compile_definitions(RES_PRJ01_TEST_PATH_UNIX="${CMAKE_CURRENT_SOURCE_DIR}/resources/prj01")
+else()
+    add_compile_definitions(RES_PRJ01_EXEC_PATH="$<TARGET_FILE:CLoveUnitResourcePrj01>")
+    add_compile_definitions(RES_PRJ01_TEST_PATH="${CMAKE_CURRENT_SOURCE_DIR}/resources/prj01")
+    add_compile_definitions(RES_PRJ01_TEST_PATH_UNIX="${CMAKE_CURRENT_SOURCE_DIR}/resources/prj01")
 endif()
-]]
+#NOTE: Not exist cmake generator to escape windows separator.
+#add_compile_definitions(RES_PRJ01_EXEC_PATH="$<PATH:CMAKE_PATH,$<TARGET_FILE:CLoveUnitResourcePrj01>>")
+#add_compile_definitions(CMAKE__RES_PRJ01_EXEC_PATH="$<SHELL_PATH:$<TARGET_FILE:CLoveUnitResourcePrj01>>")
 
 #Automatically added by include CTest
 #enable_testing()
