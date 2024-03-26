@@ -39,6 +39,9 @@ jobs:
         run: |
           cd ${{env.BUILD_DIR}}
           ctest -C Release -T test --output-on-failure
+          IF %ERRORLEVEL% NEQ 0 (
+            exit /b %ERRORLEVEL%
+          )
           cd ${{ github.workspace }}
   build_macos:
     name: Build macos_apple-clang
