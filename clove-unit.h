@@ -172,11 +172,11 @@ __CLOVE_EXTERN_C bool __clove_string_view_contains(const __clove_string_view_t* 
 #pragma endregion // String View Decl
 
 #pragma region PRIVATE - Time Decl
-typedef enum __clove_time_traslation_e {
-    __CLOVE_TIME_TRASL_NANOS_PER_SEC = 1000000000, //1 BILLION
-    __CLOVE_TIME_TRASL_MILLIS_PER_SEC = 1000,
-    __CLOVE_TIME_TRASL_NANOS_PER_MILLIS = 1000000 //1 MILION
-} __clove_time_traslation_e;
+typedef enum __clove_time_translation_e {
+    __CLOVE_TIME_TRANSL_NANOS_PER_SEC = 1000000000, //1 BILLION
+    __CLOVE_TIME_TRANSL_MILLIS_PER_SEC = 1000,
+    __CLOVE_TIME_TRANSL_NANOS_PER_MILLIS = 1000000 //1 MILLION
+} __clove_time_translation_e;
 
 typedef struct __clove_time_t {
     long long seconds;
@@ -191,7 +191,7 @@ __CLOVE_EXTERN_C unsigned long long __clove_time_to_nanos(__clove_time_t* t);
 #pragma endregion // Time Decl
 
 #pragma region PRIVATE - Stack Decl
-//Stack not generalized. By now just managing size_t items for implenting Iterative QuickSort 
+//Stack isn't generalized. By now just managing size_t items by implementing Iterative QuickSort
 typedef struct __clove_stack_t {
     unsigned char* items;
     size_t capacity;
@@ -459,7 +459,8 @@ typedef struct __clove_test_t {
         __clove_generic_type_e data_type;
         __clove_generic_u expected;
         __clove_generic_u actual;
-        unsigned char floating_precision; //Just used for float/double to represent decimal digit. NOTE: Eventually refactor to a data struct to represent expected/actual and encapusulate also __clove_generic_u.
+        unsigned char floating_precision; //Just used for float/double to represent a decimal digit.
+        //TODO Eventually refactor to a data struct to represent expected/actual and encapsulate also __clove_generic_u.
     } issue;
 } __clove_test_t;
 
@@ -558,7 +559,7 @@ __CLOVE_EXTERN_C void __clove_stream_console_free(__clove_stream_t* stream);
 typedef struct __clove_stream_file_t {
     __clove_stream_t base;
      const char* file_path;
-    FILE* file; //No way to forward declaring FILE. the only way should be to use void*
+    FILE* file; //No way to forward declaring FILE. The only way should be to use void*
 } __clove_stream_file_t;
 
 __CLOVE_EXTERN_C __clove_stream_file_t* __clove_stream_file_new(const char* file_path);
@@ -1404,11 +1405,11 @@ __clove_time_t __clove_time_sub(__clove_time_t* t1, __clove_time_t* t2) {
     result.nanos_after_seconds = t1->nanos_after_seconds - t2->nanos_after_seconds;
     if (result.seconds > 0 && result.nanos_after_seconds < 0) {
         result.seconds--;
-        result.nanos_after_seconds += __CLOVE_TIME_TRASL_NANOS_PER_SEC;
+        result.nanos_after_seconds += __CLOVE_TIME_TRANSL_NANOS_PER_SEC;
     }
     else if (result.seconds < 0 && result.nanos_after_seconds > 0) {
         result.seconds++;
-        result.nanos_after_seconds -= __CLOVE_TIME_TRASL_NANOS_PER_SEC;
+        result.nanos_after_seconds -= __CLOVE_TIME_TRANSL_NANOS_PER_SEC;
     }
     return result;
 }
@@ -1417,23 +1418,23 @@ __clove_time_t __clove_time_sum(__clove_time_t* t1, __clove_time_t* t2) {
     __clove_time_t result;
     result.seconds = t1->seconds + t2->seconds;
     result.nanos_after_seconds = t1->nanos_after_seconds + t2->nanos_after_seconds;
-    if (result.nanos_after_seconds >= __CLOVE_TIME_TRASL_NANOS_PER_SEC) {
+    if (result.nanos_after_seconds >= __CLOVE_TIME_TRANSL_NANOS_PER_SEC) {
         result.seconds++;
-        result.nanos_after_seconds -= __CLOVE_TIME_TRASL_NANOS_PER_SEC;
+        result.nanos_after_seconds -= __CLOVE_TIME_TRANSL_NANOS_PER_SEC;
     }
     return result;
 }
 
 unsigned long long __clove_time_to_millis(__clove_time_t* t) {
     unsigned long long result = 0;
-    result += t->seconds * __CLOVE_TIME_TRASL_MILLIS_PER_SEC;
-    result += t->nanos_after_seconds / __CLOVE_TIME_TRASL_NANOS_PER_MILLIS;
+    result += t->seconds * __CLOVE_TIME_TRANSL_MILLIS_PER_SEC;
+    result += t->nanos_after_seconds / __CLOVE_TIME_TRANSL_NANOS_PER_MILLIS;
     return result;
 }
 
 unsigned long long __clove_time_to_nanos(__clove_time_t* t) {
     unsigned long long result = 0;
-    result += t->seconds * __CLOVE_TIME_TRASL_NANOS_PER_SEC;
+    result += t->seconds * __CLOVE_TIME_TRANSL_NANOS_PER_SEC;
     result += t->nanos_after_seconds;
     return result;
 }
@@ -1461,7 +1462,7 @@ __clove_time_t __clove_time_now(void) {
     }
 
     result.seconds = count.QuadPart / count_per_sec.QuadPart;
-    result.nanos_after_seconds = ((count.QuadPart % count_per_sec.QuadPart) * __CLOVE_TIME_TRASL_NANOS_PER_SEC) / count_per_sec.QuadPart;
+    result.nanos_after_seconds = ((count.QuadPart % count_per_sec.QuadPart) * __CLOVE_TIME_TRANSL_NANOS_PER_SEC) / count_per_sec.QuadPart;
     return result;
 }
 #else 
@@ -1599,7 +1600,7 @@ void __clove_vector_add_all(__clove_vector_t* vector, const __clove_vector_t* ot
 }
 
 void* __clove_vector_get(const __clove_vector_t* vector, size_t index) {
-    //if (index < 0) return NULL; //can never happen bucause of size_t
+    //if (index < 0) return NULL; //can never happen because of size_t
     if (index >= vector->count) return NULL;
     size_t byte_index = index * vector->item_size;
     return (void*)&(vector->items[byte_index]);
@@ -1697,11 +1698,11 @@ void __clove_vector_quicksort_iterative(__clove_vector_t* vector, int (*comparat
 
         if (start_index >= end_index) continue;
 
-        //find pivot and put it in right position
+        //find a pivot and put it in the right position
         size_t pivot_index = __clove_vector_quicksort_partition(vector, comparator, start_index, end_index);
 
         //left array indexes
-        if (pivot_index != 0) { //protect size_t overflow (for instance this happen for already sorted items)
+        if (pivot_index != 0) { //protect size_t overflow (for instance, this happens for already sorted items)
             __clove_stack_push(&index_pairs_stack, start_index);
             __clove_stack_push(&index_pairs_stack, pivot_index - 1);
         }
@@ -1951,7 +1952,7 @@ __clove_cmdline_errno_t __clove_cmdline_handle_help(__clove_cmdline_t* cmd) {
     printf("usage:\n");
     printf("%*s<executable> [options]\n", 3," ");
     printf("where options are:\n");
-    printf("%*s%-*s%*s%s\n", 3," ", 30,"<no-options>",             5," ", "Run all tests producing a 'pretty' print report (default behaviour).");
+    printf("%*s%-*s%*s%s\n", 3," ", 30,"<no-options>",             5," ", "Run all tests producing a 'pretty' print report (default behavior).");
     printf("%*s%-*s%*s%s\n", 3," ", 30,"-b, --base-path",          5," ", "Base path for test sources. Allow to shorten test file paths when running/listing tests.");
     printf("%*s%-*s%*s%s\n", 3," ", 30,"-d, --run-detail <level>", 5," ", "Control Run Tests report detail level: '1' (failed), '2' (failed+skipped), '3' (passed+failed+skipped). Default is '3'.");
     printf("%*s%-*s%*s%s\n", 3," ", 30,"-e, --exclude <expr>",     5," ", "Suite/Test expression to be excluded. Works when running/listing tests.");
@@ -1959,10 +1960,10 @@ __clove_cmdline_errno_t __clove_cmdline_handle_help(__clove_cmdline_t* cmd) {
     printf("%*s%-*s%*s%s\n", 3," ", 30,"-i, --include <expr>",     5," ", "Suite/Test expression to be included. Works when running/listing tests.");
     printf("%*s%-*s%*s%s\n", 3," ", 30,"-l, --list-tests",         5," ", "List all/matching test cases in 'pretty' format (default).");
     printf("%*s%-*s%*s%s\n", 3," ", 30,"-o, --output <stream>",    5," ", "Specify output stream for a report: 'stdout' (default) or <file path>.");
-    printf("%*s%-*s%*s%s\n", 3," ", 30,"-r, --report <format>",    5," ", "Specify report format when running tests: 'pretty', 'csv', 'json'.");
+    printf("%*s%-*s%*s%s\n", 3," ", 30,"-r, --report <format>",    5," ", "Specify a report format when running tests: 'pretty', 'csv', 'json'.");
     printf("%*s%-*s%*s%s\n", 3," ", 30,"-t, --run-tests",          5," ", "Execute all/matching test cases (same as <no-options>).");
     printf("%*s%-*s%*s%s\n", 3," ", 30,"-v, --version",            5," ", "Show CLove-Unit version.");
-    printf("%*s%-*s%*s%s\n", 3," ", 30,"-x, --error-on-test-fail", 5," ", "Run Tests process will end with error in case of test failure. Default is to end the process succesfully.");
+    printf("%*s%-*s%*s%s\n", 3," ", 30,"-x, --error-on-test-fail", 5," ", "Run Tests process will end with error in case of test failure. Default is to end the process successfully.");
     printf("\n");
     printf("For detailed usage please look at the README in https://github.com/fdefelici/clove-unit.\n");
     return __CLOVE_CMD_ERRNO_OK;
@@ -2181,7 +2182,7 @@ void __clove_vector_test_dtor(void* test_ptr) {
     __clove_test_t* test = (__clove_test_t*)test_ptr;
     free(test->name);
 
-    //See CLOVE_STRING_EQ and CLOVE_STRING_NE where string allocation happen
+    //See CLOVE_STRING_EQ and CLOVE_STRING_NE where string allocation happens
     if (test->result == __CLOVE_TEST_RESULT_FAILED && test->issue.data_type == __CLOVE_GENERIC_STRING) {
         free(test->issue.expected._string);
         free(test->issue.actual._string);
@@ -2680,7 +2681,7 @@ void __clove_report_pretty_end_test(__clove_report_t* _this, __clove_suite_t* su
     }
 
     if (print_passed && test->result == __CLOVE_TEST_RESULT_PASSED) {
-        float millis = (float)(__clove_time_to_nanos(&(test->duration))) / (float)__CLOVE_TIME_TRASL_NANOS_PER_MILLIS;
+        float millis = (float)(__clove_time_to_nanos(&(test->duration))) / (float)__CLOVE_TIME_TRANSL_NANOS_PER_MILLIS;
         int decimal = millis > 1.f ? 0 : 3;
 
         char result[__CLOVE_STRING_LENGTH], strToPad[__CLOVE_TEST_ENTRY_LENGTH];
@@ -2811,12 +2812,12 @@ void __clove_report_pretty_end_test(__clove_report_t* _this, __clove_suite_t* su
             __CLOVE_SWITCH_END()
         }
 
-        //Dublication
+        //Duplication
         const char* file_path = test->file_name;
         if (report->params->tests_base_path) {
             file_path = __clove_path_relative(test->file_name, report->params->tests_base_path);
         }
-        //Dublication
+        //Duplication
         char result[__CLOVE_STRING_LENGTH], strToPad[__CLOVE_TEST_ENTRY_LENGTH];
         snprintf(strToPad, __CLOVE_TEST_ENTRY_LENGTH, "%0*zu) %s.%s", report->max_test_digits, test_number, suite->name, test->name);
         __clove_report_pretty_pad_right(result, strToPad);
@@ -2825,12 +2826,12 @@ void __clove_report_pretty_end_test(__clove_report_t* _this, __clove_suite_t* su
     }
     else if (print_skipped && test->result == __CLOVE_TEST_RESULT_SKIPPED) {
         
-        //Dublication
+        //Duplication
         const char* file_path = test->file_name;
         if (report->params->tests_base_path) {
             file_path = __clove_path_relative(test->file_name, report->params->tests_base_path);
         }
-        //Dublication
+        //Duplication
         char result[__CLOVE_STRING_LENGTH], strToPad[__CLOVE_TEST_ENTRY_LENGTH];
         snprintf(strToPad, __CLOVE_TEST_ENTRY_LENGTH, "%0*zu) %s.%s", report->max_test_digits, test_number, suite->name, test->name);
         __clove_report_pretty_pad_right(result, strToPad);
@@ -3038,8 +3039,8 @@ __clove_report_json_t* __clove_report_run_tests_json_new(__clove_stream_t* strea
 
     result->suite_count = 0;
     result->is_first_suite_test = false;
-    //Full report is the main usage scenario, so report will be computed during tests execution,
-    //instead, for detail Failed (or Failed+Skipped) need to cache suites (and related test) and only compute 
+    //Full report is the main usage scenario, so a report will be computed during test execution,
+    //instead, for detail Failed (or Failed+Skipped) need it to cache suites (and related test) and only compute
     //the report at end of tests executions
     result->is_realtime_scenario = params->report_detail == __CLOVE_REPORT_DETAIL__PASSED_FAILED_SKIPPED;
     result->is_reporting_enabled = result->is_realtime_scenario;
@@ -3599,7 +3600,7 @@ void __clove_symbols_function_collect(__clove_symbols_function_t exported_funct,
         }
 
         __clove_test_t* test = (__clove_test_t*)__clove_vector_add_slot(&last_suite_ptr->tests);
-        //Switched to string allocation to make test structs indipendent from the source memory
+        //Switched to string allocation to make test structs independent of the source memory
         //test->name = test_name + test_separator_length;
         test->name = __clove_string_view_as_string(&name_vw);
         test->funct = (void (*)(__clove_test_t*))exported_funct.fun_ptr;
@@ -3906,7 +3907,7 @@ void __clove_symbols_lixux_close_module_handle(__clove_symbols_lixux_module_t* m
 /*
  * Compare two functions by their name
  * Return negative if name1 is lesser than name2
- * Return positive if name1 is greather than name1
+ * Return positive if name1 is greater than name1
  * Return zero if name1 and name2 are equals
  */
 int __clove_symbols_funct_name_comparator(void* f1, void* f2) {
@@ -3928,7 +3929,7 @@ int __clove_symbols_for_each_function_by_prefix(__clove_symbols_context_t* conte
     bool is_little = (magic[5] == 0x01); //0x02 is big endian
 
     if (!(is_elf && is_64 && is_little)) {
-        puts("Current executable format is not supported (it's not ELF 64bit little-endian!");
+        puts("Current executable format is not supported (it's not ELF 64bit little-endian!)");
         return 2;
     }
 
@@ -3952,7 +3953,7 @@ int __clove_symbols_for_each_function_by_prefix(__clove_symbols_context_t* conte
 
     size_t symbol_count = symbol_table_section->sh_size / symbol_table_section->sh_entsize;
 
-    //Vector could be replace with sorted tree to sort while scanning for clove functions
+    //Vector could be replaced with a sorted tree to sort while scanning for clove functions
     __clove_vector_t clove_functions;
     __clove_vector_params_t params = __clove_vector_params_defaulted(sizeof(__clove_symbols_function_t));
     __clove_vector_init(&clove_functions, &params);
@@ -3973,7 +3974,7 @@ int __clove_symbols_for_each_function_by_prefix(__clove_symbols_context_t* conte
         }
     }
 
-    //Sort Symbols Alphanumeric ascendent
+    //Sort Symbols Alphanumeric ascendant
     __clove_vector_sort(&clove_functions, __clove_symbols_funct_name_comparator);
 
     for (size_t i = 0; i < __clove_vector_count(&clove_functions); ++i)
