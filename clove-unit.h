@@ -465,7 +465,7 @@ typedef struct __clove_test_t {
     bool dry_run;
     size_t funct_line;
     struct {
-        unsigned int line;
+        size_t line;
         __clove_assert_check_e assert;
         __clove_generic_type_e data_type;
         __clove_generic_u expected;
@@ -2876,8 +2876,7 @@ void __clove_report_pretty_end_test(__clove_report_t* _this, __clove_suite_t* su
             file_path = __clove_path_relative(test->file_name, report->params->tests_base_path);
         }
         
-        //TODO: line is unsigned int....convert to size_t? and %d to %zu
-        report->stream->writef(report->stream, "%s %0*zu) %s%s %s:%d: %s\n", 
+        report->stream->writef(report->stream, "%s %0*zu) %s%s %s:%zu: %s\n", 
             report->labels.erro, 
             report->max_test_digits, test_number,
             test_identifier,
@@ -3007,7 +3006,7 @@ void __clove_report_run_tests_csv_end_test(__clove_report_t* _this, __clove_suit
         const char* data_type = (test->issue.assert == __CLOVE_ASSERT_FAIL) ? "" : test->issue.data_type;
         const char* file_name = __clove_path_relative(test->file_name, report->params->tests_base_path);
       
-        report->stream->writef(report->stream, "%s,%s,%s,%s,%s,%u,%s,%s,", 
+        report->stream->writef(report->stream, "%s,%s,%s,%s,%s,%zu,%s,%s,", 
             suite->name, test->name, test->result, "",file_name,test->issue.line, test->issue.assert, data_type);
 
         __clove_report_run_tests_csv_print_data(report, test, &test->issue.expected);
@@ -3278,7 +3277,7 @@ void __clove_report_json_end_test(__clove_report_t* _this, __clove_suite_t* suit
     instance->stream->writef(instance->stream, "\t\t\t\t\t\t\"duration\" : %llu", __clove_time_to_nanos(&(test->duration)));
     if (test->result == __CLOVE_TEST_RESULT_FAILED) {
         instance->stream->writef(instance->stream, ",\n");
-        instance->stream->writef(instance->stream, "\t\t\t\t\t\t\"line\" : %u,\n", test->issue.line);
+        instance->stream->writef(instance->stream, "\t\t\t\t\t\t\"line\" : %zu,\n", test->issue.line);
         instance->stream->writef(instance->stream, "\t\t\t\t\t\t\"assert\" : \"%s\"", test->issue.assert);        
         if (test->issue.assert != __CLOVE_ASSERT_FAIL) {
             instance->stream->writef(instance->stream, ",\n");
