@@ -601,7 +601,6 @@ __CLOVE_EXTERN_C char* __clove_stream_memory_as_string(__clove_stream_memory_t* 
 #pragma region PRIVATE - Report Decl
 typedef struct __clove_report_t {
     void (*start)(struct __clove_report_t* _this, __clove_vector_t* suites, size_t test_count);
-    //TODO: Remove test_count and store from start();
     void (*end)(struct __clove_report_t* _this, size_t passed, size_t skipped, size_t failed);
     void (*begin_suite)(struct __clove_report_t* _this, __clove_suite_t* suite, size_t index);
     void (*end_suite)(struct __clove_report_t* _this, __clove_suite_t* suite, size_t index);
@@ -2673,7 +2672,7 @@ void __clove_report_pretty_start(__clove_report_t* _this, __clove_vector_t* suit
     });
 
     //Force minimum length in case of longest suite/name is less 
-    if (longest_suite_and_test_name < 50) longest_suite_and_test_name = 50; //TODO: 46 to be rounded to 50
+    if (longest_suite_and_test_name < 46) longest_suite_and_test_name = 46; //rounded to 50 by next operation
 
     //+1 take into account dot separator (suite.name)
     //+3 to have at least 3 more dot after suite.name

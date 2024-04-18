@@ -86,7 +86,7 @@ CLOVE_TEST(ReportOneSuiteWithTwoTests) {
     const char* expected = 
     "[INFO] Executing Test Runner with detail level: 'Failed only'\n"
     "[INFO] Suites / Tests found: 1 / 2\n"
-    "[ERRO] 2) Suite1.Test12.........................................[FAIL] test_file.c:8: expected [false] but was [true]\n"
+    "[ERRO] 2) Suite1.Test12.....................................[FAIL] test_file.c:8: expected [false] but was [true]\n"
     "[INFO] Total: 2, Passed: 1, Failed: 1, Skipped: 0\n"
     "[INFO] Run duration: 0 ms\n"
     "[ERRO] Run result: FAILURE :_(\n"
