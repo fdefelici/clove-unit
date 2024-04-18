@@ -2934,19 +2934,15 @@ void __clove_report_pretty_string_ellipse(
 
 //TODO: Convert to __clove_string_pad_right
 void __clove_report_pretty_pad_right(char* str_to_pad, size_t str_len, size_t str_target_len) {    
-    //static const char* padding = "...............................................................................................................................................................................................................................................................";
+    //Compute padding length avoiding negative result
+    size_t pad_len = 0;
+    if (str_target_len > str_len) pad_len = str_target_len - str_len;
 
-    size_t pad_len = str_target_len - str_len; // Calc Padding length
-    if (pad_len < 0) pad_len = 0;    // Avoid negative length
-
-    // FORMAT SPECIFIER: https://www.tutorialspoint.com/format-specifiers-in-c
-    // %* => minimal length taken from the padding string
-    // .* => precision, exact length of the string taken from the padding string
-    //__clove_string_sprintf(str_to_pad, str_target_len, "%s%*.*s", str_to_pad, pad_len, pad_len, padding);  // RIGHT Padding 
-     char* start_pad = str_to_pad + str_len;
-    __clove_memory_memset(start_pad , pad_len, '.');
-    char* end_pad = str_to_pad + str_len + pad_len;
-    *end_pad = '\0';
+    char* pad_beg = str_to_pad + str_len;
+    char* pad_end = str_to_pad + str_len + pad_len;
+    
+    __clove_memory_memset(pad_beg , pad_len, '.');
+    *pad_end = '\0';
 }
 #pragma endregion // RunTests Report Pretty Impl
 
