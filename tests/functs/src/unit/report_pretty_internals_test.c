@@ -257,6 +257,13 @@ CLOVE_TEST(StringEllipseLeftAndRight) {
 
 CLOVE_TEST(StringPadRight) {
     char string[6] = "123";
-    __clove_report_pretty_pad_right(string, 3, 5);
+    
+    __clove_string_pad_right(string, 6, 5);
+    CLOVE_STRING_EQ("123..", string);
+
+    __clove_string_pad_right(string, 6, 6);
+    CLOVE_STRING_EQ("123..", string);
+
+    __clove_string_pad_right(string, 6, 7);
     CLOVE_STRING_EQ("123..", string);
 }

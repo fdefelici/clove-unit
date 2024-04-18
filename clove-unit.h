@@ -145,6 +145,7 @@ __CLOVE_EXTERN_C char* __clove_string_escape(const char* string);
 __CLOVE_EXTERN_C char* __clove_string_csv_escape(const char* string);
 __CLOVE_EXTERN_C void __clove_string_ellipse(const char* string, size_t str_len, size_t pos, char* out, size_t out_size);
 __CLOVE_EXTERN_C void __clove_string_replace_char(char* path, char find, char replace);
+__CLOVE_EXTERN_C void __clove_string_pad_right(char* dest, size_t dest_size, size_t str_target_len);
 #pragma endregion // String Decl
 
 #pragma region PRIVATE - String View Decl
@@ -656,7 +657,6 @@ __CLOVE_EXTERN_C void __clove_report_pretty_end_suite(__clove_report_t* _this, _
 __CLOVE_EXTERN_C void __clove_report_pretty_end_test(__clove_report_t* _this, __clove_suite_t* suite, __clove_test_t* test, size_t test_number);
 __CLOVE_EXTERN_C void __clove_report_pretty_end(__clove_report_t* _this, size_t test_count, size_t passed, size_t skipped, size_t failed);
 __CLOVE_EXTERN_C void __clove_report_pretty_string_ellipse(const char* exp, size_t exp_len, const char* act, size_t act_len, char* exp_short, char* act_short, size_t short_size);
-__CLOVE_EXTERN_C void __clove_report_pretty_pad_right(char* str_to_pad, size_t str_len, size_t str_target_len);
 #define __CLOVE_STRING_LENGTH 256
 #define __PRETTY_PRINT_FAIL_ASSERT_MSG(buffer, buffer_size, assert, exp, act, print_type) \
 { \
@@ -1321,6 +1321,23 @@ void __clove_string_replace_char(char* str, char src_chr, char dst_chr) {
             str[i] = dst_chr;
         }
     }
+}
+
+void __clove_string_pad_right(char* dest, size_t dest_size, size_t str_target_len) {    
+    //capped by dest buffer size, taking account space of null terminator
+    if (str_target_len >= dest_size) str_target_len = dest_size - 1; 
+
+    size_t str_len = __clove_string_length(dest);
+
+    //Compute padding length avoiding negative result
+    size_t pad_len = 0;
+    if (str_target_len > str_len) pad_len = str_target_len - str_len;
+
+    char* pad_beg = dest + str_len;
+    char* pad_end = dest + str_len + pad_len;
+    
+    __clove_memory_memset(pad_beg , pad_len, '.');
+    *pad_end = '\0';
 }
 #pragma endregion //String Impl
 
@@ -2715,18 +2732,14 @@ void __clove_report_pretty_end_test(__clove_report_t* _this, __clove_suite_t* su
         print_skipped = true;
     }
 
+    //Build test identifier with padding: Suite.Test.....
+    char test_identifier[__CLOVE_STRING_LENGTH];
+    __clove_string_sprintf(test_identifier, __CLOVE_STRING_LENGTH, "%s.%s", suite->name, test->name);
+    __clove_string_pad_right(test_identifier, __CLOVE_STRING_LENGTH, report->max_suite_and_test_name_size);
+
     if (print_passed && test->result == __CLOVE_TEST_RESULT_PASSED) {
         float millis = (float)(__clove_time_to_nanos(&(test->duration))) / (float)__CLOVE_TIME_TRANSL_NANOS_PER_MILLIS;
         int decimal = millis > 1.f ? 0 : 3;
-
-        //TODO: Set suite_len and test_len in suite and test
-        size_t suite_len = __clove_string_length(suite->name);
-        size_t test_len = __clove_string_length(test->name);
-
-        size_t test_identifier_len = suite_len + test_len + 1; //+1 due to dot separator
-        char test_identifier[__CLOVE_STRING_LENGTH];
-        __clove_string_sprintf(test_identifier, __CLOVE_STRING_LENGTH, "%s.%s", suite->name, test->name);
-        __clove_report_pretty_pad_right(test_identifier, test_identifier_len, report->max_suite_and_test_name_size);
 
         report->stream->writef(report->stream, "%s %0*zu) %s%s (%.*f ms)\n", 
             report->labels.info, 
@@ -2857,22 +2870,12 @@ void __clove_report_pretty_end_test(__clove_report_t* _this, __clove_suite_t* su
             __CLOVE_SWITCH_END()
         }
 
-        //Duplication
         const char* file_path = test->file_name;
         if (report->params->tests_base_path) {
             file_path = __clove_path_relative(test->file_name, report->params->tests_base_path);
         }
         
-        //Duplication
-        size_t suite_len = __clove_string_length(suite->name);
-        size_t test_len = __clove_string_length(test->name);
-
-        size_t test_identifier_len = suite_len + test_len + 1; //+1 due to dot separator
-        char test_identifier[__CLOVE_STRING_LENGTH];
-        __clove_string_sprintf(test_identifier, __CLOVE_STRING_LENGTH, "%s.%s", suite->name, test->name);
-        __clove_report_pretty_pad_right(test_identifier, test_identifier_len, report->max_suite_and_test_name_size);
-
-    //TODO: line is unsigned int....convert to size_t? and %d to %zu
+        //TODO: line is unsigned int....convert to size_t? and %d to %zu
         report->stream->writef(report->stream, "%s %0*zu) %s%s %s:%d: %s\n", 
             report->labels.erro, 
             report->max_test_digits, test_number,
@@ -2881,22 +2884,11 @@ void __clove_report_pretty_end_test(__clove_report_t* _this, __clove_suite_t* su
             file_path, test->issue.line, msg);
     }
     else if (print_skipped && test->result == __CLOVE_TEST_RESULT_SKIPPED) {
-        
-        //Duplication
+
         const char* file_path = test->file_name;
         if (report->params->tests_base_path) {
             file_path = __clove_path_relative(test->file_name, report->params->tests_base_path);
         }
-
-        //Duplication
-        size_t suite_len = __clove_string_length(suite->name);
-        size_t test_len = __clove_string_length(test->name);
-
-        size_t test_identifier_len = suite_len + test_len + 1; //+1 due to dot separator
-        char test_identifier[__CLOVE_STRING_LENGTH];
-        __clove_string_sprintf(test_identifier, __CLOVE_STRING_LENGTH, "%s.%s", suite->name, test->name);
-        __clove_report_pretty_pad_right(test_identifier, test_identifier_len, report->max_suite_and_test_name_size);
-
 
         report->stream->writef(report->stream, "%s %0*zu) %s%s %s:%zu: %s\n", 
             report->labels.warn, 
@@ -2930,19 +2922,6 @@ void __clove_report_pretty_string_ellipse(
     //Scenario where the shortest one is the like the "prefix" of the longest one 
     __clove_string_ellipse(exp, exp_len, iter_len-1, exp_short, short_size);
     __clove_string_ellipse(act, act_len, iter_len-1, act_short, short_size);
-}
-
-//TODO: Convert to __clove_string_pad_right
-void __clove_report_pretty_pad_right(char* str_to_pad, size_t str_len, size_t str_target_len) {    
-    //Compute padding length avoiding negative result
-    size_t pad_len = 0;
-    if (str_target_len > str_len) pad_len = str_target_len - str_len;
-
-    char* pad_beg = str_to_pad + str_len;
-    char* pad_end = str_to_pad + str_len + pad_len;
-    
-    __clove_memory_memset(pad_beg , pad_len, '.');
-    *pad_end = '\0';
 }
 #pragma endregion // RunTests Report Pretty Impl
 
