@@ -145,6 +145,7 @@ __CLOVE_EXTERN_C char* __clove_string_escape(const char* string);
 __CLOVE_EXTERN_C char* __clove_string_csv_escape(const char* string);
 __CLOVE_EXTERN_C void __clove_string_ellipse(const char* string, size_t str_len, size_t pos, char* out, size_t out_size);
 __CLOVE_EXTERN_C void __clove_string_replace_char(char* path, char find, char replace);
+__CLOVE_EXTERN_C void __clove_string_pad_right(char* dest, size_t dest_size, size_t str_target_len);
 #pragma endregion // String Decl
 
 #pragma region PRIVATE - String View Decl
@@ -258,10 +259,20 @@ __CLOVE_EXTERN_C void __clove_vector_collection_dtor(void* vector);
     *__CLOVE_MACRO_COMBINE(__vector_slot,__LINE__) = ITEM;
 
 #define __CLOVE_VECTOR_FOREACH(VECTOR_PTR, TYPE, NAME, BODY) \
-    for(size_t __CLOVE_MACRO_COMBINE(vector_index,__LINE__)=0; __CLOVE_MACRO_COMBINE(vector_index,__LINE__) < __clove_vector_count(VECTOR_PTR); ++__CLOVE_MACRO_COMBINE(vector_index,__LINE__)) { \
-        TYPE* NAME = (TYPE*)__clove_vector_get(VECTOR_PTR, __CLOVE_MACRO_COMBINE(vector_index,__LINE__)); \
+    for(size_t __CLOVE_MACRO_COMBINE(__CLOVE_MACRO_COMBINE(vector_index_,NAME), __LINE__)=0; __CLOVE_MACRO_COMBINE(__CLOVE_MACRO_COMBINE(vector_index_,NAME), __LINE__) < __clove_vector_count(VECTOR_PTR); ++__CLOVE_MACRO_COMBINE(__CLOVE_MACRO_COMBINE(vector_index_,NAME), __LINE__)) { \
+        TYPE* NAME = (TYPE*)__clove_vector_get(VECTOR_PTR, __CLOVE_MACRO_COMBINE(__CLOVE_MACRO_COMBINE(vector_index_,NAME), __LINE__)); \
         BODY \
     }
+
+#define __CLOVE_VECTOR_FOR(VECTOR_PTR, TYPE, NAME, INDEX, BODY) \
+    for(size_t INDEX=0; INDEX < __clove_vector_count(VECTOR_PTR); ++INDEX) { \
+        TYPE* NAME = (TYPE*)__clove_vector_get(VECTOR_PTR, INDEX); \
+        BODY \
+    }
+
+#define __CLOVE_VECTOR_FREE(VECTOR_PTR) \
+    __clove_vector_free(VECTOR_PTR);
+
 #pragma endregion // Vector Decl
 
 #pragma region PRIVATE - Map Decl
@@ -454,7 +465,7 @@ typedef struct __clove_test_t {
     bool dry_run;
     size_t funct_line;
     struct {
-        unsigned int line;
+        size_t line;
         __clove_assert_check_e assert;
         __clove_generic_type_e data_type;
         __clove_generic_u expected;
@@ -589,8 +600,8 @@ __CLOVE_EXTERN_C char* __clove_stream_memory_as_string(__clove_stream_memory_t* 
 
 #pragma region PRIVATE - Report Decl
 typedef struct __clove_report_t {
-    void (*start)(struct __clove_report_t* _this, size_t suite_count, size_t test_count);
-    void (*end)(struct __clove_report_t* _this, size_t test_count, size_t passed, size_t skipped, size_t failed);
+    void (*start)(struct __clove_report_t* _this, __clove_vector_t* suites, size_t test_count);
+    void (*end)(struct __clove_report_t* _this, size_t passed, size_t skipped, size_t failed);
     void (*begin_suite)(struct __clove_report_t* _this, __clove_suite_t* suite, size_t index);
     void (*end_suite)(struct __clove_report_t* _this, __clove_suite_t* suite, size_t index);
     void (*end_test)(struct __clove_report_t* _this, __clove_suite_t* suite, __clove_test_t* test, size_t test_number);
@@ -627,6 +638,8 @@ typedef struct __clove_report_pretty_t {
     __clove_report_params_t* params;
     __clove_time_t start_time;
     unsigned int max_test_digits;
+    size_t max_suite_and_test_name_size;
+    size_t test_count;
     struct {
         const char* info;
         const char* warn;
@@ -638,15 +651,13 @@ typedef struct __clove_report_pretty_t {
 } __clove_report_pretty_t;
 __clove_report_pretty_t* __clove_report_run_tests_pretty_new(__clove_stream_t* stream, __clove_report_params_t* params);
 __CLOVE_EXTERN_C void __clove_report_pretty_free(__clove_report_t* report);
-__CLOVE_EXTERN_C void __clove_report_pretty_start(__clove_report_t* _this, size_t suite_count, size_t test_count);
+__CLOVE_EXTERN_C void __clove_report_pretty_start(__clove_report_t* _this, __clove_vector_t* suites, size_t test_count);
 __CLOVE_EXTERN_C void __clove_report_pretty_begin_suite(__clove_report_t* _this, __clove_suite_t* suite, size_t index);
 __CLOVE_EXTERN_C void __clove_report_pretty_end_suite(__clove_report_t* _this, __clove_suite_t* suite, size_t index);
 __CLOVE_EXTERN_C void __clove_report_pretty_end_test(__clove_report_t* _this, __clove_suite_t* suite, __clove_test_t* test, size_t test_number);
-__CLOVE_EXTERN_C void __clove_report_pretty_end(__clove_report_t* _this, size_t test_count, size_t passed, size_t skipped, size_t failed);
+__CLOVE_EXTERN_C void __clove_report_pretty_end(__clove_report_t* _this, size_t passed, size_t skipped, size_t failed);
 __CLOVE_EXTERN_C void __clove_report_pretty_string_ellipse(const char* exp, size_t exp_len, const char* act, size_t act_len, char* exp_short, char* act_short, size_t short_size);
-__CLOVE_EXTERN_C void __clove_report_pretty_pad_right(char* result, char* strToPad);
 #define __CLOVE_STRING_LENGTH 256
-#define __CLOVE_TEST_ENTRY_LENGTH 60
 #define __PRETTY_PRINT_FAIL_ASSERT_MSG(buffer, buffer_size, assert, exp, act, print_type) \
 { \
     char phrase_format[40] = {0}; \
@@ -669,11 +680,11 @@ typedef struct __clove_report_run_tests_csv_t {
 } __clove_report_run_tests_csv_t;
 __clove_report_run_tests_csv_t* __clove_report_run_tests_csv_new(__clove_stream_t* stream,  __clove_report_params_t* params);
 __CLOVE_EXTERN_C void __clove_report_run_tests_csv_free(__clove_report_t* report);
-__CLOVE_EXTERN_C void __clove_report_run_tests_csv_start(__clove_report_t* _this, size_t suite_count, size_t test_count);
+__CLOVE_EXTERN_C void __clove_report_run_tests_csv_start(__clove_report_t* _this, __clove_vector_t* suites, size_t test_count);
 __CLOVE_EXTERN_C void __clove_report_run_tests_csv_begin_suite(__clove_report_t* _this, __clove_suite_t* suite, size_t index);
 __CLOVE_EXTERN_C void __clove_report_run_tests_csv_end_suite(__clove_report_t* _this, __clove_suite_t* suite, size_t index);
 __CLOVE_EXTERN_C void __clove_report_run_tests_csv_end_test(__clove_report_t* _this, __clove_suite_t* suite, __clove_test_t* test, size_t test_number);
-__CLOVE_EXTERN_C void __clove_report_run_tests_csv_end(__clove_report_t* _this, size_t test_count, size_t passed, size_t skipped, size_t failed);
+__CLOVE_EXTERN_C void __clove_report_run_tests_csv_end(__clove_report_t* _this, size_t passed, size_t skipped, size_t failed);
 __CLOVE_EXTERN_C void __clove_report_run_tests_csv_print_data(__clove_report_run_tests_csv_t* _this, __clove_test_t* test, __clove_generic_u* data);
 #pragma endregion
 
@@ -686,9 +697,10 @@ typedef struct __clove_report_json_t {
     const char* json_schema;
     __clove_suite_t* current_suite;
     bool is_first_suite_test;
-    size_t test_count;
+    size_t suite_tests_counter;
     size_t suite_tests_number;
     size_t suite_count;
+    size_t test_count;
     __clove_vector_t cached_suites;
     bool is_realtime_scenario;
     bool is_reporting_enabled;
@@ -696,10 +708,10 @@ typedef struct __clove_report_json_t {
 
 __CLOVE_EXTERN_C __clove_report_json_t* __clove_report_run_tests_json_new(__clove_stream_t* stream, __clove_report_params_t* params);
 __CLOVE_EXTERN_C void __clove_report_json_free(__clove_report_t* report);
-__CLOVE_EXTERN_C void __clove_report_json_start(__clove_report_t* _this, size_t suite_count, size_t test_count);
+__CLOVE_EXTERN_C void __clove_report_json_start(__clove_report_t* _this, __clove_vector_t* suites, size_t test_count);
 __CLOVE_EXTERN_C void __clove_report_json_begin_suite(__clove_report_t* _this, __clove_suite_t* suite, size_t index);
 __CLOVE_EXTERN_C void __clove_report_json_end_suite(__clove_report_t* _this, __clove_suite_t* suite, size_t index);
-__CLOVE_EXTERN_C void __clove_report_json_end(__clove_report_t* _this, size_t test_count, size_t passed, size_t skipped, size_t failed);
+__CLOVE_EXTERN_C void __clove_report_json_end(__clove_report_t* _this, size_t passed, size_t skipped, size_t failed);
 __CLOVE_EXTERN_C void __clove_report_json_end_test(__clove_report_t* _this, __clove_suite_t* suite, __clove_test_t* test, size_t test_number);
 __CLOVE_EXTERN_C void __clove_report_json_print_data(__clove_report_json_t* _this, __clove_test_t* test, __clove_generic_u* data);
 #pragma endregion
@@ -805,7 +817,7 @@ __CLOVE_EXTERN_C int __clove_symbols_for_each_function_by_prefix(__clove_symbols
 #pragma region PRIVATE - Run Decl
 __CLOVE_EXTERN_C int __clove_runner_auto(int argc, char* argv[]);
 __CLOVE_EXTERN_C int __clove_run_tests_with_report(__clove_report_t* report, __clove_vector_t* includes, __clove_vector_t* excludes);
-__CLOVE_EXTERN_C int __clove_exec_suites(__clove_suite_t* suites, size_t suite_count, size_t test_count, __clove_report_t* report);
+__CLOVE_EXTERN_C int __clove_exec_suites(__clove_vector_t* suites, size_t test_count, __clove_report_t* report);
 __CLOVE_EXTERN_C void __clove_exec_suite(__clove_suite_t* suite, size_t test_counter, size_t* passed, size_t* failed, size_t* skipped, __clove_report_t* report);
 #pragma endregion // Run Decl
 
@@ -1310,6 +1322,23 @@ void __clove_string_replace_char(char* str, char src_chr, char dst_chr) {
             str[i] = dst_chr;
         }
     }
+}
+
+void __clove_string_pad_right(char* dest, size_t dest_size, size_t str_target_len) {    
+    //capped by dest buffer size, taking account space of null terminator
+    if (str_target_len >= dest_size) str_target_len = dest_size - 1; 
+
+    size_t str_len = __clove_string_length(dest);
+
+    //Compute padding length avoiding negative result
+    size_t pad_len = 0;
+    if (str_target_len > str_len) pad_len = str_target_len - str_len;
+
+    char* pad_beg = dest + str_len;
+    char* pad_end = dest + str_len + pad_len;
+    
+    __clove_memory_memset(pad_beg , pad_len, '.');
+    *pad_end = '\0';
 }
 #pragma endregion //String Impl
 
@@ -2597,10 +2626,11 @@ void __clove_report_pretty_free(__clove_report_t* report) {
     free(report);
 }
 
-void __clove_report_pretty_start(__clove_report_t* _this, size_t suite_count, size_t test_count) {
+void __clove_report_pretty_start(__clove_report_t* _this, __clove_vector_t* suites, size_t test_count) {
     __clove_report_pretty_t* report = (__clove_report_pretty_t*)_this;
     report->start_time = __clove_time_now();
     report->max_test_digits = (unsigned int)snprintf(NULL, 0U, "%zu", test_count);
+    report->test_count = test_count;
 
     bool activated = report->stream->has_ansi_support(report->stream);
     if (activated) {
@@ -2629,6 +2659,29 @@ void __clove_report_pretty_start(__clove_report_t* _this, size_t suite_count, si
         level_str = "Failed + Skipped";
     }
 
+    size_t longest_suite_and_test_name = 0;    
+    __CLOVE_VECTOR_FOREACH(suites, __clove_suite_t, each_suite, {
+        size_t suite_length = __clove_string_length(each_suite->name);
+        __CLOVE_VECTOR_FOREACH(suites, __clove_test_t, each_test, { 
+            size_t test_length = __clove_string_length(each_test->name);
+
+            if (longest_suite_and_test_name < suite_length + test_length) {
+                longest_suite_and_test_name = suite_length + test_length;
+            }
+        });
+    });
+
+    //Force minimum length in case of longest suite/name is less 
+    if (longest_suite_and_test_name < 46) longest_suite_and_test_name = 46; //rounded to 50 by next operation
+
+    //+1 take into account dot separator (suite.name)
+    //+3 to have at least 3 more dot after suite.name
+    report->max_suite_and_test_name_size = longest_suite_and_test_name + 1 + 3;
+    //max len capping
+    if (report->max_suite_and_test_name_size > __CLOVE_STRING_LENGTH) report->max_suite_and_test_name_size = __CLOVE_STRING_LENGTH;
+    
+    size_t suite_count = __clove_vector_count(suites);
+
     report->stream->open(report->stream);
     report->stream->writef(report->stream, "%s Executing Test Runner with detail level: '%s'\n", report->labels.info, level_str);
     report->stream->writef(report->stream, "%s Suites / Tests found: %zu / %zu\n", report->labels.info, suite_count, test_count);
@@ -2645,15 +2698,15 @@ void __clove_report_pretty_end_suite(__clove_report_t* _this, __clove_suite_t* s
     __CLOVE_UNUSED_VAR(index);
     //nothing todo
 }
-void __clove_report_pretty_end(__clove_report_t* _this, size_t test_count, size_t passed, size_t skipped, size_t failed) {
+void __clove_report_pretty_end(__clove_report_t* _this, size_t passed, size_t skipped, size_t failed) {
     __clove_report_pretty_t* report = (__clove_report_pretty_t*)_this;
     __clove_time_t end_time = __clove_time_now();
     __clove_time_t diff = __clove_time_sub(&end_time, &(report->start_time));
     unsigned long long millis = __clove_time_to_millis(&diff);
 
-    report->stream->writef(report->stream, "%s Total: %zu, Passed: %zu, Failed: %zu, Skipped: %zu\n", report->labels.info, test_count, passed, failed, skipped);
+    report->stream->writef(report->stream, "%s Total: %zu, Passed: %zu, Failed: %zu, Skipped: %zu\n", report->labels.info, report->test_count, passed, failed, skipped);
     report->stream->writef(report->stream, "%s Run duration: %llu ms\n", report->labels.info, millis);
-    if (passed == test_count) { report->stream->writef(report->stream, "%s Run result: SUCCESS :-)\n", report->labels.info); }
+    if (passed == report->test_count) { report->stream->writef(report->stream, "%s Run result: SUCCESS :-)\n", report->labels.info); }
     else if (failed > 0) { report->stream->writef(report->stream, "%s Run result: FAILURE :_(\n", report->labels.erro); }
     else if (skipped > 0) { report->stream->writef(report->stream, "%s Run result: OK, but some test has been skipped!\n", report->labels.warn); }
 
@@ -2680,15 +2733,21 @@ void __clove_report_pretty_end_test(__clove_report_t* _this, __clove_suite_t* su
         print_skipped = true;
     }
 
+    //Build test identifier with padding: Suite.Test.....
+    char test_identifier[__CLOVE_STRING_LENGTH];
+    __clove_string_sprintf(test_identifier, __CLOVE_STRING_LENGTH, "%s.%s", suite->name, test->name);
+    __clove_string_pad_right(test_identifier, __CLOVE_STRING_LENGTH, report->max_suite_and_test_name_size);
+
     if (print_passed && test->result == __CLOVE_TEST_RESULT_PASSED) {
         float millis = (float)(__clove_time_to_nanos(&(test->duration))) / (float)__CLOVE_TIME_TRANSL_NANOS_PER_MILLIS;
         int decimal = millis > 1.f ? 0 : 3;
 
-        char result[__CLOVE_STRING_LENGTH], strToPad[__CLOVE_TEST_ENTRY_LENGTH];
-        snprintf(strToPad, __CLOVE_TEST_ENTRY_LENGTH, "%0*zu) %s.%s", report->max_test_digits, test_number, suite->name, test->name);
-        __clove_report_pretty_pad_right(result, strToPad);
-
-        report->stream->writef(report->stream, "%s %s%s (%.*f ms)\n", report->labels.info, result, report->labels.pass, decimal, millis);
+        report->stream->writef(report->stream, "%s %0*zu) %s%s (%.*f ms)\n", 
+            report->labels.info, 
+            report->max_test_digits, test_number,
+            test_identifier,
+            report->labels.pass, 
+            decimal, millis);
     }
     else if (print_failed && test->result == __CLOVE_TEST_RESULT_FAILED) {
         char msg[__CLOVE_STRING_LENGTH] = "FAILURE but NO MESSAGE!!!";
@@ -2812,31 +2871,31 @@ void __clove_report_pretty_end_test(__clove_report_t* _this, __clove_suite_t* su
             __CLOVE_SWITCH_END()
         }
 
-        //Duplication
         const char* file_path = test->file_name;
         if (report->params->tests_base_path) {
             file_path = __clove_path_relative(test->file_name, report->params->tests_base_path);
         }
-        //Duplication
-        char result[__CLOVE_STRING_LENGTH], strToPad[__CLOVE_TEST_ENTRY_LENGTH];
-        snprintf(strToPad, __CLOVE_TEST_ENTRY_LENGTH, "%0*zu) %s.%s", report->max_test_digits, test_number, suite->name, test->name);
-        __clove_report_pretty_pad_right(result, strToPad);
-
-        report->stream->writef(report->stream, "%s %s%s %s:%d: %s\n", report->labels.erro, result, report->labels.fail, file_path, test->issue.line, msg);
+        
+        report->stream->writef(report->stream, "%s %0*zu) %s%s %s:%zu: %s\n", 
+            report->labels.erro, 
+            report->max_test_digits, test_number,
+            test_identifier,
+            report->labels.fail, 
+            file_path, test->issue.line, msg);
     }
     else if (print_skipped && test->result == __CLOVE_TEST_RESULT_SKIPPED) {
-        
-        //Duplication
+
         const char* file_path = test->file_name;
         if (report->params->tests_base_path) {
             file_path = __clove_path_relative(test->file_name, report->params->tests_base_path);
         }
-        //Duplication
-        char result[__CLOVE_STRING_LENGTH], strToPad[__CLOVE_TEST_ENTRY_LENGTH];
-        snprintf(strToPad, __CLOVE_TEST_ENTRY_LENGTH, "%0*zu) %s.%s", report->max_test_digits, test_number, suite->name, test->name);
-        __clove_report_pretty_pad_right(result, strToPad);
 
-        report->stream->writef(report->stream, "%s %s%s %s:%zu: %s\n", report->labels.warn, result, report->labels.skip, file_path, test->funct_line, "Missing assertion!");
+        report->stream->writef(report->stream, "%s %0*zu) %s%s %s:%zu: %s\n", 
+            report->labels.warn, 
+            report->max_test_digits, test_number,
+            test_identifier,
+            report->labels.skip, 
+            file_path, test->funct_line, "Missing assertion!");
     }
 }
 
@@ -2864,19 +2923,6 @@ void __clove_report_pretty_string_ellipse(
     __clove_string_ellipse(exp, exp_len, iter_len-1, exp_short, short_size);
     __clove_string_ellipse(act, act_len, iter_len-1, act_short, short_size);
 }
-
-void __clove_report_pretty_pad_right(char* result, char* strToPad) {
-    int targetStrLen = __CLOVE_TEST_ENTRY_LENGTH;           // Target output length  
-    const char* padding = "...................................................................................";
-
-    int padLen = targetStrLen - (int)__clove_string_length(strToPad); // Calc Padding length
-    if (padLen < 0) padLen = 0;    // Avoid negative length
-
-    // FORMAT SPECIFIER: https://www.tutorialspoint.com/format-specifiers-in-c
-    // %* => minimal length taken from the padding string
-    // .* => precision, exact length of the string taken from the padding string
-    __clove_string_sprintf(result, __CLOVE_STRING_LENGTH, "%s%*.*s", strToPad, padLen, padLen, padding);  // LEFT Padding 
-}
 #pragma endregion // RunTests Report Pretty Impl
 
 #pragma region PRIVATE - RunTests Report Csv Impl
@@ -2898,9 +2944,9 @@ void __clove_report_run_tests_csv_free(__clove_report_t* report) {
     free(report);
 }
 
-void __clove_report_run_tests_csv_start(__clove_report_t* _this, size_t suite_count, size_t test_count) {
+void __clove_report_run_tests_csv_start(__clove_report_t* _this, __clove_vector_t* suites, size_t test_count) {
     __CLOVE_UNUSED_VAR(_this);
-    __CLOVE_UNUSED_VAR(suite_count);
+    __CLOVE_UNUSED_VAR(suites);
     __CLOVE_UNUSED_VAR(test_count);
 
     __clove_report_run_tests_csv_t* report = (__clove_report_run_tests_csv_t*)_this;
@@ -2920,8 +2966,7 @@ void __clove_report_run_tests_csv_end_suite(__clove_report_t* _this, __clove_sui
     __CLOVE_UNUSED_VAR(index);
     //nothing todo
 }
-void __clove_report_run_tests_csv_end(__clove_report_t* _this, size_t test_count, size_t passed, size_t skipped, size_t failed) {
-    __CLOVE_UNUSED_VAR(test_count);
+void __clove_report_run_tests_csv_end(__clove_report_t* _this, size_t passed, size_t skipped, size_t failed) {
     __CLOVE_UNUSED_VAR(passed);
     __CLOVE_UNUSED_VAR(skipped);
     __CLOVE_UNUSED_VAR(failed);
@@ -2961,7 +3006,7 @@ void __clove_report_run_tests_csv_end_test(__clove_report_t* _this, __clove_suit
         const char* data_type = (test->issue.assert == __CLOVE_ASSERT_FAIL) ? "" : test->issue.data_type;
         const char* file_name = __clove_path_relative(test->file_name, report->params->tests_base_path);
       
-        report->stream->writef(report->stream, "%s,%s,%s,%s,%s,%u,%s,%s,", 
+        report->stream->writef(report->stream, "%s,%s,%s,%s,%s,%zu,%s,%s,", 
             suite->name, test->name, test->result, "",file_name,test->issue.line, test->issue.assert, data_type);
 
         __clove_report_run_tests_csv_print_data(report, test, &test->issue.expected);
@@ -3034,10 +3079,11 @@ __clove_report_json_t* __clove_report_run_tests_json_new(__clove_stream_t* strea
     result->clove_version = __CLOVE_VERSION;
     result->json_schema = "1.0";
     result->current_suite = NULL;
-    result->test_count = 0;
+    result->suite_tests_counter = 0;
     result->suite_tests_number = 0;
 
     result->suite_count = 0;
+    result->test_count = 0;
     result->is_first_suite_test = false;
     //Full report is the main usage scenario, so a report will be computed during test execution,
     //instead, for detail Failed (or Failed+Skipped) need it to cache suites (and related test) and only compute
@@ -3054,14 +3100,16 @@ void __clove_report_json_free(__clove_report_t* report) {
     free(report);
 }
 
-void __clove_report_json_start(__clove_report_t* _this, size_t suite_count, size_t test_count) {
+void __clove_report_json_start(__clove_report_t* _this, __clove_vector_t* suites, size_t test_count) {
+    __CLOVE_UNUSED_VAR(suites);
+
     __clove_report_json_t* instance = (__clove_report_json_t*)_this;
+    instance->suite_count = __clove_vector_count(suites);
+    instance->test_count = test_count;
 
     if (!instance->is_realtime_scenario) {
-        __CLOVE_VECTOR_INIT_CAPACITY(&instance->cached_suites, __clove_suite_t*, suite_count);
+        __CLOVE_VECTOR_INIT_CAPACITY(&instance->cached_suites, __clove_suite_t*, instance->suite_count);
     }
-
-    instance->suite_count = suite_count;
 
     bool opened = instance->stream->open(instance->stream);
     if (!opened) { __clove_console_printf("ERROR OPENING STREAM\n"); } //TODO: ToString stream
@@ -3070,13 +3118,13 @@ void __clove_report_json_start(__clove_report_t* _this, size_t suite_count, size
     instance->stream->writef(instance->stream, "\t\"clove_version\" : \"%s\",\n", instance->clove_version);
     instance->stream->writef(instance->stream, "\t\"json_schema\" : \"%s\",\n", instance->json_schema);
     instance->stream->writef(instance->stream, "\t\"result\" : {\n");
-    instance->stream->writef(instance->stream, "\t\t\"suite_count\" : %zu,\n", suite_count);
+    instance->stream->writef(instance->stream, "\t\t\"suite_count\" : %zu,\n", instance->suite_count);
     instance->stream->writef(instance->stream, "\t\t\"test_count\" : %zu,\n", test_count);
     instance->stream->writef(instance->stream, "\t\t\"suites\" : {\n");
 }
 
 
-void __clove_report_json_end(__clove_report_t* _this, size_t test_count, size_t passed, size_t skipped, size_t failed) {
+void __clove_report_json_end(__clove_report_t* _this, size_t passed, size_t skipped, size_t failed) {
     __clove_report_json_t* instance = (__clove_report_json_t*)_this;
     
     if (!instance->is_reporting_enabled) {
@@ -3122,7 +3170,7 @@ void __clove_report_json_end(__clove_report_t* _this, size_t test_count, size_t 
 
     //Write overall results
     const char* status = "UNKNOWN";
-    if (passed == test_count) status = __CLOVE_TEST_RESULT_PASSED;
+    if (passed == instance->test_count) status = __CLOVE_TEST_RESULT_PASSED;
     else if (failed > 0) status = __CLOVE_TEST_RESULT_FAILED;
     else if (skipped > 0) status = __CLOVE_TEST_RESULT_SKIPPED;
 
@@ -3217,19 +3265,19 @@ void __clove_report_json_end_test(__clove_report_t* _this, __clove_suite_t* suit
         instance->stream->writef(instance->stream, "\t\t\t\"%s\" : {\n", instance->current_suite->name);
         instance->stream->writef(instance->stream, "\t\t\t\t\"file\" : \"%s\",\n", escaped_file);
         instance->stream->writef(instance->stream, "\t\t\t\t\"tests\" : {\n");
-        instance->test_count = 0;
+        instance->suite_tests_counter = 0;
    
         free(escaped_file);
         instance->is_first_suite_test = false;
     }
 
-    instance->test_count++;
+    instance->suite_tests_counter++;
     instance->stream->writef(instance->stream, "\t\t\t\t\t\"%s\" : {\n", test->name);
     instance->stream->writef(instance->stream, "\t\t\t\t\t\t\"status\" : \"%s\",\n", test->result);
     instance->stream->writef(instance->stream, "\t\t\t\t\t\t\"duration\" : %llu", __clove_time_to_nanos(&(test->duration)));
     if (test->result == __CLOVE_TEST_RESULT_FAILED) {
         instance->stream->writef(instance->stream, ",\n");
-        instance->stream->writef(instance->stream, "\t\t\t\t\t\t\"line\" : %u,\n", test->issue.line);
+        instance->stream->writef(instance->stream, "\t\t\t\t\t\t\"line\" : %zu,\n", test->issue.line);
         instance->stream->writef(instance->stream, "\t\t\t\t\t\t\"assert\" : \"%s\"", test->issue.assert);        
         if (test->issue.assert != __CLOVE_ASSERT_FAIL) {
             instance->stream->writef(instance->stream, ",\n");
@@ -3255,8 +3303,7 @@ void __clove_report_json_end_test(__clove_report_t* _this, __clove_suite_t* suit
     size_t suite_total_tests = suite->test_count; //realtime scenario
     if (!instance->is_realtime_scenario) suite_total_tests = instance->suite_tests_number;
 
-    //if (instance->test_count < suite->test_count) {
-    if (instance->test_count < suite_total_tests) {
+    if (instance->suite_tests_counter < suite_total_tests) {
         instance->stream->writef(instance->stream, ",\n");
     }
     else {
@@ -4064,7 +4111,7 @@ int __clove_run_tests_with_report(__clove_report_t* report, __clove_vector_t* in
     if (result == 0) {
         //0 in case of test success/warning
         //1 in case of test failure
-        run_result = __clove_exec_suites((__clove_suite_t*)(context.suites.items), context.suites_count, context.tests_count, report);
+        run_result = __clove_exec_suites(&context.suites, context.tests_count, report);
         if (run_result != 0) run_result = 2;
     }
     else {
@@ -4074,21 +4121,20 @@ int __clove_run_tests_with_report(__clove_report_t* report, __clove_vector_t* in
     return run_result;
 }
 
-int __clove_exec_suites(__clove_suite_t* suites, size_t suite_count, size_t test_count, __clove_report_t* report) {
-    report->start(report, suite_count, test_count);
+int __clove_exec_suites(__clove_vector_t* suites, size_t test_count, __clove_report_t* report) {
+    report->start(report, suites, test_count);
     size_t passed = 0;
     size_t failed = 0;
     size_t skipped = 0;
-
+    
     size_t test_start_counter = 1;
-    for (size_t i = 0; i < suite_count; ++i) {
-        __clove_suite_t* each_suite = &suites[i];
+    __CLOVE_VECTOR_FOR(suites, __clove_suite_t, each_suite, i, {
         report->begin_suite(report, each_suite, i);
         __clove_exec_suite(each_suite, test_start_counter, &passed, &failed, &skipped, report);
         report->end_suite(report, each_suite, i);
         test_start_counter += each_suite->test_count;
-    }
-    report->end(report, test_count, passed, skipped, failed);
+    });
+    report->end(report, passed, skipped, failed);
     return failed == 0 ? 0 : 1;
 }
 
