@@ -6,7 +6,7 @@
 static __clove_report_json_t* report;
 static __clove_stream_file_t* stream;
 static __clove_report_params_t params;
-
+static __clove_vector_t suites;
 
 CLOVE_SUITE_SETUP() {
     char* file_path = __clove_path_rel_to_abs_exec_path("clove_report.json");
@@ -14,16 +14,20 @@ CLOVE_SUITE_SETUP() {
     params.tests_base_path = "abs";
     params.report_detail = __CLOVE_REPORT_DETAIL__FAILED;
     report = __clove_report_run_tests_json_new((__clove_stream_t*)stream, &params);
+
+    __CLOVE_VECTOR_INIT(&suites, __clove_suite_t);
 }
 
 CLOVE_SUITE_TEARDOWN() {
+    __CLOVE_VECTOR_FREE(&suites);
+
     report->base.free((__clove_report_t*)report);
     stream->base.free((__clove_stream_t*)stream);
 }
 
 CLOVE_TEST(EmptyReport) {
     __clove_report_t* base = (__clove_report_t*)report;
-    base->start(base, 0, 0);
+    base->start(base, &suites, 0);
     base->end(base, 0, 0, 0, 0);
 
     const char* file_path = stream->file_path;
@@ -49,12 +53,13 @@ CLOVE_TEST(EmptyReport) {
 }
 
 CLOVE_TEST(ReportOneSuiteWithOnePassedTest) {
-    __clove_suite_t suite = create_suite("Suite1", 0);
+    __clove_suite_t suite = create_suite("Suite1");
     __clove_test_t test11 = create_test("Test11");
     suite_add_test(&suite, &test11);
+    __CLOVE_VECTOR_ADD(&suites, __clove_suite_t, suite);
     
     __clove_report_t* base = (__clove_report_t*)report;
-    base->start(base, 1, 1);
+    base->start(base, &suites, 1);
     base->begin_suite(base, &suite, 0);
     base->end_test(base, &suite, &test11, 1);
     base->end_suite(base, &suite, 0);
@@ -82,14 +87,16 @@ CLOVE_TEST(ReportOneSuiteWithOnePassedTest) {
 }
 
 CLOVE_TEST(ReportOneSuiteWithTwoTests) {
-    __clove_suite_t suite = create_suite("Suite1", 0);
+    __clove_suite_t suite = create_suite("Suite1");
     __clove_test_t test11 = create_test("Test11");
     __clove_test_t test12 = create_test_fail("Test12");
     suite_add_test(&suite, &test11);
     suite_add_test(&suite, &test12);
 
+    __CLOVE_VECTOR_ADD(&suites, __clove_suite_t, suite);
+
     __clove_report_t* base = (__clove_report_t*)report;
-    base->start(base, 1, 2);
+    base->start(base, &suites, 2);
     base->begin_suite(base, &suite, 0);
     base->end_test(base, &suite, &test11, 1);
     base->end_test(base, &suite, &test12, 2);

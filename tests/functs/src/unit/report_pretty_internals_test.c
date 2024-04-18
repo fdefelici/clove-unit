@@ -254,3 +254,9 @@ CLOVE_TEST(StringEllipseLeftAndRight) {
     __clove_string_ellipse(string, str_len, pos, out, out_size);
     CLOVE_STRING_EQ("...234567890...", out);
 }
+
+CLOVE_TEST(StringPadRight) {
+    char string[6] = "123";
+    __clove_report_pretty_pad_right(string, 3, 5);
+    CLOVE_STRING_EQ("123..", string);
+}
