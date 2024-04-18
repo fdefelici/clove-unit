@@ -26,7 +26,7 @@ CLOVE_SUITE_TEARDOWN() {
 CLOVE_TEST(EmptyReport) {
     __clove_report_t* base = (__clove_report_t*)report;
     base->start(base, &suites, 0);
-    base->end(base, 0, 0, 0, 0);
+    base->end(base, 0, 0, 0);
 
     const char* file_path = stream->file_path;
     const char* actual = read_file(file_path);
@@ -61,7 +61,7 @@ CLOVE_TEST(ReportOneSuiteWithOnePassedTest) {
     base->begin_suite(base, &suite, 0);
     base->end_test(base, &suite, &test11, 1);
     base->end_suite(base, &suite, 0);
-    base->end(base, 1, 1, 0, 0);
+    base->end(base, 1, 0, 0);
 
     const char* file_path = stream->file_path;
     const char* actual = read_file(file_path);
@@ -104,7 +104,7 @@ CLOVE_TEST(ReportOneSuiteWithOneSkippedTest) {
     base->begin_suite(base, &suite, 0);
     base->end_test(base, &suite, &test11, 1);
     base->end_suite(base, &suite, 0);
-    base->end(base, 1, 0, 1, 0);
+    base->end(base, 0, 1, 0);
 
     const char* file_path = stream->file_path;
     const char* actual = read_file(file_path);
@@ -151,7 +151,7 @@ CLOVE_TEST(ReportOneSuiteWithTwoTests) {
     base->end_test(base, &suite, &test11, 1);
     base->end_test(base, &suite, &test12, 2);
     base->end_suite(base, &suite, 0);
-    base->end(base, 2, 1, 0, 1);
+    base->end(base, 1, 0, 1);
 
     const char* file_path = stream->file_path;
     const char* actual = read_file(file_path);
@@ -211,7 +211,7 @@ CLOVE_TEST(ReportTwoSuitesWithOnePassedTestEach) {
     base->begin_suite(base, &suite2, 1);
     base->end_test(base, &suite2, &test21, 2);
     base->end_suite(base, &suite2, 1);
-    base->end(base, 2, 2, 0, 0);
+    base->end(base, 2, 0, 0);
 
     const char* file_path = stream->file_path;
     const char* actual = read_file(file_path);
@@ -272,7 +272,7 @@ CLOVE_TEST(ReportOneSuiteWithOneFailAssertTest) {
     base->begin_suite(base, &suite, 0);
     base->end_test(base, &suite, &test11, 1);
     base->end_suite(base, &suite, 0);
-    base->end(base, 1, 0, 0, 1);
+    base->end(base, 0, 0, 1);
 
     const char* file_path = stream->file_path;
     const char* actual = read_file(file_path);
@@ -329,7 +329,7 @@ CLOVE_TEST(ReportOneSuiteWithOneFailSizetAssertTest) {
     base->begin_suite(base, &suite, 0);
     base->end_test(base, &suite, &test11, 1);
     base->end_suite(base, &suite, 0);
-    base->end(base, 1, 0, 0, 1);
+    base->end(base, 0, 0, 1);
 
     const char* file_path = stream->file_path;
     const char* actual = read_file(file_path);

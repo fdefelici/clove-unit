@@ -24,7 +24,7 @@ CLOVE_SUITE_TEARDOWN() {
 CLOVE_TEST(EmptyReport) {
     __clove_report_t* base = (__clove_report_t*)report;
     base->start(base, &suites, 0);
-    base->end(base, 0, 0, 0, 0);
+    base->end(base, 0, 0, 0);
 
     const char* expected = 
     "[INFO] Executing Test Runner with detail level: 'Full'\n"
@@ -51,7 +51,7 @@ CLOVE_TEST(ReportOneSuiteWithOnePassedTest) {
     base->begin_suite(base, &suite, 0);
     base->end_test(base, &suite, &test11, 1);
     base->end_suite(base, &suite, 0);
-    base->end(base, 1, 1, 0, 0);
+    base->end(base, 1, 0, 0);
 
     const char* expected = 
     "[INFO] Executing Test Runner with detail level: 'Full'\n"
@@ -82,7 +82,7 @@ CLOVE_TEST(ReportOneSuiteWithTwoTests) {
     base->end_test(base, &suite, &test11, 1);
     base->end_test(base, &suite, &test12, 2);
     base->end_suite(base, &suite, 0);
-    base->end(base, 2, 1, 0, 1);
+    base->end(base, 1, 0, 1);
 
     const char* expected = 
     "[INFO] Executing Test Runner with detail level: 'Full'\n"
@@ -117,7 +117,7 @@ CLOVE_TEST(ReportOneSuiteWithThreeTests) {
     base->end_test(base, &suite, &test12, 2);
     base->end_test(base, &suite, &test13, 3);
     base->end_suite(base, &suite, 0);
-    base->end(base, 3, 1, 1, 1);
+    base->end(base, 1, 1, 1);
 
     const char* expected = 
     "[INFO] Executing Test Runner with detail level: 'Full'\n"
@@ -179,7 +179,7 @@ CLOVE_TEST(ReportTwoSuitesWithTenTests) {
     base->end_test(base, &suite2, &test28, 9);
     base->end_test(base, &suite2, &test29, 10);
     base->end_suite(base, &suite2, 1);
-    base->end(base, 2, 10, 0, 0);
+    base->end(base, 10, 0, 0);
 
     const char* expected = 
     "[INFO] Executing Test Runner with detail level: 'Full'\n"
@@ -194,8 +194,9 @@ CLOVE_TEST(ReportTwoSuitesWithTenTests) {
     "[INFO] 08) Suite2.Test27.........................................[PASS] (0.000 ms)\n"
     "[INFO] 09) Suite2.Test28.........................................[PASS] (0.000 ms)\n"
     "[INFO] 10) Suite2.Test29.........................................[PASS] (0.000 ms)\n"
-    "[INFO] Total: 2, Passed: 10, Failed: 0, Skipped: 0\n"
+    "[INFO] Total: 10, Passed: 10, Failed: 0, Skipped: 0\n"
     "[INFO] Run duration: 0 ms\n"
+    "[INFO] Run result: SUCCESS :-)\n"
     ;
 
     char* actual = __clove_stream_memory_as_string(stream);
