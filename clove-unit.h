@@ -1363,7 +1363,7 @@ bool __clove_string_view_endswith(const __clove_string_view_t* view, const __clo
 }
 
 bool __clove_string_view_nendswith(const __clove_string_view_t* view, const __clove_string_view_t* suffix, size_t suffix_begin_offset) {
-    __clove_string_view_t suffix_with_offset = __clove_string_view_from_str(suffix->begin + suffix_begin_offset);
+    __clove_string_view_t suffix_with_offset = __clove_string_view_from_be(suffix->begin + suffix_begin_offset, __clove_string_view_end(suffix));
     return __clove_string_view_endswith(view, &suffix_with_offset);
 }
 

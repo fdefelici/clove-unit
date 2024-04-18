@@ -133,6 +133,45 @@ CLOVE_TEST(ValidateTestRule) {
     __clove_vector_free(&includes);
 }
 
+CLOVE_TEST(ValidateSuiteAndTestRule) {
+    __clove_string_view_t suite_vw = __clove_string_view_from_str("MySuite");
+    __clove_string_view_t type_vw = __clove_string_view_from_str("20");
+    __clove_string_view_t name_vw = __clove_string_view_from_str("Test01");
+
+    __clove_symbols_context_t ctx;
+    bool pass;
+
+    __clove_vector_t includes = __clove_vector_null();
+    __clove_vector_t excludes = __clove_vector_null();
+    ctx.includes = &includes;
+    ctx.excludes = &excludes;
+
+    pass = __clove_symbols_function_validate(&suite_vw, &type_vw, &name_vw, &ctx);
+    CLOVE_IS_TRUE(pass);
+
+    __clove_vector_params_t params = __clove_vector_params_defaulted(sizeof(__clove_test_expr_t));
+    __clove_vector_init(&includes, &params);
+    __clove_vector_add_slot(&includes);
+
+    __clove_test_expr_t expr;
+    __clove_test_expr_init(&expr, "*Suite.*01");
+    __clove_vector_set(&includes, 0, &expr);
+    pass = __clove_symbols_function_validate(&suite_vw, &type_vw, &name_vw, &ctx);
+    CLOVE_IS_TRUE(pass);
+
+    __clove_test_expr_init(&expr, "*Suit*.*01");
+    __clove_vector_set(&includes, 0, &expr);
+    pass = __clove_symbols_function_validate(&suite_vw, &type_vw, &name_vw, &ctx);
+    CLOVE_IS_TRUE(pass);
+
+    __clove_test_expr_init(&expr, "*Suit*.*st0*");
+    __clove_vector_set(&includes, 0, &expr);
+    pass = __clove_symbols_function_validate(&suite_vw, &type_vw, &name_vw, &ctx);
+    CLOVE_IS_TRUE(pass);
+
+    __clove_vector_free(&includes);
+}
+
 CLOVE_TEST(ValidateRuleProblems) {
     __clove_string_view_t suite_vw = __clove_string_view_from_str("MySuite");
     __clove_string_view_t type_vw = __clove_string_view_from_str("20");
