@@ -1,9 +1,9 @@
 #include "domain_utils.h"
 
-__clove_suite_t create_suite(const char* name, size_t test_count) {
+__clove_suite_t create_suite(const char* name) {
     __clove_suite_t suite;
     suite.name = (char*)name; //remove const just to avoid build warnings
-    suite.test_count = test_count;
+    suite.test_count = 0;
     __CLOVE_VECTOR_INIT(&suite.tests, __clove_test_t);
     suite.issue.passed_count = 0;
     suite.issue.failed_count = 0;

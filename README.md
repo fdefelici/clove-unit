@@ -276,13 +276,13 @@ These options allow you to specify an expression that works like this:
 
 For example, the following are valid selection patterns (non-exhaustive list):
 
-| Pattern            | Description                                                                      |
-|--------------------|----------------------------------------------------------------------------------|
-| `MySuite01.Test01` | Will match exactly the Suite Name and the Test Name.                             |
-| `MySuite01`        | Will match all tests whose Suite Name is "MySuite01".                            |
-| `Suite*`           | Will match all tests whose Suite Name starts with "Suite".                       |
-| `*Suite01`         | Will match all tests whose Suite Name ends with "Suite01".                       |
-| `*Suite*`          | Will match all tests whose Suite Name contains "Suite".                          |
-| `*Suite*`          | Will match all tests whose Suite Name contains "Suite".                          |
-| `MySuite01.*01`    | Will match all tests whose Suite Name is MySuite01 and Test Name ends with "01". |
-| `*.*`              | Will match all suites and tests.                                                 |
+| Pattern            | Description                                                                              |
+|--------------------|------------------------------------------------------------------------------------------|
+| `Suite.Test`       | Match exactly the Suite Name and the Test Name.                                          |
+| `Suite`            | Match all tests whose Suite Name `is` "Suite".                                           |
+| `Suite*`           | Match all tests whose Suite Name `starts with` "Suite".                                  |
+| `*Suite`           | Match all tests whose Suite Name `ends with` "Suite".                                    |
+| `*Suite*`          | Match all tests whose Suite Name `contains` "Suite".                                     |
+| `Suite.*Test`      | Match all tests whose Suite Name `is` "Suite" and Test Name `ends with` "Test".          |
+| `Suite*.*Test`     | Match all tests whose Suite Name `starts with` "Suite" and Test Name `ends with` "Test". |
+| `*.*`              | Match all suites and tests.                                                 |
