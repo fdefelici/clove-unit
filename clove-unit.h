@@ -1,6 +1,6 @@
 /*
  * clove-unit
- * v2.4.3
+ * v2.4.4
  * Single-Header Unit Testing library for C/C++
  * https://github.com/fdefelici/clove-unit
  *
@@ -10,8 +10,8 @@
 
 #define __CLOVE_VERSION_MAJOR 2
 #define __CLOVE_VERSION_MINOR 4
-#define __CLOVE_VERSION_PATCH 3
-#define __CLOVE_VERSION "2.4.3"
+#define __CLOVE_VERSION_PATCH 4
+#define __CLOVE_VERSION "2.4.4"
 
 //Preventing "unknown-pragmas" warning on GCC <= 12 for '#pragma region' usage
 //NOTE1: GCC and G++ v13+ support '#pragma region' by the way.
