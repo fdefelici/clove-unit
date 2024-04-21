@@ -2662,7 +2662,7 @@ void __clove_report_pretty_start(__clove_report_t* _this, __clove_vector_t* suit
     size_t longest_suite_and_test_name = 0;    
     __CLOVE_VECTOR_FOREACH(suites, __clove_suite_t, each_suite, {
         size_t suite_length = __clove_string_length(each_suite->name);
-        __CLOVE_VECTOR_FOREACH(suites, __clove_test_t, each_test, { 
+        __CLOVE_VECTOR_FOREACH(&each_suite->tests, __clove_test_t, each_test, { 
             size_t test_length = __clove_string_length(each_test->name);
 
             if (longest_suite_and_test_name < suite_length + test_length) {

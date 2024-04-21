@@ -67,35 +67,6 @@ CLOVE_TEST(ReportOneSuiteWithOnePassedTest) {
     CLOVE_STRING_EQ(expected, actual);
 }
 
-CLOVE_TEST(ReportWithTestNameLongerThanSuiteName) {
-    __clove_suite_t suite = create_suite("bl_blitters");
-    __clove_test_t test11 = create_test("bl_blitters_select_color__blit_color");
-    //bl_blitters.bl_blitters_select_color__blit_color_blend
-
-    suite_add_test(&suite, &test11);
-    __CLOVE_VECTOR_ADD(&suites, __clove_suite_t, suite);
-   
-    __clove_report_t* base = (__clove_report_t*)report;
-    base->start(base, &suites, 1);
-    base->begin_suite(base, &suite, 0);
-    base->end_test(base, &suite, &test11, 1);
-    base->end_suite(base, &suite, 0);
-    base->end(base, 1, 0, 0);
-
-    const char* expected = 
-    "[INFO] Executing Test Runner with detail level: 'Full'\n"
-    "[INFO] Suites / Tests found: 1 / 1\n"
-    "[INFO] 1) bl_blitters.bl_blitters_select_color__blit_color..[PASS] (0.000 ms)\n"
-    "[INFO] Total: 1, Passed: 1, Failed: 0, Skipped: 0\n"
-    "[INFO] Run duration: 0 ms\n"
-    "[INFO] Run result: SUCCESS :-)\n"
-    ;
-
-    char* actual = __clove_stream_memory_as_string(stream);
-
-    CLOVE_STRING_EQ(expected, actual);
-}
-
 CLOVE_TEST(ReportOneSuiteWithTwoTests) {
     __clove_suite_t suite = create_suite("Suite1");
     __clove_test_t test11 = create_test("Test11");
@@ -224,6 +195,90 @@ CLOVE_TEST(ReportTwoSuitesWithTenTests) {
     "[INFO] 09) Suite2.Test28.....................................[PASS] (0.000 ms)\n"
     "[INFO] 10) Suite2.Test29.....................................[PASS] (0.000 ms)\n"
     "[INFO] Total: 10, Passed: 10, Failed: 0, Skipped: 0\n"
+    "[INFO] Run duration: 0 ms\n"
+    "[INFO] Run result: SUCCESS :-)\n"
+    ;
+
+    char* actual = __clove_stream_memory_as_string(stream);
+
+    CLOVE_STRING_EQ(expected, actual);
+}
+
+CLOVE_TEST(ReportWithTestIdentifierLength45) {
+    __clove_suite_t suite = create_suite("Suite12345");
+    __clove_test_t test11 = create_test("Suite12345_Test1234567890__1234567");
+   
+    suite_add_test(&suite, &test11);
+    __CLOVE_VECTOR_ADD(&suites, __clove_suite_t, suite);
+   
+    __clove_report_t* base = (__clove_report_t*)report;
+    base->start(base, &suites, 1);
+    base->begin_suite(base, &suite, 0);
+    base->end_test(base, &suite, &test11, 1);
+    base->end_suite(base, &suite, 0);
+    base->end(base, 1, 0, 0);
+
+    const char* expected = 
+    "[INFO] Executing Test Runner with detail level: 'Full'\n"
+    "[INFO] Suites / Tests found: 1 / 1\n"
+    "[INFO] 1) Suite12345.Suite12345_Test1234567890__1234567.....[PASS] (0.000 ms)\n"
+    "[INFO] Total: 1, Passed: 1, Failed: 0, Skipped: 0\n"
+    "[INFO] Run duration: 0 ms\n"
+    "[INFO] Run result: SUCCESS :-)\n"
+    ;
+
+    char* actual = __clove_stream_memory_as_string(stream);
+
+    CLOVE_STRING_EQ(expected, actual);
+}
+
+CLOVE_TEST(ReportWithTestIdentifierLength48) {
+    __clove_suite_t suite = create_suite("Suite12345");
+    __clove_test_t test11 = create_test("Suite12345_Test1234567890__1234567890");
+   
+    suite_add_test(&suite, &test11);
+    __CLOVE_VECTOR_ADD(&suites, __clove_suite_t, suite);
+   
+    __clove_report_t* base = (__clove_report_t*)report;
+    base->start(base, &suites, 1);
+    base->begin_suite(base, &suite, 0);
+    base->end_test(base, &suite, &test11, 1);
+    base->end_suite(base, &suite, 0);
+    base->end(base, 1, 0, 0);
+
+    const char* expected = 
+    "[INFO] Executing Test Runner with detail level: 'Full'\n"
+    "[INFO] Suites / Tests found: 1 / 1\n"
+    "[INFO] 1) Suite12345.Suite12345_Test1234567890__1234567890...[PASS] (0.000 ms)\n"
+    "[INFO] Total: 1, Passed: 1, Failed: 0, Skipped: 0\n"
+    "[INFO] Run duration: 0 ms\n"
+    "[INFO] Run result: SUCCESS :-)\n"
+    ;
+
+    char* actual = __clove_stream_memory_as_string(stream);
+
+    CLOVE_STRING_EQ(expected, actual);
+}
+
+CLOVE_TEST(ReportWithTestIdentifierLength50) {
+    __clove_suite_t suite = create_suite("Suite12345");
+    __clove_test_t test11 = create_test("Suite12345_Test1234567890__123456789012");
+   
+    suite_add_test(&suite, &test11);
+    __CLOVE_VECTOR_ADD(&suites, __clove_suite_t, suite);
+   
+    __clove_report_t* base = (__clove_report_t*)report;
+    base->start(base, &suites, 1);
+    base->begin_suite(base, &suite, 0);
+    base->end_test(base, &suite, &test11, 1);
+    base->end_suite(base, &suite, 0);
+    base->end(base, 1, 0, 0);
+
+    const char* expected = 
+    "[INFO] Executing Test Runner with detail level: 'Full'\n"
+    "[INFO] Suites / Tests found: 1 / 1\n"
+    "[INFO] 1) Suite12345.Suite12345_Test1234567890__123456789012...[PASS] (0.000 ms)\n"
+    "[INFO] Total: 1, Passed: 1, Failed: 0, Skipped: 0\n"
     "[INFO] Run duration: 0 ms\n"
     "[INFO] Run result: SUCCESS :-)\n"
     ;
