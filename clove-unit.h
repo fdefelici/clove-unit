@@ -1,6 +1,6 @@
 /*
  * clove-unit
- * v2.4.3
+ * v2.4.4
  * Single-Header Unit Testing library for C/C++
  * https://github.com/fdefelici/clove-unit
  *
@@ -10,8 +10,8 @@
 
 #define __CLOVE_VERSION_MAJOR 2
 #define __CLOVE_VERSION_MINOR 4
-#define __CLOVE_VERSION_PATCH 3
-#define __CLOVE_VERSION "2.4.3"
+#define __CLOVE_VERSION_PATCH 4
+#define __CLOVE_VERSION "2.4.4"
 
 //Preventing "unknown-pragmas" warning on GCC <= 12 for '#pragma region' usage
 //NOTE1: GCC and G++ v13+ support '#pragma region' by the way.
@@ -2662,7 +2662,7 @@ void __clove_report_pretty_start(__clove_report_t* _this, __clove_vector_t* suit
     size_t longest_suite_and_test_name = 0;    
     __CLOVE_VECTOR_FOREACH(suites, __clove_suite_t, each_suite, {
         size_t suite_length = __clove_string_length(each_suite->name);
-        __CLOVE_VECTOR_FOREACH(suites, __clove_test_t, each_test, { 
+        __CLOVE_VECTOR_FOREACH(&each_suite->tests, __clove_test_t, each_test, { 
             size_t test_length = __clove_string_length(each_test->name);
 
             if (longest_suite_and_test_name < suite_length + test_length) {
