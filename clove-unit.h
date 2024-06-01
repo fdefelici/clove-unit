@@ -90,6 +90,7 @@ __CLOVE_EXTERN_C char* __clove_path_rel_to_abs_exec_path(const char* rel_path);
 __CLOVE_EXTERN_C bool __clove_path_is_relative(const char* path);
 __CLOVE_EXTERN_C void __clove_path_to_os(char* path);
 __CLOVE_EXTERN_C char* __clove_path_basepath(const char* path);
+__CLOVE_EXTERN_C char* __clove_path_to_absolute(const char* path);
 #pragma endregion // Path Decl
 
 #pragma region PRIVATE - Memory Decl
@@ -896,6 +897,8 @@ double __clove_math_decimald(unsigned char precision) {
 #include <string.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <limits.h>
+
 char*  __clove_path_concat(const char separator, const char* path1, const char* path2) {
     size_t count = __clove_string_length(path1) + 1 + __clove_string_length(path2) + 1;
     char* path = __CLOVE_MEMORY_CALLOC_TYPE_N(char, count);
@@ -958,6 +961,18 @@ char* __clove_path_basepath(const char* a_path) {
     __clove_string_strncpy(base_path, base_length + 1, a_path, base_length);
     __clove_path_to_os(base_path);
     return base_path;
+}
+char* __clove_path_to_absolute(const char* rel_path) {
+    char* result = NULL;
+#if _WIN32
+    result = __CLOVE_MEMORY_MALLOC_TYPE_N(char, _MAX_PATH);
+    //if( _fullpath( full, partialPath, _MAX_PATH ) != NULL )
+    _fullpath(result, rel_path, _MAX_PATH );
+#else
+    result = __CLOVE_MEMORY_MALLOC_TYPE_N(char, PATH_MAX);
+    realpath(rel_path, result); // NULL
+#endif 
+    return result;
 }
 #pragma endregion // Path Impl
 
@@ -3742,26 +3757,29 @@ int __clove_symbols_for_each_function_by_prefix(__clove_symbols_context_t* conte
 #include <mach-o/loader.h>
 #include <mach-o/swap.h>
 #include <mach-o/dyld.h>
-
 typedef struct __clove_symbols_macos_module_t {
     void* handle;
     size_t size; //mmap handle size;
     intptr_t address; //module base address 
 } __clove_symbols_macos_module_t;
 
-intptr_t __clove_symbols_macos_image_slide(const char* path)
-{
+
+bool __clove_symbols_macos_image_slide(const char* abs_path, intptr_t* out_address)
+{   
+    //NOTE: dyld image names are in absolute path. So tu properly compare, need to pass an abs_path to this function.
     for (uint32_t i = 0; i < _dyld_image_count(); i++)
     {
-        if (strcmp(_dyld_get_image_name(i), path) == 0)
-            return _dyld_get_image_vmaddr_slide(i);
+        if (strcmp(_dyld_get_image_name(i), abs_path) == 0) {
+            *out_address = _dyld_get_image_vmaddr_slide(i);
+            return true;
+        }
     }
-    return 0;
+    return false;
 }
 
-int __clove_symbols_macos_open_module_handle(const char* module_path, __clove_symbols_macos_module_t* out_module) {
+int __clove_symbols_macos_open_module_handle(const char* module_abs_path, __clove_symbols_macos_module_t* out_module) {
     int fd;
-    if ((fd = open(module_path, O_RDONLY)) < 0) {
+    if ((fd = open(module_abs_path, O_RDONLY)) < 0) {
         return 1;
     }
 
@@ -3780,7 +3798,11 @@ int __clove_symbols_macos_open_module_handle(const char* module_path, __clove_sy
 
     out_module->handle = map;
     out_module->size = st.st_size;
-    out_module->address = __clove_symbols_macos_image_slide(module_path);
+    bool found = __clove_symbols_macos_image_slide(module_abs_path, &out_module->address);
+    if (!found) {
+        puts("cannot find image slide");
+        return 4;
+    }
     return 0;
 }
 
@@ -3801,7 +3823,7 @@ struct load_command* __clove_symbols_macos_find_command(struct mach_header_64* h
 }
 
 int __clove_symbols_for_each_function_by_prefix(__clove_symbols_context_t* context, __clove_symbols_function_action action) {
-    const char* module_path = __clove_exec_path;
+    const char* module_path = __clove_get_exec_path();
 
     __clove_symbols_macos_module_t module;
     if (__clove_symbols_macos_open_module_handle(module_path, &module) != 0) { return 1; };
@@ -4054,8 +4076,12 @@ int main(int argc, char* argv[]) {\
 }
 
 int __clove_runner_auto(int argc, char* argv[]) {
-    __clove_exec_path = argv[0];
-    __clove_exec_base_path = __clove_path_basepath(argv[0]);
+    //__clove_exec_path = argv[0];
+    __clove_exec_path = __clove_path_to_absolute(argv[0]);
+    __clove_exec_base_path = __clove_path_basepath(__clove_exec_path);
+
+    //puts(__clove_exec_path);
+    //puts(__clove_exec_base_path);
 
     //argc = 5;
     //const char* argv2[] = {"exec", "-i", "*.ActShortThanExpForthCharDiff", "-r", "pretty"};
@@ -4083,6 +4109,7 @@ int __clove_runner_auto(int argc, char* argv[]) {
 
     __clove_vector_free(&cmd_handlers);
     __clove_cmdline_free(&cmdline);
+    free(__clove_exec_path);
     free(__clove_exec_base_path);
     return cmd_result;
 }
