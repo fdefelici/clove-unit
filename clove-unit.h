@@ -88,6 +88,7 @@ __CLOVE_EXTERN_C char* __clove_path_concat(const char separator, const char* pat
 __CLOVE_EXTERN_C const char* __clove_path_relative(const char* abs_path, const char* base_path);
 __CLOVE_EXTERN_C char* __clove_path_rel_to_abs_exec_path(const char* rel_path);
 __CLOVE_EXTERN_C bool __clove_path_is_relative(const char* path);
+__CLOVE_EXTERN_C bool __clove_path_is_absolute(const char* path);
 __CLOVE_EXTERN_C void __clove_path_to_os(char* path);
 __CLOVE_EXTERN_C char* __clove_path_basepath(const char* path);
 __CLOVE_EXTERN_C char* __clove_path_to_absolute(const char* path);
@@ -934,10 +935,14 @@ char* __clove_path_rel_to_abs_exec_path(const char* rel_path) {
 }
 
 bool __clove_path_is_relative(const char* path) {
-    if (__clove_string_startswith(path, "\\")) return false; //windows
-    if (__clove_string_length(path) > 2 && path[1] == ':') return false;    //windows
+    if (__clove_string_startswith(path, "\\")) return false; //windows (match the main unit)
+    if (__clove_string_length(path) > 2 && path[1] == ':') return false;    //windows (contains unit:)
     if (__clove_string_startswith(path, "/")) return false;  //unix or Windows
     return true;
+}
+
+bool __clove_path_is_absolute(const char* path) {
+    return !__clove_path_is_relative(path);
 }
 
 void __clove_path_to_os(char* path) {
@@ -975,6 +980,20 @@ char* __clove_path_to_absolute(const char* rel_path) {
 #else
     result = __CLOVE_MEMORY_MALLOC_TYPE_N(char, PATH_MAX);
     realpath(rel_path, result); // NULL
+
+    //case where rel_path not really exists on fs
+    //(in this case only the first subpath of the rel_path is added by realpath)
+    if (!__clove_string_endswith(rel_path)) {
+        if (__clove_path_is_absolute(rel_path)) {
+            __clove_string_strcpy(result, _MAX_PATH, rel_path);
+        } else { //relative
+            realpath(result, ".", _MAX_PATH);
+            if (!__clove_string_endswith(result, "/")) {
+                __clove_string_strcat(result, _MAX_PATH, "/");
+            }
+            __clove_string_strcat(result, _MAX_PATH, rel_path);
+        }       
+    }
 #endif 
     return result;
 }
