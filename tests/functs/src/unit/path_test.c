@@ -82,7 +82,7 @@ CLOVE_TEST(GetRelativePathFromAbsPath) {
     CLOVE_STRING_EQ(abs_path, result);
 }
 
-CLOVE_TEST(ConvertToAbsolutePath) {
+CLOVE_TEST(ConvertAbsToAbsolutePath) {
     char* result = __clove_path_to_absolute("/abs/path/file.c");
 
     #ifdef _WIN32
@@ -95,3 +95,16 @@ CLOVE_TEST(ConvertToAbsolutePath) {
     __clove_memory_free(result);
 }
 
+CLOVE_TEST(ConvertRelToAbsolutePath) {
+    char* result = __clove_path_to_absolute("rel/path/file.c");
+
+    #ifdef _WIN32
+        const char* result_without_unit = result + 2;  //e.g. c:\abs\path\file.c => \abs\path\file.c
+        CLOVE_STRING_EQ("\\rel\\path\\file.c", result_without_unit);
+    #else
+        CLOVE_IS_TRUE(__clove_string_startswith(result, "/"));
+        CLOVE_IS_TRUE(__clove_string_endswith(result, "/rel/path/file.c"));
+    #endif
+
+    __clove_memory_free(result);
+}

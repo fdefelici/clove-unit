@@ -983,15 +983,15 @@ char* __clove_path_to_absolute(const char* rel_path) {
 
     //case where rel_path not really exists on fs
     //(in this case only the first subpath of the rel_path is added by realpath)
-    if (!__clove_string_endswith(rel_path)) {
+    if (!__clove_string_endswith(result, rel_path)) {
         if (__clove_path_is_absolute(rel_path)) {
-            __clove_string_strcpy(result, _MAX_PATH, rel_path);
+            __clove_string_strcpy(result, PATH_MAX, rel_path);
         } else { //relative
-            realpath(result, ".");
+            realpath(".", result);
             if (!__clove_string_endswith(result, "/")) {
-                __clove_string_strcat(result, _MAX_PATH, "/");
+                __clove_string_strcat(result, PATH_MAX, "/");
             }
-            __clove_string_strcat(result, _MAX_PATH, rel_path);
+            __clove_string_strcat(result, PATH_MAX, rel_path);
         }       
     }
 #endif 
