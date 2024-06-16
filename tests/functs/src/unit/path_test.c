@@ -97,10 +97,11 @@ CLOVE_TEST(ConvertAbsToAbsolutePath) {
 
 CLOVE_TEST(ConvertRelToAbsolutePath) {
     char* result = __clove_path_to_absolute("rel/path/file.c");
-
+    puts(result);
     #ifdef _WIN32
         const char* result_without_unit = result + 2;  //e.g. c:\abs\path\file.c => \abs\path\file.c
-        CLOVE_STRING_EQ("\\rel\\path\\file.c", result_without_unit);
+        CLOVE_IS_TRUE(__clove_string_startswith(result_without_unit, "\\"));
+        CLOVE_IS_TRUE(__clove_string_endswith(result_without_unit, "\\rel\\path\\file.c"));
     #else
         CLOVE_IS_TRUE(__clove_string_startswith(result, "/"));
         CLOVE_IS_TRUE(__clove_string_endswith(result, "/rel/path/file.c"));
