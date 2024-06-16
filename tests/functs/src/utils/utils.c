@@ -31,7 +31,7 @@ const char* cmd_fmt(const char* format, ...) {
     va_start(args, format);
     __clove_string_vsprintf(result, sizeof(result), format_ext, args);
     va_end(args);
-    free(format_ext);
+    __clove_memory_free(format_ext);
     return result;
 }
 #else 

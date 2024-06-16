@@ -27,7 +27,7 @@ CLOVE_TEST(StringEscaping) {
     const char* expected = "\\\"Hello\\nWorld\\\"";
     char* actual = __clove_string_escape(to_escape);
     CLOVE_STRING_EQ(expected, actual);
-    free(actual);
+    __clove_memory_free(actual);
 }
 
 CLOVE_TEST(StringStartsWith) {

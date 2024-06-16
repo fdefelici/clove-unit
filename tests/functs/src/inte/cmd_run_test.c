@@ -13,7 +13,7 @@ CLOVE_SUITE_SETUP() {
 }
 
 CLOVE_SUITE_TEARDOWN() {
-    if (cmd_out) free(cmd_out);
+    if (cmd_out) __clove_memory_free(cmd_out);
 }
  
 CLOVE_TEST(JsonReportWithOptOonFile) {
@@ -28,8 +28,8 @@ CLOVE_TEST(JsonReportWithOptOonFile) {
     CLOVE_IS_TRUE(file_exists(report_path));
 
     file_delete(report_path);
-    free(base_path);
-    free(report_path);
+    __clove_memory_free(base_path);
+    __clove_memory_free(report_path);
 }
 
 CLOVE_TEST(JsonReportWithOptOuputOnFile) {
@@ -44,8 +44,8 @@ CLOVE_TEST(JsonReportWithOptOuputOnFile) {
     CLOVE_IS_TRUE(file_exists(report_path));
 
     file_delete(report_path);
-    free(base_path);
-    free(report_path);
+    __clove_memory_free(base_path);
+    __clove_memory_free(report_path);
 }
 
 CLOVE_TEST(JsonReportWithOptOuputOnStdoutAsDefault) {
@@ -226,8 +226,8 @@ CLOVE_TEST(DefaultReportWithOptOonFile) {
     CLOVE_IS_TRUE(file_exists(report_path));
 
     file_delete(report_path);
-    free(base_path);
-    free(report_path);
+    __clove_memory_free(base_path);
+    __clove_memory_free(report_path);
 }
 
 CLOVE_TEST(DefaultReportWithOptT) {

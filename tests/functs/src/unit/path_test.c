@@ -30,7 +30,7 @@ CLOVE_TEST(BasePathForFullPath) {
 
     char* result = __clove_path_basepath("/path/to/directory/file.txt");
     CLOVE_STRING_EQ(expected, result);
-    free(result);
+    __clove_memory_free(result);
 }
 
 CLOVE_TEST(BasePathForDirectory) {
@@ -39,7 +39,7 @@ CLOVE_TEST(BasePathForDirectory) {
 
     char* result = __clove_path_basepath("/path/to/directory/");
     CLOVE_STRING_EQ(expected, result);
-    free(result);
+    __clove_memory_free(result);
 }
 
 CLOVE_TEST(PathToOs) {
@@ -92,6 +92,6 @@ CLOVE_TEST(ConvertToAbsolutePath) {
         CLOVE_STRING_EQ("/abs/path/file.c", result);
     #endif
 
-    free(result);
+    __clove_memory_free(result);
 }
 
