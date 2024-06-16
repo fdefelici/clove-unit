@@ -43,10 +43,10 @@
 #include <stdio.h>
 __CLOVE_EXTERN_C void  __clove_utils_empty_funct(void);
 
-extern char* __clove_exec_path;
-extern char* __clove_exec_base_path;
-__CLOVE_EXTERN_C const char* __clove_get_exec_base_path(void);
-__CLOVE_EXTERN_C const char* __clove_get_exec_path(void);
+extern char* __clove_exec_abs_path;
+extern char* __clove_exec_abs_basepath;
+__CLOVE_EXTERN_C const char* __clove_utils_get_exec_abs_path(void);
+__CLOVE_EXTERN_C const char* __clove_utils_get_exec_abs_basepath(void);
 
 //Switch implementation for pointer types
 #define __CLOVE_SWITCH_BEG(X) \
@@ -147,6 +147,7 @@ __CLOVE_EXTERN_C char* __clove_string_csv_escape(const char* string);
 __CLOVE_EXTERN_C void __clove_string_ellipse(const char* string, size_t str_len, size_t pos, char* out, size_t out_size);
 __CLOVE_EXTERN_C void __clove_string_replace_char(char* path, char find, char replace);
 __CLOVE_EXTERN_C void __clove_string_pad_right(char* dest, size_t dest_size, size_t str_target_len);
+__CLOVE_EXTERN_C int  __clove_string_last_indexof(const char* source, char character);
 #pragma endregion // String Decl
 
 #pragma region PRIVATE - String View Decl
@@ -863,13 +864,14 @@ __CLOVE_EXTERN_C void __clove_exec_suite(__clove_suite_t* suite, size_t test_cou
 #include <stdio.h>
 void __clove_utils_empty_funct(void) { }
 
-const char* __clove_get_exec_base_path(void) {
-    return __clove_exec_base_path;
+const char* __clove_utils_get_exec_abs_path(void) {
+    return __clove_exec_abs_path;
 }
 
-const char* __clove_get_exec_path(void) {
-    return __clove_exec_path;
+const char* __clove_utils_get_exec_abs_basepath(void) {
+    return __clove_exec_abs_basepath;
 }
+
 #pragma endregion // Utils Impl
 
 #pragma region PRIVATE - Math Impl
@@ -925,7 +927,7 @@ const char* __clove_path_relative(const char* abs_path, const char* base_path) {
 }
 
 char* __clove_path_rel_to_abs_exec_path(const char* rel_path) {
-    const char* base_path = __clove_get_exec_base_path();
+    const char* base_path = __clove_utils_get_exec_abs_basepath();
     char* abs_path = __clove_path_concat(__CLOVE_PATH_SEPARATOR, base_path, rel_path);
     return abs_path;
 }
@@ -944,24 +946,25 @@ void __clove_path_to_os(char* path) {
 
 char* __clove_path_basepath(const char* a_path) {
     // Find the last path separator character in the input path.
-    const char* last_char = a_path + __clove_string_length(a_path) - 1;
-    while (last_char > a_path && *last_char != '/' && *last_char != '\\') {
-        --last_char;
-    }
-
+    int last_char_win = __clove_string_last_indexof(a_path, '\\');
+    int last_char_uni = __clove_string_last_indexof(a_path, '/'); //or unix or win eventually
+    int last_char_index = last_char_win > last_char_uni ? last_char_win : last_char_uni;
+    
     // If there are no separators in the path, return the current directory path.
-    if (last_char == a_path) {
+    if (last_char_index <= 0)  { 
         static char dot_path[3] = { '.', __CLOVE_PATH_SEPARATOR, '\0' };
         return __clove_string_strdup(dot_path);
+    } else {
+        // Calculate base path length based on the position of the last path separator.
+        size_t base_length = (size_t)(last_char_index + 1);
+        char* base_path = __CLOVE_MEMORY_CALLOC_TYPE_N(char, base_length);
+        __clove_string_strncpy(base_path, base_length, a_path, base_length - 1);
+        __clove_path_to_os(base_path);
+        return base_path;
     }
 
-    // Calculate base path length based on the position of the last path separator.
-    size_t base_length = last_char - a_path;
-    char* base_path = __CLOVE_MEMORY_CALLOC_TYPE_N(char, base_length + 1);
-    __clove_string_strncpy(base_path, base_length + 1, a_path, base_length);
-    __clove_path_to_os(base_path);
-    return base_path;
 }
+
 char* __clove_path_to_absolute(const char* rel_path) {
     char* result = NULL;
 #if _WIN32
@@ -1355,6 +1358,13 @@ void __clove_string_pad_right(char* dest, size_t dest_size, size_t str_target_le
     __clove_memory_memset(pad_beg , pad_len, '.');
     *pad_end = '\0';
 }
+
+int __clove_string_last_indexof(const char* source, char character) {
+    const char* char_ptr = strrchr(source, character);
+    if (char_ptr == NULL) return -1;
+    return (int)(char_ptr - source);
+}
+
 #pragma endregion //String Impl
 
 #pragma region PRIVATE - String View Impl
@@ -3823,7 +3833,7 @@ struct load_command* __clove_symbols_macos_find_command(struct mach_header_64* h
 }
 
 int __clove_symbols_for_each_function_by_prefix(__clove_symbols_context_t* context, __clove_symbols_function_action action) {
-    const char* module_path = __clove_get_exec_path();
+    const char* module_path = __clove_utils_get_exec_abs_path();
 
     __clove_symbols_macos_module_t module;
     if (__clove_symbols_macos_open_module_handle(module_path, &module) != 0) { return 1; };
@@ -3986,7 +3996,7 @@ int __clove_symbols_funct_name_comparator(void* f1, void* f2) {
 }
 
 int __clove_symbols_for_each_function_by_prefix(__clove_symbols_context_t* context, __clove_symbols_function_action action) {
-    const char* module_path = __clove_exec_path;
+    const char* module_path = CLOVE_EXEC_PATH;
 
     __clove_symbols_lixux_module_t module;
     if (__clove_symbols_lixux_open_module_handle(module_path, &module) != 0) { return 1; }
@@ -4066,8 +4076,8 @@ int __clove_symbols_for_each_function_by_prefix(__clove_symbols_context_t* conte
 
 #pragma region PRIVATE - Run Impl
 #define __CLOVE_RUNNER_AUTO() \
-char* __clove_exec_path;\
-char* __clove_exec_base_path;\
+char* __clove_exec_abs_path;\
+char* __clove_exec_abs_basepath;\
 __CLOVE_ASSERT_CHECK_E_DECL() \
 __CLOVE_TEST_RESULT_E_DECL() \
 __CLOVE_GENERIC_TYPE_E_DECL() \
@@ -4076,12 +4086,8 @@ int main(int argc, char* argv[]) {\
 }
 
 int __clove_runner_auto(int argc, char* argv[]) {
-    //__clove_exec_path = argv[0];
-    __clove_exec_path = __clove_path_to_absolute(argv[0]);
-    __clove_exec_base_path = __clove_path_basepath(__clove_exec_path);
-
-    //puts(__clove_exec_path);
-    //puts(__clove_exec_base_path);
+    __clove_exec_abs_path = __clove_path_to_absolute(argv[0]);
+    __clove_exec_abs_basepath = __clove_path_basepath(__clove_exec_abs_path);
 
     //argc = 5;
     //const char* argv2[] = {"exec", "-i", "*.ActShortThanExpForthCharDiff", "-r", "pretty"};
@@ -4109,8 +4115,8 @@ int __clove_runner_auto(int argc, char* argv[]) {
 
     __clove_vector_free(&cmd_handlers);
     __clove_cmdline_free(&cmdline);
-    free(__clove_exec_path);
-    free(__clove_exec_base_path);
+    free(__clove_exec_abs_path);
+    free(__clove_exec_abs_basepath);
     return cmd_result;
 }
 
@@ -4202,13 +4208,13 @@ void __clove_exec_suite(__clove_suite_t* suite, size_t test_counter, size_t* pas
 #pragma region PUBLIC
 #pragma region PUBLIC - UTILS
 /*
- * Provide the executable path
+ * Provide the executable absolute path
  */
-#define CLOVE_EXEC_PATH() __clove_get_exec_path()
+#define CLOVE_EXEC_PATH() __clove_utils_get_exec_abs_path()
  /*
-  * Provide the executable base path
+  * Provide the executable absolute base path
   */
-#define CLOVE_EXEC_BASE_PATH() __clove_get_exec_base_path()
+#define CLOVE_EXEC_BASE_PATH() __clove_utils_get_exec_abs_basepath()
 #pragma endregion //UTILS
 
 #pragma region PUBLIC - ASSERTS

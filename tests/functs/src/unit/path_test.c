@@ -17,8 +17,6 @@ CLOVE_TEST(AbsolutePathFromExecBasePath) {
     char* result = __clove_path_rel_to_abs_exec_path("path/to/append");
     CLOVE_NOT_NULL(result);
 }   
-#include <string.h>
-#include <stdlib.h>
 
 CLOVE_TEST(BasePathForJustExecutable) {
     char expected[3] = { '.', __CLOVE_PATH_SEPARATOR, '\0' };
@@ -83,3 +81,17 @@ CLOVE_TEST(GetRelativePathFromAbsPath) {
     result = __clove_path_relative(abs_path, "");
     CLOVE_STRING_EQ(abs_path, result);
 }
+
+CLOVE_TEST(ConvertToAbsolutePath) {
+    char* result = __clove_path_to_absolute("/abs/path/file.c");
+
+    #ifdef _WIN32
+        const char* result_without_unit = result + 2;  //e.g. c:\abs\path\file.c => \abs\path\file.c
+        CLOVE_STRING_EQ("\\abs\\path\\file.c", result_without_unit);
+    #else
+        CLOVE_STRING_EQ("/abs/path/file.c", result);
+    #endif
+
+    free(result);
+}
+

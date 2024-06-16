@@ -236,10 +236,10 @@ Assertions that can be used within a `CLOVE_TEST` definition.
 
 Helper APIs to support test implementation.
 
-| API                      | Description                                                |
-|--------------------------|------------------------------------------------------------|
-| `CLOVE_EXEC_PATH()`      | Macro to easily retrieve executable path as a `char*`      |
-| `CLOVE_EXEC_BASE_PATH()` | Macro to easily retrieve executable base path as a `char*` |
+| API                      | Description                                                               |
+|--------------------------|---------------------------------------------------------------------------|
+| `CLOVE_EXEC_PATH()`      | Macro to easily retrieve executable absolute path as a `const char*`      |
+| `CLOVE_EXEC_BASE_PATH()` | Macro to easily retrieve executable absolute base path as a `const char*` |
 
 ## Command-Line API
 
