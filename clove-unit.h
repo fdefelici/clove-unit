@@ -987,7 +987,7 @@ char* __clove_path_to_absolute(const char* rel_path) {
         if (__clove_path_is_absolute(rel_path)) {
             __clove_string_strcpy(result, _MAX_PATH, rel_path);
         } else { //relative
-            realpath(result, ".", _MAX_PATH);
+            realpath(result, ".");
             if (!__clove_string_endswith(result, "/")) {
                 __clove_string_strcat(result, _MAX_PATH, "/");
             }
