@@ -951,24 +951,46 @@ void __clove_path_to_os(char* path) {
 }
 
 char* __clove_path_basepath(const char* a_path) {
+    bool last_char_is_win = __clove_string_endswith(a_path, "\\");
+    bool last_char_is_uni = __clove_string_endswith(a_path, "/");
+    
+    //__CLOVE_UNUSED_VAR(last_char_is_win);
+    //__CLOVE_UNUSED_VAR(last_char_is_uni);
+    
+    
+    size_t source_len = __clove_string_length(a_path);
+    size_t tmp_len = source_len + 1;
+    char* tmp_path = __CLOVE_MEMORY_CALLOC_TYPE_N(char, tmp_len); //take account for '\0'
+    
+    if (last_char_is_win || last_char_is_uni) 
+    {
+        source_len--;
+    }
+
+    __clove_string_strncpy(tmp_path, tmp_len, a_path, source_len);
+    
+
     // Find the last path separator character in the input path.
-    int last_char_win = __clove_string_last_indexof(a_path, '\\');
-    int last_char_uni = __clove_string_last_indexof(a_path, '/'); //or unix or win eventually
+    int last_char_win = __clove_string_last_indexof(tmp_path, '\\');
+    int last_char_uni = __clove_string_last_indexof(tmp_path, '/'); //or unix or win eventually
     int last_char_index = last_char_win > last_char_uni ? last_char_win : last_char_uni;
     
     // If there are no separators in the path, return the current directory path.
+    char* result = NULL;
     if (last_char_index <= 0)  { 
         static char dot_path[3] = { '.', __CLOVE_PATH_SEPARATOR, '\0' };
-        return __clove_string_strdup(dot_path);
+        result = __clove_string_strdup(dot_path);
     } else {
         // Calculate base path length based on the position of the last path separator.
         size_t base_length = (size_t)(last_char_index + 1);
         char* base_path = __CLOVE_MEMORY_CALLOC_TYPE_N(char, base_length);
-        __clove_string_strncpy(base_path, base_length, a_path, base_length - 1);
+        __clove_string_strncpy(base_path, base_length, tmp_path, base_length - 1);
         __clove_path_to_os(base_path);
-        return base_path;
+        result = base_path;
     }
 
+    __clove_memory_free(tmp_path);
+    return result;
 }
 
 char* __clove_path_to_absolute(const char* rel_path) {

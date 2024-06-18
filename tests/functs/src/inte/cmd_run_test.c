@@ -19,15 +19,15 @@ CLOVE_SUITE_TEARDOWN() {
 CLOVE_TEST(JsonReportWithOptOonFile) {
     char* base_path = __clove_path_basepath(RES_PRJ01_EXEC_PATH);
     char* report_path = __clove_path_concat(__CLOVE_PATH_SEPARATOR, base_path, "cmd_json_report.json");
-    //file_delete(report_path);
+    //utils_file_delete(report_path);
 
     const char* cmd = cmd_fmt("\"%s\" -r json -o \"%s\"", RES_PRJ01_EXEC_PATH, report_path);
     int cmd_code = exec_cmd(cmd, &cmd_out);
     CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_OK, cmd_code); 
 
-    CLOVE_IS_TRUE(file_exists(report_path));
+    CLOVE_IS_TRUE(utils_file_exists(report_path));
 
-    file_delete(report_path);
+    utils_file_delete(report_path);
     __clove_memory_free(base_path);
     __clove_memory_free(report_path);
 }
@@ -35,15 +35,15 @@ CLOVE_TEST(JsonReportWithOptOonFile) {
 CLOVE_TEST(JsonReportWithOptOuputOnFile) {
     char* base_path = __clove_path_basepath(RES_PRJ01_EXEC_PATH);
     char* report_path = __clove_path_concat(__CLOVE_PATH_SEPARATOR, base_path, "cmd_json_report.json");
-    //file_delete(report_path);
+    //utils_file_delete(report_path);
 
     const char* cmd = cmd_fmt("\"%s\" -r json --output \"%s\"", RES_PRJ01_EXEC_PATH, report_path);
     int cmd_code = exec_cmd(cmd, &cmd_out);
     CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_OK, cmd_code); 
 
-    CLOVE_IS_TRUE(file_exists(report_path));
+    CLOVE_IS_TRUE(utils_file_exists(report_path));
 
-    file_delete(report_path);
+    utils_file_delete(report_path);
     __clove_memory_free(base_path);
     __clove_memory_free(report_path);
 }
@@ -217,15 +217,15 @@ CLOVE_TEST(DefaultReportIncludeOverExcludeOneTest) {
 CLOVE_TEST(DefaultReportWithOptOonFile) {
     char* base_path = __clove_path_basepath(RES_PRJ01_EXEC_PATH);
     char* report_path = __clove_path_concat(__CLOVE_PATH_SEPARATOR, base_path, "cmd_console_report.txt");
-    //file_delete(report_path);
+    //utils_file_delete(report_path);
 
     const char* cmd = cmd_fmt("\"%s\" -o \"%s\"", RES_PRJ01_EXEC_PATH, report_path);
     int cmd_code = exec_cmd(cmd, &cmd_out);
     CLOVE_INT_EQ(__CLOVE_CMD_ERRNO_OK, cmd_code); 
 
-    CLOVE_IS_TRUE(file_exists(report_path));
+    CLOVE_IS_TRUE(utils_file_exists(report_path));
 
-    file_delete(report_path);
+    utils_file_delete(report_path);
     __clove_memory_free(base_path);
     __clove_memory_free(report_path);
 }

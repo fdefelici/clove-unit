@@ -1,6 +1,6 @@
 #define CLOVE_SUITE_NAME UNIT_ReportPrettyTest
 #include "clove-unit.h"
-#include "utils/domain_utils.h"
+#include "utils/utils.h"
 
 static __clove_report_pretty_t* report;
 static __clove_stream_memory_t* stream;
