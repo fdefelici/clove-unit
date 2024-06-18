@@ -1,15 +1,15 @@
 #define CLOVE_SUITE_NAME UNIT_PathTest
-#include "clove-unit.h"
+#include <clove-unit.h>
 #include "utils/utils.h"
 
 CLOVE_TEST(PathConcatenation) {
-    char* result = __clove_path_concat('/', "path/to/first", "second");
+    char* result = __clove_path_concat("path/to/first", "second", '/');
     CLOVE_ULLONG_EQ(20, __clove_string_length(result));
     CLOVE_STRING_EQ("path/to/first/second", result);
 }   
 
 CLOVE_TEST(PathConcatConvertingSeparator) {
-    char* result = __clove_path_concat('\\', "path/to/first", "second");
+    char* result = __clove_path_concat("path/to/first", "second", '\\');
     CLOVE_ULLONG_EQ(20, __clove_string_length(result));
     CLOVE_STRING_EQ("path\\to\\first\\second", result);
 } 
@@ -98,7 +98,7 @@ CLOVE_TEST(ConvertUnexistentAbsToAbsolutePath) {
 
 CLOVE_TEST(ConvertUnexistentRelToAbsolutePath) {
     char* cwd_path = utils_cwd();
-    char* abs_path = __clove_path_concat(__CLOVE_PATH_SEPARATOR, cwd_path, "rel/path/file.c");
+    char* abs_path = __clove_path_concat(cwd_path, "rel/path/file.c", __CLOVE_PATH_SEPARATOR);
 
     char* result = __clove_path_to_absolute("rel/path/file.c");
     CLOVE_STRING_EQ(abs_path, result);    
@@ -110,8 +110,7 @@ CLOVE_TEST(ConvertUnexistentRelToAbsolutePath) {
 
 CLOVE_TEST(ConvertExistentRelToAbsolutePath) {
     char* cwd_path = utils_cwd();
-    //puts(cwd_path);
-    char* abs_path = __clove_path_concat(__CLOVE_PATH_SEPARATOR, cwd_path, "my/path");
+    char* abs_path = __clove_path_concat(cwd_path, "my/path", __CLOVE_PATH_SEPARATOR);
     utils_mkdirs(abs_path);
 
     char* result = __clove_path_to_absolute("my/path");
@@ -127,39 +126,3 @@ CLOVE_TEST(ConvertExistentRelToAbsolutePath) {
     __clove_memory_free(abs_path);
     __clove_memory_free(abs_path_parent);
 }
-
-/*
-CLOVE_TEST(ConvertUnexistentToAbsoluteWithEndingSlashIsRemoved) {
-    char* cwd_path = utils_cwd();
-    char* abs_path = __clove_path_concat(__CLOVE_PATH_SEPARATOR, cwd_path, "rel/path");
-
-    char* result = __clove_path_to_absolute("./rel/path/");
-
-    CLOVE_STRING_EQ(abs_path, result);
-
-    __clove_memory_free(result);
-    __clove_memory_free(cwd_path);
-    __clove_memory_free(abs_path);
-}
-
-
-CLOVE_TEST(ConvertExistentToAbsoluteWithEndingSlashIsRemoved) {
-    char* cwd_path = utils_cwd();
-    char* abs_path = __clove_path_concat(__CLOVE_PATH_SEPARATOR, cwd_path, "my/path");
-    utils_mkdirs(abs_path);
-
-    char* result = __clove_path_to_absolute("my/path/");
-
-    CLOVE_STRING_EQ(abs_path, result);
-
-    //rmdir
-    char* abs_path_parent = __clove_path_basepath(abs_path);
-    utils_rmdir(abs_path_parent);
-
-    __clove_memory_free(result);
-    __clove_memory_free(cwd_path);
-    __clove_memory_free(abs_path);
-    __clove_memory_free(abs_path_parent);
-}
-
-*/
