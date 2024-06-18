@@ -3880,7 +3880,8 @@ int __clove_symbols_macos_open_module_handle(const char* module_abs_path, __clov
     out_module->size = st.st_size;
     bool found = __clove_symbols_macos_image_slide(module_abs_path, &out_module->address);
     if (!found) {
-        puts("cannot find image slide");
+        //TODO: add logging api like __clove_log_erro(frmt, args)
+        printf("[ERRO] cannot find image slide for: %s", module_abs_path);
         return 4;
     }
     return 0;
