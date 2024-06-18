@@ -40,6 +40,14 @@ static int _utils_os_rmdir_recurs(const char* dir) {
     return ret; // 0 on success, non-zero on failure
 }
 
+static char* _utils_os_cwd() {
+    char buffer[_MAX_PATH];
+    _getcwd(buffer, sizeof(buffer));
+
+    char* result = __clove_string_strdup(buffer);
+    return result;
+}
+
 #else 
 #include <unistd.h>
 #include <dirent.h>
@@ -47,7 +55,7 @@ static int _utils_os_rmdir_recurs(const char* dir) {
 //#include <sys/stat.h>
 #include <sys/types.h>
 static void _utils_os_mkdir(const char* path) {
-    _mkdir(path, 0775);
+    mkdir(path, 0775);
 }
 
 static int _utils_os_rmdir_recurs(const char* dirPath) {
@@ -84,11 +92,22 @@ static int _utils_os_rmdir_recurs(const char* dirPath) {
         printf("Error: Failed to remove directory: %s\n", dirPath);
         return -1;
     }
+    return 0;
+}
+
+static char* _utils_os_cwd() {
+    char buffer[PATH_MAX];
+    getcwd(buffer, sizeof(buffer));
+
+    char* result = __clove_string_strdup(buffer);
+    return result;
+}
 #endif
 
 char* utils_cwd() {
     //eventually _getcwd (windows) and getcwd (posix) can be used
-    return __clove_path_to_absolute(".");
+    //return __clove_path_to_absolute(".");
+    return _utils_os_cwd();
 }
 
 void utils_mkdirs(char* path) {

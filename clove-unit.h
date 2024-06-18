@@ -902,6 +902,7 @@ double __clove_math_decimald(unsigned char precision) {
 #include <stdbool.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <sys/stat.h> 
 
 char*  __clove_path_concat(const char separator, const char* path1, const char* path2) {
     size_t count = __clove_string_length(path1) + 1 + __clove_string_length(path2) + 1;
@@ -993,6 +994,11 @@ char* __clove_path_basepath(const char* a_path) {
     return result;
 }
 
+static bool __clove_path_exists(const char* path) {
+    struct stat buffer;
+    return stat(path, &buffer) == 0;   
+}
+
 char* __clove_path_to_absolute(const char* rel_path) {
     char* result = NULL;
 #if _WIN32
@@ -1001,8 +1007,25 @@ char* __clove_path_to_absolute(const char* rel_path) {
     _fullpath(result, rel_path, _MAX_PATH );
 #else
     result = __CLOVE_MEMORY_MALLOC_TYPE_N(char, PATH_MAX);
-    realpath(rel_path, result); // NULL
+    if (__clove_path_exists(rel_path)) {
+        realpath(rel_path, result); // NULL
+    } else {
+        if (__clove_path_is_absolute(rel_path)) {
+            __clove_string_strcpy(result, PATH_MAX, rel_path);
+        } else { //relative
+            realpath(".", result); //getcwd
+            if (!__clove_string_endswith(result, "/")) {
+                __clove_string_strcat(result, PATH_MAX, "/");
+            }
+            if (__clove_string_startswith(rel_path, "./")) {
+                rel_path = rel_path + 2;
+            }
+            
+            __clove_string_strcat(result, PATH_MAX, rel_path);
+        }       
+    }
 
+/*
     //case where rel_path not really exists on fs
     //(in this case only the first subpath of the rel_path is added by realpath)
     if (!__clove_string_endswith(result, rel_path)) {
@@ -1016,6 +1039,7 @@ char* __clove_path_to_absolute(const char* rel_path) {
             __clove_string_strcat(result, PATH_MAX, rel_path);
         }       
     }
+*/
 #endif 
     return result;
 }
