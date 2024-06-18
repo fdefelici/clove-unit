@@ -43,10 +43,10 @@
 #include <stdio.h>
 __CLOVE_EXTERN_C void  __clove_utils_empty_funct(void);
 
-extern char* __clove_exec_path;
-extern char* __clove_exec_base_path;
-__CLOVE_EXTERN_C const char* __clove_get_exec_base_path(void);
-__CLOVE_EXTERN_C const char* __clove_get_exec_path(void);
+extern char* __clove_exec_abs_path;
+extern char* __clove_exec_abs_basepath;
+__CLOVE_EXTERN_C const char* __clove_utils_get_exec_abs_path(void);
+__CLOVE_EXTERN_C const char* __clove_utils_get_exec_abs_basepath(void);
 
 //Switch implementation for pointer types
 #define __CLOVE_SWITCH_BEG(X) \
@@ -84,12 +84,15 @@ __CLOVE_EXTERN_C double __clove_math_decimald(unsigned char precision);
 #define __CLOVE_PATH_SEPARATOR_STR "/"
 #endif //_WIN32
 
-__CLOVE_EXTERN_C char* __clove_path_concat(const char separator, const char* path1, const char* path2);
+__CLOVE_EXTERN_C char* __clove_path_concat(const char* path1, const char* path2, const char separator);
 __CLOVE_EXTERN_C const char* __clove_path_relative(const char* abs_path, const char* base_path);
 __CLOVE_EXTERN_C char* __clove_path_rel_to_abs_exec_path(const char* rel_path);
 __CLOVE_EXTERN_C bool __clove_path_is_relative(const char* path);
+__CLOVE_EXTERN_C bool __clove_path_is_absolute(const char* path);
 __CLOVE_EXTERN_C void __clove_path_to_os(char* path);
 __CLOVE_EXTERN_C char* __clove_path_basepath(const char* path);
+__CLOVE_EXTERN_C bool __clove_path_exists(const char* path);
+__CLOVE_EXTERN_C char* __clove_path_to_absolute(const char* path);
 #pragma endregion // Path Decl
 
 #pragma region PRIVATE - Memory Decl
@@ -98,6 +101,7 @@ __CLOVE_EXTERN_C void* __clove_memory_calloc(size_t size);
 __CLOVE_EXTERN_C void* __clove_memory_realloc(void* source, size_t size);
 __CLOVE_EXTERN_C bool __clove_memory_memcpy(void* dest, size_t dest_size, const void* src, size_t src_size);
 __CLOVE_EXTERN_C bool __clove_memory_memset(void* dest, size_t size, unsigned char value);
+__CLOVE_EXTERN_C void __clove_memory_free(void* source);
 
 #define __CLOVE_MEMORY_MALLOC_TYPE_N(TYPE, COUNT) (TYPE*)__clove_memory_malloc(sizeof(TYPE) * COUNT)
 #define __CLOVE_MEMORY_MALLOC_TYPE(TYPE) __CLOVE_MEMORY_MALLOC_TYPE_N(TYPE, 1)
@@ -146,6 +150,7 @@ __CLOVE_EXTERN_C char* __clove_string_csv_escape(const char* string);
 __CLOVE_EXTERN_C void __clove_string_ellipse(const char* string, size_t str_len, size_t pos, char* out, size_t out_size);
 __CLOVE_EXTERN_C void __clove_string_replace_char(char* path, char find, char replace);
 __CLOVE_EXTERN_C void __clove_string_pad_right(char* dest, size_t dest_size, size_t str_target_len);
+__CLOVE_EXTERN_C int  __clove_string_last_indexof(const char* source, char character);
 #pragma endregion // String Decl
 
 #pragma region PRIVATE - String View Decl
@@ -862,13 +867,14 @@ __CLOVE_EXTERN_C void __clove_exec_suite(__clove_suite_t* suite, size_t test_cou
 #include <stdio.h>
 void __clove_utils_empty_funct(void) { }
 
-const char* __clove_get_exec_base_path(void) {
-    return __clove_exec_base_path;
+const char* __clove_utils_get_exec_abs_path(void) {
+    return __clove_exec_abs_path;
 }
 
-const char* __clove_get_exec_path(void) {
-    return __clove_exec_path;
+const char* __clove_utils_get_exec_abs_basepath(void) {
+    return __clove_exec_abs_basepath;
 }
+
 #pragma endregion // Utils Impl
 
 #pragma region PRIVATE - Math Impl
@@ -896,7 +902,16 @@ double __clove_math_decimald(unsigned char precision) {
 #include <string.h>
 #include <stdbool.h>
 #include <stdlib.h>
-char*  __clove_path_concat(const char separator, const char* path1, const char* path2) {
+#include <limits.h>
+#include <sys/stat.h> 
+
+#ifdef _WIN32
+    #define __CLOVE_PATH_MAX_LEN _MAX_PATH
+#else 
+    #define __CLOVE_PATH_MAX_LEN PATH_MAX
+#endif //_WIN32
+
+char*  __clove_path_concat(const char* path1, const char* path2, const char separator) {
     size_t count = __clove_string_length(path1) + 1 + __clove_string_length(path2) + 1;
     char* path = __CLOVE_MEMORY_CALLOC_TYPE_N(char, count);
 
@@ -922,16 +937,20 @@ const char* __clove_path_relative(const char* abs_path, const char* base_path) {
 }
 
 char* __clove_path_rel_to_abs_exec_path(const char* rel_path) {
-    const char* base_path = __clove_get_exec_base_path();
-    char* abs_path = __clove_path_concat(__CLOVE_PATH_SEPARATOR, base_path, rel_path);
+    const char* base_path = __clove_utils_get_exec_abs_basepath();
+    char* abs_path = __clove_path_concat(base_path, rel_path, __CLOVE_PATH_SEPARATOR);
     return abs_path;
 }
 
 bool __clove_path_is_relative(const char* path) {
-    if (__clove_string_startswith(path, "\\")) return false; //windows
-    if (__clove_string_length(path) > 2 && path[1] == ':') return false;    //windows
+    if (__clove_string_startswith(path, "\\")) return false; //windows (match the main unit)
+    if (__clove_string_length(path) > 2 && path[1] == ':') return false;    //windows (contains unit:)
     if (__clove_string_startswith(path, "/")) return false;  //unix or Windows
     return true;
+}
+
+bool __clove_path_is_absolute(const char* path) {
+    return !__clove_path_is_relative(path);
 }
 
 void __clove_path_to_os(char* path) {
@@ -939,25 +958,88 @@ void __clove_path_to_os(char* path) {
     __clove_string_replace_char(path, '\\', __CLOVE_PATH_SEPARATOR);
 }
 
-char* __clove_path_basepath(const char* a_path) {
+char* __clove_path_basepath(const char* path) {    
+    char temp_path[__CLOVE_PATH_MAX_LEN];
+    __clove_string_strcpy(temp_path, sizeof(temp_path), path);
+
+    //Remove last path separator character if any
+    bool last_char_is_win = __clove_string_endswith(path, "\\");
+    bool last_char_is_uni = __clove_string_endswith(path, "/");
+    if (last_char_is_win || last_char_is_uni) {
+        size_t last_index = __clove_string_length(temp_path) - 1;
+        temp_path[last_index] = '\0'; 
+    }
+    
     // Find the last path separator character in the input path.
-    const char* last_char = a_path + __clove_string_length(a_path) - 1;
-    while (last_char > a_path && *last_char != '/' && *last_char != '\\') {
-        --last_char;
-    }
-
+    int last_char_win = __clove_string_last_indexof(temp_path, '\\');
+    int last_char_uni = __clove_string_last_indexof(temp_path, '/'); //or unix or win eventually
+    int last_char_index = last_char_win > last_char_uni ? last_char_win : last_char_uni;
+    
     // If there are no separators in the path, return the current directory path.
-    if (last_char == a_path) {
+    char* result = NULL;
+    if (last_char_index < 0)  { 
         static char dot_path[3] = { '.', __CLOVE_PATH_SEPARATOR, '\0' };
-        return __clove_string_strdup(dot_path);
+        result = __clove_string_strdup(dot_path);
+    } else {
+        // Calculate base path length based on the position of the last path separator.
+        size_t base_length = (size_t)(last_char_index + 1);
+        char* base_path = __CLOVE_MEMORY_CALLOC_TYPE_N(char, base_length);
+        __clove_string_strncpy(base_path, base_length, temp_path, base_length - 1);
+        __clove_path_to_os(base_path);
+        result = base_path;
     }
 
-    // Calculate base path length based on the position of the last path separator.
-    size_t base_length = last_char - a_path;
-    char* base_path = __CLOVE_MEMORY_CALLOC_TYPE_N(char, base_length + 1);
-    __clove_string_strncpy(base_path, base_length + 1, a_path, base_length);
-    __clove_path_to_os(base_path);
-    return base_path;
+    return result;
+}
+
+bool __clove_path_exists(const char* path) {
+    struct stat buffer;
+    return stat(path, &buffer) == 0;   
+}
+
+char* __clove_path_to_absolute(const char* rel_path) {
+    char* result = NULL;
+#if _WIN32
+    result = __CLOVE_MEMORY_MALLOC_TYPE_N(char, _MAX_PATH);
+    //if( _fullpath( full, partialPath, _MAX_PATH ) != NULL )
+    _fullpath(result, rel_path, _MAX_PATH );
+#else
+    result = __CLOVE_MEMORY_MALLOC_TYPE_N(char, PATH_MAX);
+    if (__clove_path_exists(rel_path)) {
+        realpath(rel_path, result); // NULL
+    } else {
+        if (__clove_path_is_absolute(rel_path)) {
+            __clove_string_strcpy(result, PATH_MAX, rel_path);
+        } else { //relative
+            realpath(".", result); //getcwd
+            if (!__clove_string_endswith(result, "/")) {
+                __clove_string_strcat(result, PATH_MAX, "/");
+            }
+            if (__clove_string_startswith(rel_path, "./")) {
+                rel_path = rel_path + 2;
+            }
+            
+            __clove_string_strcat(result, PATH_MAX, rel_path);
+        }       
+    }
+
+/*
+    //case where rel_path not really exists on fs
+    //(in this case only the first subpath of the rel_path is added by realpath)
+    if (!__clove_string_endswith(result, rel_path)) {
+        if (__clove_path_is_absolute(rel_path)) {
+            __clove_string_strcpy(result, PATH_MAX, rel_path);
+        } else { //relative
+            realpath(".", result);
+            if (!__clove_string_endswith(result, "/")) {
+                __clove_string_strcat(result, PATH_MAX, "/");
+            }
+            __clove_string_strcat(result, PATH_MAX, rel_path);
+        }       
+    }
+*/
+#endif 
+    return result;
 }
 #pragma endregion // Path Impl
 
@@ -1043,6 +1125,12 @@ bool __clove_memory_memcpy(void* dest, size_t dest_size, const void* src, size_t
 bool __clove_memory_memset(void* dest, size_t size, unsigned char value) {
     return memset(dest, value, size) != NULL;
 }
+
+void __clove_memory_free(void* source)
+{
+    free(source);
+}
+
 #pragma endregion //Memory Impl
 
 #pragma region PRIVATE - String Impl
@@ -1340,6 +1428,13 @@ void __clove_string_pad_right(char* dest, size_t dest_size, size_t str_target_le
     __clove_memory_memset(pad_beg , pad_len, '.');
     *pad_end = '\0';
 }
+
+int __clove_string_last_indexof(const char* source, char character) {
+    const char* char_ptr = strrchr(source, character);
+    if (char_ptr == NULL) return -1;
+    return (int)(char_ptr - source);
+}
+
 #pragma endregion //String Impl
 
 #pragma region PRIVATE - String View Impl
@@ -1545,7 +1640,7 @@ size_t __clove_stack_pop(__clove_stack_t* stack) {
 
 void __clove_stack_free(__clove_stack_t* stack) {
     if (!stack) return;
-    free(stack->items);
+    __clove_memory_free(stack->items);
     stack->items = NULL;
     stack->capacity = 0;
     stack->count = 0;
@@ -1651,12 +1746,12 @@ void __clove_vector_free(__clove_vector_t* vector) {
     }
 
     if (vector->items) {
-        free(vector->items);
+        __clove_memory_free(vector->items);
         vector->items = NULL;
     }
 
     if (vector->swap_temp) {
-        free(vector->swap_temp);
+        __clove_memory_free(vector->swap_temp);
         vector->swap_temp = NULL;
     }
     vector->capacity = 0;
@@ -1794,18 +1889,18 @@ void __clove_map_free(__clove_map_t* map) {
         while(current) {
             __clove_map_node_t* next = current->next;
 
-            free(current->key);
+            __clove_memory_free(current->key);
             if (map->item_dtor) {
                 //if dtor set, means map become owner of the item (and its memory)
                 map->item_dtor(current->value);
-                free(current->value);
+                __clove_memory_free(current->value);
             }
-            free(current);
+            __clove_memory_free(current);
 
             current = next;
         }
     }
-    free(map->hashmap);
+    __clove_memory_free(map->hashmap);
     map->hashmap = NULL;
     map->hashmap_size = 0;
     map->count = 0;
@@ -2073,7 +2168,7 @@ __clove_cmdline_errno_t __clove_cmdline_handle_run_tests(__clove_cmdline_t* cmd)
     stream->free(stream);
     __clove_vector_free(&includes);
     __clove_vector_free(&excludes);
-    free(base_path_fixed);
+    __clove_memory_free(base_path_fixed);
 
     //Result
     if (run_result == 1) return __CLOVE_CMD_ERRNO_GENERIC;
@@ -2158,7 +2253,7 @@ __clove_cmdline_errno_t __clove_cmdline_handle_list_tests(__clove_cmdline_t* cmd
     report->free(report);
     stream->free(stream);
 
-    free(base_path_os);
+    __clove_memory_free(base_path_os);
     __clove_vector_free(&context.suites);
     __clove_vector_free((__clove_vector_t*)context.includes);
     __clove_vector_free((__clove_vector_t*)context.excludes);
@@ -2209,12 +2304,12 @@ void __clove_vector_test_ctor(void* test) {
 
 void __clove_vector_test_dtor(void* test_ptr) {
     __clove_test_t* test = (__clove_test_t*)test_ptr;
-    free(test->name);
+    __clove_memory_free(test->name);
 
     //See CLOVE_STRING_EQ and CLOVE_STRING_NE where string allocation happens
     if (test->result == __CLOVE_TEST_RESULT_FAILED && test->issue.data_type == __CLOVE_GENERIC_STRING) {
-        free(test->issue.expected._string);
-        free(test->issue.actual._string);
+        __clove_memory_free(test->issue.expected._string);
+        __clove_memory_free(test->issue.actual._string);
     }
 }
 #pragma endregion
@@ -2243,7 +2338,7 @@ void __clove_vector_suite_ctor(void* suite_ptr) {
 
 void __clove_vector_suite_dtor(void* suite_ptr) {
     __clove_suite_t* suite = (__clove_suite_t*)suite_ptr;
-    free(suite->name);
+    __clove_memory_free(suite->name);
     __clove_vector_free(&suite->tests);
 }
 #pragma endregion // Suite Impl
@@ -2448,7 +2543,7 @@ bool __clove_stream_console_has_ansi_support(__clove_stream_t* stream) {
 
 
 void __clove_stream_console_free(__clove_stream_t* stream) {
-    free(stream);
+    __clove_memory_free(stream);
 }
 
 __clove_stream_file_t* __clove_stream_file_new(const char* file_path) {
@@ -2490,8 +2585,8 @@ bool __clove_stream_file_has_ansi_support(struct __clove_stream_t* _this) {
 void __clove_stream_file_free(__clove_stream_t* stream) {
     __clove_stream_file_t* _this = (__clove_stream_file_t*)stream;
     _this->file = NULL;
-    free((char*)_this->file_path);
-    free(_this);
+    __clove_memory_free((char*)_this->file_path);
+    __clove_memory_free(_this);
 }
 
 //In Memory Stream
@@ -2538,7 +2633,7 @@ bool __clove_stream_memory_has_ansi_support(__clove_stream_t* stream) {
 
 void __clove_stream_memory_free(__clove_stream_t* stream) {
     __clove_vector_free(&((__clove_stream_memory_t*)stream)->lines);
-    free(stream);
+    __clove_memory_free(stream);
 }
 
 char* __clove_stream_memory_get_line(__clove_stream_memory_t* mem_stream, size_t index) {
@@ -2623,7 +2718,7 @@ __clove_report_pretty_t* __clove_report_run_tests_pretty_new(__clove_stream_t* s
 }
 
 void __clove_report_pretty_free(__clove_report_t* report) {
-    free(report);
+    __clove_memory_free(report);
 }
 
 void __clove_report_pretty_start(__clove_report_t* _this, __clove_vector_t* suites, size_t test_count) {
@@ -2846,8 +2941,8 @@ void __clove_report_pretty_end_test(__clove_report_t* _this, __clove_suite_t* su
                         char* exp_escaped = __clove_string_escape(exp);
                         char* act_escaped = __clove_string_escape(act);
                         __clove_string_sprintf(msg, sizeof(msg), "%sexpected \"%s\" but was \"%s\"", non, exp_escaped, act_escaped);
-                        free(exp_escaped);
-                        free(act_escaped);
+                        __clove_memory_free(exp_escaped);
+                        __clove_memory_free(act_escaped);
                     }
                     else {
                         char exp_short[16];
@@ -2857,8 +2952,8 @@ void __clove_report_pretty_end_test(__clove_report_t* _this, __clove_suite_t* su
                         char* exp_escaped = __clove_string_escape(exp_short);
                         char* act_escaped = __clove_string_escape(act_short);
                         __clove_string_sprintf(msg, sizeof(msg), "%sexpected [%zu]\"%s\" but was [%zu]\"%s\"", non, exp_len, exp_escaped, act_len, act_escaped);
-                        free(exp_escaped);
-                        free(act_escaped);
+                        __clove_memory_free(exp_escaped);
+                        __clove_memory_free(act_escaped);
                     }
                 }
                 __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_PTR) {
@@ -2941,7 +3036,7 @@ __clove_report_run_tests_csv_t* __clove_report_run_tests_csv_new(__clove_stream_
 }
 
 void __clove_report_run_tests_csv_free(__clove_report_t* report) {
-    free(report);
+    __clove_memory_free(report);
 }
 
 void __clove_report_run_tests_csv_start(__clove_report_t* _this, __clove_vector_t* suites, size_t test_count) {
@@ -3052,7 +3147,7 @@ void __clove_report_run_tests_csv_print_data(__clove_report_run_tests_csv_t* ins
             __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_STRING) {
                 char* escaped = __clove_string_csv_escape(data->_string);
                 instance->stream->writef(instance->stream, "%s", escaped);
-                free(escaped);
+                __clove_memory_free(escaped);
             }
             __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_PTR)
                 instance->stream->writef(instance->stream, "%p", data->_ptr);
@@ -3097,7 +3192,7 @@ __clove_report_json_t* __clove_report_run_tests_json_new(__clove_stream_t* strea
 void __clove_report_json_free(__clove_report_t* report) {
     __clove_report_json_t* instance = (__clove_report_json_t*)report;
     __clove_vector_free(&instance->cached_suites);
-    free(report);
+    __clove_memory_free(report);
 }
 
 void __clove_report_json_start(__clove_report_t* _this, __clove_vector_t* suites, size_t test_count) {
@@ -3215,7 +3310,7 @@ void __clove_report_json_print_data(__clove_report_json_t* instance, __clove_tes
             __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_STRING) {
                 char* escaped = __clove_string_escape(data->_string);
                 instance->stream->writef(instance->stream, "%s", escaped);
-                free(escaped);
+                __clove_memory_free(escaped);
             }
             __CLOVE_SWITCH_CASE(__CLOVE_GENERIC_PTR)
                 instance->stream->writef(instance->stream, "%p", data->_ptr);
@@ -3267,7 +3362,7 @@ void __clove_report_json_end_test(__clove_report_t* _this, __clove_suite_t* suit
         instance->stream->writef(instance->stream, "\t\t\t\t\"tests\" : {\n");
         instance->suite_tests_counter = 0;
    
-        free(escaped_file);
+        __clove_memory_free(escaped_file);
         instance->is_first_suite_test = false;
     }
 
@@ -3332,7 +3427,7 @@ __clove_report_list_tests_pretty_t* __clove_report_list_tests_pretty_new(__clove
     return _this;
 }
 void __clove_report_list_tests_pretty_free(__clove_report_list_tests_t* _this) {
-    free((__clove_report_list_tests_pretty_t*)_this);
+    __clove_memory_free((__clove_report_list_tests_pretty_t*)_this);
 }
 void __clove_report_list_tests_pretty_begin(__clove_report_list_tests_t* _this, size_t suite_count, size_t test_count) {
     __clove_report_list_tests_pretty_t* pretty = (__clove_report_list_tests_pretty_t*)_this;
@@ -3399,7 +3494,7 @@ __clove_report_list_tests_csv_t* __clove_report_list_tests_csv_new(__clove_strea
     return _this;
 }
 void __clove_report_list_tests_csv_free(__clove_report_list_tests_t* _this) {
-    free((__clove_report_list_tests_csv_t*)_this);
+    __clove_memory_free((__clove_report_list_tests_csv_t*)_this);
 }
 void __clove_report_list_tests_csv_begin(__clove_report_list_tests_t* _this, size_t suite_count, size_t test_count) {
     __CLOVE_UNUSED_VAR(test_count);
@@ -3460,7 +3555,7 @@ __clove_report_list_tests_json_t* __clove_report_list_tests_json_new(__clove_str
     return _this;
 }
 void __clove_report_list_tests_json_free(__clove_report_list_tests_t* _this) {
-    free((__clove_report_list_tests_json_t*)_this);
+    __clove_memory_free((__clove_report_list_tests_json_t*)_this);
 }
 
 void __clove_report_list_tests_json_begin(__clove_report_list_tests_t* _this, size_t suite_count, size_t test_count) {
@@ -3516,7 +3611,7 @@ void __clove_report_list_tests_json_end_test(__clove_report_list_tests_t* _this,
         json->stream->writef(json->stream, "\t\t\t\t\"file\" : \"%s\",\n", escaped_file);
         json->stream->writef(json->stream, "\t\t\t\t\"tests\" : [\n");
 
-        free(escaped_file);
+        __clove_memory_free(escaped_file);
         json->is_suite_first_test = false;  
     }
     json->stream->writef(json->stream, "\t\t\t\t\t{\n");
@@ -3742,26 +3837,29 @@ int __clove_symbols_for_each_function_by_prefix(__clove_symbols_context_t* conte
 #include <mach-o/loader.h>
 #include <mach-o/swap.h>
 #include <mach-o/dyld.h>
-
 typedef struct __clove_symbols_macos_module_t {
     void* handle;
     size_t size; //mmap handle size;
     intptr_t address; //module base address 
 } __clove_symbols_macos_module_t;
 
-intptr_t __clove_symbols_macos_image_slide(const char* path)
-{
+
+bool __clove_symbols_macos_image_slide(const char* abs_path, intptr_t* out_address)
+{   
+    //NOTE: dyld image names are in absolute path. So tu properly compare, need to pass an abs_path to this function.
     for (uint32_t i = 0; i < _dyld_image_count(); i++)
     {
-        if (strcmp(_dyld_get_image_name(i), path) == 0)
-            return _dyld_get_image_vmaddr_slide(i);
+        if (strcmp(_dyld_get_image_name(i), abs_path) == 0) {
+            *out_address = _dyld_get_image_vmaddr_slide(i);
+            return true;
+        }
     }
-    return 0;
+    return false;
 }
 
-int __clove_symbols_macos_open_module_handle(const char* module_path, __clove_symbols_macos_module_t* out_module) {
+int __clove_symbols_macos_open_module_handle(const char* module_abs_path, __clove_symbols_macos_module_t* out_module) {
     int fd;
-    if ((fd = open(module_path, O_RDONLY)) < 0) {
+    if ((fd = open(module_abs_path, O_RDONLY)) < 0) {
         return 1;
     }
 
@@ -3780,7 +3878,12 @@ int __clove_symbols_macos_open_module_handle(const char* module_path, __clove_sy
 
     out_module->handle = map;
     out_module->size = st.st_size;
-    out_module->address = __clove_symbols_macos_image_slide(module_path);
+    bool found = __clove_symbols_macos_image_slide(module_abs_path, &out_module->address);
+    if (!found) {
+        //TODO: add logging api like __clove_log_erro(frmt, args)
+        printf("[ERRO] cannot find image slide for: %s", module_abs_path);
+        return 4;
+    }
     return 0;
 }
 
@@ -3801,7 +3904,7 @@ struct load_command* __clove_symbols_macos_find_command(struct mach_header_64* h
 }
 
 int __clove_symbols_for_each_function_by_prefix(__clove_symbols_context_t* context, __clove_symbols_function_action action) {
-    const char* module_path = __clove_exec_path;
+    const char* module_path = __clove_utils_get_exec_abs_path();
 
     __clove_symbols_macos_module_t module;
     if (__clove_symbols_macos_open_module_handle(module_path, &module) != 0) { return 1; };
@@ -3964,7 +4067,7 @@ int __clove_symbols_funct_name_comparator(void* f1, void* f2) {
 }
 
 int __clove_symbols_for_each_function_by_prefix(__clove_symbols_context_t* context, __clove_symbols_function_action action) {
-    const char* module_path = __clove_exec_path;
+    const char* module_path = __clove_utils_get_exec_abs_path();
 
     __clove_symbols_lixux_module_t module;
     if (__clove_symbols_lixux_open_module_handle(module_path, &module) != 0) { return 1; }
@@ -4044,8 +4147,8 @@ int __clove_symbols_for_each_function_by_prefix(__clove_symbols_context_t* conte
 
 #pragma region PRIVATE - Run Impl
 #define __CLOVE_RUNNER_AUTO() \
-char* __clove_exec_path;\
-char* __clove_exec_base_path;\
+char* __clove_exec_abs_path;\
+char* __clove_exec_abs_basepath;\
 __CLOVE_ASSERT_CHECK_E_DECL() \
 __CLOVE_TEST_RESULT_E_DECL() \
 __CLOVE_GENERIC_TYPE_E_DECL() \
@@ -4054,8 +4157,8 @@ int main(int argc, char* argv[]) {\
 }
 
 int __clove_runner_auto(int argc, char* argv[]) {
-    __clove_exec_path = argv[0];
-    __clove_exec_base_path = __clove_path_basepath(argv[0]);
+    __clove_exec_abs_path = __clove_path_to_absolute(argv[0]);
+    __clove_exec_abs_basepath = __clove_path_basepath(__clove_exec_abs_path);
 
     //argc = 5;
     //const char* argv2[] = {"exec", "-i", "*.ActShortThanExpForthCharDiff", "-r", "pretty"};
@@ -4083,7 +4186,8 @@ int __clove_runner_auto(int argc, char* argv[]) {
 
     __clove_vector_free(&cmd_handlers);
     __clove_cmdline_free(&cmdline);
-    free(__clove_exec_base_path);
+    __clove_memory_free(__clove_exec_abs_path);
+    __clove_memory_free(__clove_exec_abs_basepath);
     return cmd_result;
 }
 
@@ -4175,13 +4279,13 @@ void __clove_exec_suite(__clove_suite_t* suite, size_t test_counter, size_t* pas
 #pragma region PUBLIC
 #pragma region PUBLIC - UTILS
 /*
- * Provide the executable path
+ * Provide the executable absolute path
  */
-#define CLOVE_EXEC_PATH() __clove_get_exec_path()
+#define CLOVE_EXEC_PATH() __clove_utils_get_exec_abs_path()
  /*
-  * Provide the executable base path
+  * Provide the executable absolute base path
   */
-#define CLOVE_EXEC_BASE_PATH() __clove_get_exec_base_path()
+#define CLOVE_EXEC_BASE_PATH() __clove_utils_get_exec_abs_basepath()
 #pragma endregion //UTILS
 
 #pragma region PUBLIC - ASSERTS

@@ -1,7 +1,6 @@
 #define CLOVE_SUITE_NAME UNIT_ReportJsonFullTest
 #include "clove-unit.h"
 #include "utils/utils.h"
-#include "utils/domain_utils.h"
 
 static __clove_report_json_t* report;
 static __clove_stream_file_t* stream;
@@ -29,7 +28,7 @@ CLOVE_TEST(EmptyReport) {
     base->end(base, 0, 0, 0);
 
     const char* file_path = stream->file_path;
-    const char* actual = read_file(file_path);
+    const char* actual = utils_file_read(file_path);
 
     const char* expected =
     "{\n"
@@ -64,7 +63,7 @@ CLOVE_TEST(ReportOneSuiteWithOnePassedTest) {
     base->end(base, 1, 0, 0);
 
     const char* file_path = stream->file_path;
-    const char* actual = read_file(file_path);
+    const char* actual = utils_file_read(file_path);
 
     const char* expected =
     "{\n"
@@ -107,7 +106,7 @@ CLOVE_TEST(ReportOneSuiteWithOneSkippedTest) {
     base->end(base, 0, 1, 0);
 
     const char* file_path = stream->file_path;
-    const char* actual = read_file(file_path);
+    const char* actual = utils_file_read(file_path);
 
     const char* expected =
     "{\n"
@@ -154,7 +153,7 @@ CLOVE_TEST(ReportOneSuiteWithTwoTests) {
     base->end(base, 1, 0, 1);
 
     const char* file_path = stream->file_path;
-    const char* actual = read_file(file_path);
+    const char* actual = utils_file_read(file_path);
 
     const char* expected = 
     "{\n"
@@ -214,7 +213,7 @@ CLOVE_TEST(ReportTwoSuitesWithOnePassedTestEach) {
     base->end(base, 2, 0, 0);
 
     const char* file_path = stream->file_path;
-    const char* actual = read_file(file_path);
+    const char* actual = utils_file_read(file_path);
 
     const char* expected =
     "{\n"
@@ -275,7 +274,7 @@ CLOVE_TEST(ReportOneSuiteWithOneFailAssertTest) {
     base->end(base, 0, 0, 1);
 
     const char* file_path = stream->file_path;
-    const char* actual = read_file(file_path);
+    const char* actual = utils_file_read(file_path);
 
     const char* expected =
     "{\n"
@@ -332,7 +331,7 @@ CLOVE_TEST(ReportOneSuiteWithOneFailSizetAssertTest) {
     base->end(base, 0, 0, 1);
 
     const char* file_path = stream->file_path;
-    const char* actual = read_file(file_path);
+    const char* actual = utils_file_read(file_path);
 
     const char* expected =
     "{\n"

@@ -27,7 +27,7 @@ CLOVE_TEST(StringEscaping) {
     const char* expected = "\\\"Hello\\nWorld\\\"";
     char* actual = __clove_string_escape(to_escape);
     CLOVE_STRING_EQ(expected, actual);
-    free(actual);
+    __clove_memory_free(actual);
 }
 
 CLOVE_TEST(StringStartsWith) {
@@ -47,4 +47,11 @@ CLOVE_TEST(StringIsEqualsAny) {
     CLOVE_IS_FALSE(__clove_string_equal_any("mystring", 1, "one"));
     CLOVE_IS_TRUE(__clove_string_equal_any("mystring", 3, "one", "two", "mystring"));
     CLOVE_IS_FALSE(__clove_string_equal_any("mystring", 2, "one", "two"));
+}
+
+CLOVE_TEST(StringLastIndexOf) {
+    CLOVE_INT_EQ(-1, __clove_string_last_indexof("hello_o", 'a'));
+    CLOVE_INT_EQ( 6, __clove_string_last_indexof("hello_o", 'o'));
+    CLOVE_INT_EQ( 3, __clove_string_last_indexof("hello_o", 'l'));
+    CLOVE_INT_EQ( 1, __clove_string_last_indexof("hello_o", 'e'));
 }
