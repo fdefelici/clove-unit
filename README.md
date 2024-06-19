@@ -19,7 +19,7 @@ Consider also supporting `CLove-Unit` development becoming a [**sponsor**](https
 
 * [Features](#features)
 * [IDE Extensions](#ide-extensions)
-* [Supported Package Managers](#supported-package-managers)
+* [How to Integrate](#how-to-integrate)
 * [How It Works](#how-it-works)
 * [Getting Started](#getting-started)
 * [Programming API](#programming-api)
@@ -48,11 +48,65 @@ For those who prefer a UI oriented test executor, `CLove-Unit` is supported on t
 
 Have a look and enjoy ;-)
 
-## Supported Package Managers
+## How to Integrate
 
-`CLove-Unit` is also available on the following Package Managers:
+`CLove-Unit` can be imported in your project in the following ways:
+- Sourcing the header file
+- Using a Package Manager
+- Using CMake 
 
-* [Conan](https://conan.io/center/recipes/clove-unit)
+### Sourcing the Header file
+Being an header-only library, you can just download [clove-unit.h](./clove-unit.h) file and include it in your project.
+
+```c
+#include "clove-unit.h"
+```
+
+Then remember to properly configure your compiler include paths.
+
+### Using a Package Manager
+`CLove-Unit` is currently available on the following Package Managers:
+
+* [Conan](https://conan.io): read [here](https://conan.io/center/recipes/clove-unit) for details on how to import it.
+
+### Using CMake 
+In case you still need dependency management, but you want to avoid Package Manager configuration complexity, you can use standard mechansim provided by `CMake` such as [FetchContent](https://cmake.org/cmake/help/latest/module/FetchContent.html) and [add_subdirectory](https://cmake.org/cmake/help/latest/command/add_subdirectory.html).
+
+> CMake library is named `clove-unit`
+
+Here a few examples:
+
+* **FetchContent**
+
+  ```cmake
+  cmake_minimum_required(VERSION 3.18)
+  project(TestProject C)
+
+  Include(FetchContent)
+  FetchContent_Declare(
+    clove-unit
+    GIT_REPOSITORY https://github.com/fdefelici/clove-unit.git
+    GIT_TAG master       # or eventually any branch, tag or commit sha
+  )
+  FetchContent_MakeAvailable(clove-unit)
+
+  add_executable(tests <YOUR_TEST_FILES>)
+  target_link_libraries(tests clove-unit)
+  ```
+
+* [add_subdirectory](https://cmake.org/cmake/help/latest/command/add_subdirectory.html)
+
+  First download `CLove-Unit` repository and then point properly to it like this:
+
+  ```cmake
+  cmake_minimum_required(VERSION 3.18)
+  project(TestProject C)
+
+  add_subdirectory(<PATH_TO_CLOVE_UNIT_REPOSITORY>)  
+
+  add_executable(tests <YOUR_TEST_FILES>)
+  target_link_libraries(tests clove-unit)
+  ```
 
 ## How It Works
 
