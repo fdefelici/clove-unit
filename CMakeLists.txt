@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 3.18)
 project(CLoveUnit LANGUAGES C)
 include(CTest)
 
-add_library(CloveUnit INTERFACE)
-target_include_directories(CloveUnit INTERFACE "${CMAKE_CURRENT_LIST_DIR}")
+add_library(clove-unit INTERFACE)
+target_include_directories(clove-unit INTERFACE "${CMAKE_CURRENT_LIST_DIR}")
 
 #[[
 add_subdirectory(tests/functs)
