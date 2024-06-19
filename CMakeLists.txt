@@ -4,6 +4,7 @@ include(CTest)
 
 add_library(clove-unit INTERFACE)
 target_include_directories(clove-unit INTERFACE "${CMAKE_CURRENT_LIST_DIR}")
+target_compile_features(clove-unit INTERFACE c_std_11)
 
 #[[
 add_subdirectory(tests/functs)
