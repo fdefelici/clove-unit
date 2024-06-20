@@ -3,11 +3,8 @@ cmake_minimum_required(VERSION 3.18)
 set(CLOVE_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR})
 list(INSERT CMAKE_MODULE_PATH 0 ${CLOVE_SOURCE_DIR}/cmake/modules)
 
-# Extract CLOVE_VERSION from header file
-set(CLOVE_VERSION_REGEX "#define __CLOVE_VERSION_.*[ \t]+(.+)")
-file(STRINGS "${CLOVE_SOURCE_DIR}/clove-unit.h" CLOVE_VERSION REGEX ${CLOVE_VERSION_REGEX})
-list(TRANSFORM CLOVE_VERSION REPLACE ${CLOVE_VERSION_REGEX} "\\1")
-string(JOIN "." CLOVE_VERSION ${CLOVE_VERSION})
+include(CloveModules)
+clove_get_version(CLOVE_VERSION)
 
 # Configure Project
 project(
@@ -18,12 +15,11 @@ project(
   LANGUAGES C
 )
 
-include(JoinPaths)
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
 # Eventually CMAKE_INSTALL_PREFIX can be overridden by the user to change base installation path for the package
-join_paths(CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}" clove-unit ${PROJECT_VERSION})
+clove_join_paths(CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}" clove-unit ${PROJECT_VERSION})
 
 # Library Target definition and configuration
 add_library(clove-unit INTERFACE)
