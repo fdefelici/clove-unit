@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.18)
 set(CLOVE_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR})
 list(INSERT CMAKE_MODULE_PATH 0 ${CLOVE_SOURCE_DIR}/cmake/modules)
 
-include(CloveModules)
+include(CLoveModules)
 clove_get_version(CLOVE_VERSION)
 
 # Configure Project
