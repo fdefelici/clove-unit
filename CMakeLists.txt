@@ -22,6 +22,7 @@ include(JoinPaths)
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
+# Eventually CMAKE_INSTALL_PREFIX can be overridden by the user to change base installation path for the package
 join_paths(CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}" clove-unit ${PROJECT_VERSION})
 
 # Library Target definition and configuration
@@ -83,6 +84,11 @@ export(PACKAGE clove-unit)
 ]] 
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
   include(CTest)
+
+  option(CLOVE_CMAKE__UC_BUILD                  "enable build use case" OFF)
+  option(CLOVE_CMAKE__UC_SANITY                 "enable sanity check use case" OFF)
+  option(CLOVE_CMAKE__UC_PERFS                  "enable performance test use case" OFF)
+  option(CLOVE_CMAKE__CPP_STRICT_WARN_AS_ERROR  "threat compilation warning as error" OFF)
 
   if (CLOVE_CMAKE__UC_BUILD)
     add_subdirectory(tests/functs)
