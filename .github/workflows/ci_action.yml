@@ -22,7 +22,7 @@ jobs:
       BUILD_DIR: ${{ github.workspace }}\build
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: List Workspace
         run:  dir /a ${{ github.workspace }}
       - name: Compile
@@ -53,7 +53,7 @@ jobs:
       BUILD_DIR: ${{ github.workspace }}/build
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: List Workspace
         run:  ls -la ${{ github.workspace }}
       - name: Compile
@@ -93,7 +93,7 @@ jobs:
         BUILD_DIR: ${{ github.workspace }}/build
       steps:
         - name: Checkout
-          uses: actions/checkout@v3
+          uses: actions/checkout@v4
         - name: List Workspace
           run:  ls -la ${{ github.workspace }}
         - name: Install Clang (if needed)
@@ -145,7 +145,7 @@ jobs:
       BUILD_DIR: ${{ github.workspace }}/build
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: List Workspace
         run:  ls -la ${{ github.workspace }}
       - name: Compile
