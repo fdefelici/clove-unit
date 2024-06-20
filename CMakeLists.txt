@@ -79,6 +79,7 @@ export(PACKAGE clove-unit)
 #[[ 
   In case this is the root project add dev targets (Development mode).
   To avoid targets pollution when using FetchContent were only the target library is required
+  Note: PROJECT_IS_TOP_LEVEL cmake variable exists in version 3.21+
 ]] 
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
   include(CTest)
