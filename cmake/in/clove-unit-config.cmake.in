@@ -1,0 +1,5 @@
+@PACKAGE_INIT@
+
+set(CLOVE_VERSION "@PROJECT_VERSION@")
+include("${CMAKE_CURRENT_LIST_DIR}/clove-unit-targets.cmake")
+check_required_components("@PROJECT_NAME@")

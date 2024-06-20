@@ -1,27 +1,85 @@
 cmake_minimum_required(VERSION 3.18)
-project(CLoveUnit LANGUAGES C)
 
+set(CLOVE_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR})
+list(INSERT CMAKE_MODULE_PATH 0 ${CLOVE_SOURCE_DIR}/cmake/modules)
+
+# Extract CLOVE_VERSION from header file
+set(CLOVE_VERSION_REGEX "#define __CLOVE_VERSION_.*[ \t]+(.+)")
+file(STRINGS "${CLOVE_SOURCE_DIR}/clove-unit.h" CLOVE_VERSION REGEX ${CLOVE_VERSION_REGEX})
+list(TRANSFORM CLOVE_VERSION REPLACE ${CLOVE_VERSION_REGEX} "\\1")
+string(JOIN "." CLOVE_VERSION ${CLOVE_VERSION})
+
+# Configure Project
+project(
+  CLoveUnit 
+  VERSION ${CLOVE_VERSION}
+  DESCRIPTION "Single-header Unit Testing framework for C (interoperable with C++) with test autodiscovery feature"
+  HOMEPAGE_URL "https://github.com/fdefelici/clove-unit"
+  LANGUAGES C
+)
+
+include(JoinPaths)
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+
+join_paths(CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}" clove-unit ${PROJECT_VERSION})
+
+# Library Target definition and configuration
 add_library(clove-unit INTERFACE)
-target_include_directories(clove-unit INTERFACE "${CMAKE_CURRENT_LIST_DIR}")
+add_library(clove-unit::clove-unit ALIAS clove-unit)
+
+target_include_directories(
+  clove-unit INTERFACE 
+  $<BUILD_INTERFACE:${CLOVE_SOURCE_DIR}>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
+
 target_compile_features(clove-unit INTERFACE c_std_11)
 
-#[[
-add_subdirectory(tests/functs)
-if (DEFINED CLOVE_CMAKE__CI_TRIGGERED)
-    add_subdirectory(tests/stricts/clove-c)
-    add_subdirectory(tests/stricts/clove-cpp)
-    add_subdirectory(examples/clove101)
-    add_subdirectory(examples/clovepp)
-endif()
+# Install command stuffs for enabling find_package usage
+install(
+    TARGETS clove-unit 
+    EXPORT clove-unit-targets
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
 
-if (DEFINED CLOVE_CMAKE__ENABLE_PERFS)
-add_subdirectory(tests/perfs)
-endif()
-]]
+write_basic_package_version_file(
+  clove-unit-config-version.cmake
+  VERSION ${PROJECT_VERSION}
+  COMPATIBILITY AnyNewerVersion
+)
+
+configure_package_config_file(
+    ${CLOVE_SOURCE_DIR}/cmake/in/clove-unit-config.cmake.in
+    clove-unit-config.cmake
+    INSTALL_DESTINATION ${CMAKE_INSTALL_PREFIX}/cmake
+)
+
+install(
+    FILES ${CLOVE_SOURCE_DIR}/clove-unit.h
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
+install(
+    FILES
+        ${PROJECT_BINARY_DIR}/clove-unit-config.cmake
+        ${PROJECT_BINARY_DIR}/clove-unit-config-version.cmake
+    DESTINATION ${CMAKE_INSTALL_PREFIX}/cmake
+)
+
+install(
+    EXPORT clove-unit-targets
+    #NAMESPACE clove-unit::
+    DESTINATION ${CMAKE_INSTALL_PREFIX}/cmake
+)
+
+export(PACKAGE clove-unit)
+
 
 #[[ 
   In case this is the root project add dev targets (Development mode).
   To avoid targets pollution when using FetchContent were only the target library is required
+  Note: PROJECT_IS_TOP_LEVEL cmake variable exists in version 3.21+
 ]] 
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
   include(CTest)

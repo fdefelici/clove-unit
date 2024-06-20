@@ -70,9 +70,9 @@ Then remember to properly configure your compiler include paths.
 * [Conan](https://conan.io): read [here](https://conan.io/center/recipes/clove-unit) for details on how to import it.
 
 ### Using CMake 
-In case you still need dependency management, but you want to avoid Package Manager configuration complexity, you can use standard mechansim provided by `CMake` such as [FetchContent](https://cmake.org/cmake/help/latest/module/FetchContent.html) and [add_subdirectory](https://cmake.org/cmake/help/latest/command/add_subdirectory.html).
+In case you still need dependency management, but you want to avoid Package Manager configuration complexity, you can use standard mechansim provided by `CMake` such as [FetchContent](https://cmake.org/cmake/help/latest/module/FetchContent.html), [add_subdirectory](https://cmake.org/cmake/help/latest/command/add_subdirectory.html) and [find_package](https://cmake.org/cmake/help/latest/command/find_package.html).
 
-> CMake library is named `clove-unit`
+> NOTE: CMake library is named `clove-unit`
 
 Here a few examples:
 
@@ -94,7 +94,7 @@ Here a few examples:
   target_link_libraries(tests clove-unit)
   ```
 
-* [add_subdirectory](https://cmake.org/cmake/help/latest/command/add_subdirectory.html)
+* **add_subdirectory** 
 
   First download `CLove-Unit` repository and then point properly to it like this:
 
@@ -103,6 +103,29 @@ Here a few examples:
   project(TestProject C)
 
   add_subdirectory(<PATH_TO_CLOVE_UNIT_REPOSITORY>)  
+
+  add_executable(tests <YOUR_TEST_FILES>)
+  target_link_libraries(tests clove-unit)
+  ```
+
+* **find_package** 
+
+  First download `CLove-Unit` repository and then run cmake install command on it. 
+
+  Package will be installed in at following path: `<CMAKE_INSTALL_PREFIX/clove-unit/<CLOVE_VERSION>`
+  
+  Eventually you may want to customize [CMAKE_INSTALL_PREFIX](https://cmake.org/cmake/help/latest/variable/CMAKE_INSTALL_PREFIX.html) variable to override cmake default installation path for packages.
+
+  
+  Then use the package as follow:
+  ```cmake
+  cmake_minimum_required(VERSION 3.18)
+  project(TestProject C)
+
+  find_package(clove-unit REQUIRED PATHS <INSTALLATION_PATH>)  
+
+  # or more strict
+  # find_package(clove-unit <CLOVE_VERSION> EXACT REQUIRED PATHS <INSTALLATION_PATH>)  
 
   add_executable(tests <YOUR_TEST_FILES>)
   target_link_libraries(tests clove-unit)
