@@ -30,7 +30,7 @@ jobs:
           echo "== CMAKE VERSION =="
           cmake --version
           echo "== CMAKE CONFIGURE =="
-          cmake -B${{env.BUILD_DIR}} -DCLOVE_CMAKE__UC_BUILD=true
+          cmake -B${{env.BUILD_DIR}} -DCLOVE_CMAKE__UC_BUILD=ON
           echo "== CMAKE BUILD =="
           cmake --build ${{env.BUILD_DIR}} --config Release
       - name: List Build
@@ -61,7 +61,7 @@ jobs:
           echo "== CMAKE VERSION =="
           cmake --version
           echo "== CMAKE CONFIGURE =="
-          cmake -B${{env.BUILD_DIR}} -DCLOVE_CMAKE__UC_BUILD=true
+          cmake -B${{env.BUILD_DIR}} -DCLOVE_CMAKE__UC_BUILD=ON
           echo "== CMAKE BUILD =="
           cmake --build ${{env.BUILD_DIR}} --config Release
       - name: List Build
@@ -78,14 +78,14 @@ jobs:
         fail-fast: false
         matrix:
           compiler: 
-            - {c: gcc, cpp: g++, v: 11, strict: false}
-            - {c: gcc, cpp: g++, v: 12, strict: false}
-            - {c: gcc, cpp: g++, v: 13, strict: true}
-            - {c: clang, cpp: clang++, v: 13, strict: true}
-            - {c: clang, cpp: clang++, v: 14, strict: true}
-            - {c: clang, cpp: clang++, v: 15, strict: true}
-            - {c: clang, cpp: clang++, v: 16, strict: true}
-            - {c: clang, cpp: clang++, v: 17, strict: true}
+            - {c: gcc, cpp: g++, v: 11, strict: OFF}
+            - {c: gcc, cpp: g++, v: 12, strict: OFF}
+            - {c: gcc, cpp: g++, v: 13, strict: ON}
+            - {c: clang, cpp: clang++, v: 13, strict: ON}
+            - {c: clang, cpp: clang++, v: 14, strict: ON}
+            - {c: clang, cpp: clang++, v: 15, strict: ON}
+            - {c: clang, cpp: clang++, v: 16, strict: ON}
+            - {c: clang, cpp: clang++, v: 17, strict: ON}
       defaults:
         run:
           shell: bash
@@ -125,7 +125,7 @@ jobs:
             echo "== CMAKE VERSION =="
             cmake --version
             echo "== CMAKE CONFIGURE =="
-            cmake -B${{env.BUILD_DIR}} -DCLOVE_CMAKE__UC_BUILD=true -DCLOVE_CMAKE__CPP_STRICT_WARN_AS_ERROR=${{matrix.compiler.strict}}
+            cmake -B${{env.BUILD_DIR}} -DCLOVE_CMAKE__UC_BUILD=ON -DCLOVE_CMAKE__CPP_STRICT_WARN_AS_ERROR=${{matrix.compiler.strict}}
             echo "== CMAKE BUILD =="
             cmake --build ${{env.BUILD_DIR}} --config Release
         - name: List Build
@@ -153,7 +153,7 @@ jobs:
           echo "== CMAKE VERSION =="
           cmake --version
           echo "== CMAKE CONFIGURE =="
-          cmake -B${{env.BUILD_DIR}} -DCLOVE_CMAKE__UC_SANITY=true
+          cmake -B${{env.BUILD_DIR}} -DCLOVE_CMAKE__UC_SANITY=ON
           echo "== CMAKE BUILD =="
           cmake --build ${{env.BUILD_DIR}} --config Release
       - name: List Build

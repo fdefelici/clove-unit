@@ -112,7 +112,7 @@ Here a few examples:
 
   First download `CLove-Unit` repository and then run cmake install command on it. 
 
-  Package will be installed in at following path: `<CMAKE_INSTALL_PREFIX/clove-unit/<CLOVE_VERSION>`
+  Package will be installed in at following path: `<CMAKE_INSTALL_PREFIX>/clove-unit/<CLOVE_VERSION>`
   
   Eventually you may want to customize [CMAKE_INSTALL_PREFIX](https://cmake.org/cmake/help/latest/variable/CMAKE_INSTALL_PREFIX.html) variable to override cmake default installation path for packages.
 
