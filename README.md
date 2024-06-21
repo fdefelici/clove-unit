@@ -156,7 +156,7 @@ Getting started with CLove-Unit is simple. Just follow these steps:
 
 ### 1. Include CLove-Unit
 
-Include the [clove-unit.h](./clove-unit.h) header in your project.
+Include the [clove-unit.h](./clove-unit.h) header in your project using one of the methods described in [How to Integrate](#how-to-integrate) section.
 
 ### 2. Define a Suite
 
