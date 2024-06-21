@@ -22,7 +22,7 @@ jobs:
       BUILD_DIR: ${{ github.workspace }}\build
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: List Workspace
         run:  dir /a ${{ github.workspace }}
       - name: Compile
@@ -30,7 +30,7 @@ jobs:
           echo "== CMAKE VERSION =="
           cmake --version
           echo "== CMAKE CONFIGURE =="
-          cmake -B${{env.BUILD_DIR}} -DCLOVE_CMAKE__UC_BUILD=true
+          cmake -B${{env.BUILD_DIR}} -DCLOVE_CMAKE__UC_BUILD=ON
           echo "== CMAKE BUILD =="
           cmake --build ${{env.BUILD_DIR}} --config Release
       - name: List Build
@@ -53,7 +53,7 @@ jobs:
       BUILD_DIR: ${{ github.workspace }}/build
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: List Workspace
         run:  ls -la ${{ github.workspace }}
       - name: Compile
@@ -61,7 +61,7 @@ jobs:
           echo "== CMAKE VERSION =="
           cmake --version
           echo "== CMAKE CONFIGURE =="
-          cmake -B${{env.BUILD_DIR}} -DCLOVE_CMAKE__UC_BUILD=true
+          cmake -B${{env.BUILD_DIR}} -DCLOVE_CMAKE__UC_BUILD=ON
           echo "== CMAKE BUILD =="
           cmake --build ${{env.BUILD_DIR}} --config Release
       - name: List Build
@@ -73,19 +73,19 @@ jobs:
           cd ${{ github.workspace }}
   build_ubuntu:
       name: Build ubuntu_${{matrix.compiler.c}}-${{matrix.compiler.v}}
-      runs-on: ubuntu-latest
+      runs-on: ubuntu-22.04
       strategy:
         fail-fast: false
         matrix:
           compiler: 
-            - {c: gcc, cpp: g++, v: 11, strict: false}
-            - {c: gcc, cpp: g++, v: 12, strict: false}
-            - {c: gcc, cpp: g++, v: 13, strict: true}
-            - {c: clang, cpp: clang++, v: 13, strict: true}
-            - {c: clang, cpp: clang++, v: 14, strict: true}
-            - {c: clang, cpp: clang++, v: 15, strict: true}
-            - {c: clang, cpp: clang++, v: 16, strict: true}
-            - {c: clang, cpp: clang++, v: 17, strict: true}
+            - {c: gcc, cpp: g++, v: 11, strict: OFF}
+            - {c: gcc, cpp: g++, v: 12, strict: OFF}
+            - {c: gcc, cpp: g++, v: 13, strict: ON}
+            - {c: clang, cpp: clang++, v: 13, strict: ON}
+            - {c: clang, cpp: clang++, v: 14, strict: ON}
+            - {c: clang, cpp: clang++, v: 15, strict: ON}
+            - {c: clang, cpp: clang++, v: 16, strict: ON}
+            - {c: clang, cpp: clang++, v: 17, strict: ON}
       defaults:
         run:
           shell: bash
@@ -93,7 +93,7 @@ jobs:
         BUILD_DIR: ${{ github.workspace }}/build
       steps:
         - name: Checkout
-          uses: actions/checkout@v3
+          uses: actions/checkout@v4
         - name: List Workspace
           run:  ls -la ${{ github.workspace }}
         - name: Install Clang (if needed)
@@ -102,20 +102,30 @@ jobs:
           with:
             version: "${{ matrix.compiler.v }}"
             env: true  # set CC / CXX variable
+        - name: Install GCC (if needed)
+          # Installing GCC-13 due to regression introduced in ubuntu 22.04 image
+          # https://github.com/actions/runner-images/issues/9866
+          if: ${{ matrix.compiler.c == 'gcc' && matrix.compiler.v == 13 }} 
+          run: |
+            sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+            sudo apt-get update -y
+            sudo apt-get install gcc-13
+            sudo apt-get install g++-13
         - name: Set Compiler # only if CC / CXX are not already set from new installation
           run: |
             if [ -z "${CC}" ]; then
               echo "CC=${{matrix.compiler.c}}-${{matrix.compiler.v}}" >> "$GITHUB_ENV"
               echo "CXX=${{matrix.compiler.cpp}}-${{matrix.compiler.v}}" >> "$GITHUB_ENV"
+            else
+              echo CC=$CC
+              echo CXX=$CXX
             fi
-            echo CC=$CC
-            echo CXX=$CXX
         - name: Compile
           run: |
             echo "== CMAKE VERSION =="
             cmake --version
             echo "== CMAKE CONFIGURE =="
-            cmake -B${{env.BUILD_DIR}} -DCLOVE_CMAKE__UC_BUILD=true -DCLOVE_CMAKE__CPP_STRICT_WARN_AS_ERROR=${{matrix.compiler.strict}}
+            cmake -B${{env.BUILD_DIR}} -DCLOVE_CMAKE__UC_BUILD=ON -DCLOVE_CMAKE__CPP_STRICT_WARN_AS_ERROR=${{matrix.compiler.strict}}
             echo "== CMAKE BUILD =="
             cmake --build ${{env.BUILD_DIR}} --config Release
         - name: List Build
@@ -135,7 +145,7 @@ jobs:
       BUILD_DIR: ${{ github.workspace }}/build
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: List Workspace
         run:  ls -la ${{ github.workspace }}
       - name: Compile
@@ -143,7 +153,7 @@ jobs:
           echo "== CMAKE VERSION =="
           cmake --version
           echo "== CMAKE CONFIGURE =="
-          cmake -B${{env.BUILD_DIR}} -DCLOVE_CMAKE__UC_SANITY=true
+          cmake -B${{env.BUILD_DIR}} -DCLOVE_CMAKE__UC_SANITY=ON
           echo "== CMAKE BUILD =="
           cmake --build ${{env.BUILD_DIR}} --config Release
       - name: List Build

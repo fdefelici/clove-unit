@@ -1,15 +1,14 @@
-#include "utils.h"
+#include "utils/cmd_utils.h"
 #include <clove-unit.h>
-
 #include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/stat.h>
 
 FILE* pipe_open(const char* cmd, const char* mode);
 int   pipe_close(FILE* pipe);
+
 #ifdef _WIN32
 FILE* pipe_open(const char* cmd, const char* mode) {
     return _popen(cmd, mode);
@@ -31,7 +30,7 @@ const char* cmd_fmt(const char* format, ...) {
     va_start(args, format);
     __clove_string_vsprintf(result, sizeof(result), format_ext, args);
     va_end(args);
-    free(format_ext);
+    __clove_memory_free(format_ext);
     return result;
 }
 #else 
@@ -92,70 +91,4 @@ int exec_cmd(const char* cmd, char** output) {
     }
     int result_code = pipe_close(pipe);
     return result_code;
-}
-
-bool file_exists(const char* path) {
-    struct stat buffer;
-    return stat(path, &buffer) == 0;
-}
-
-/*
-bool file_exists(const char* path) {
-    FILE* file = __clove_file_open(path, "r");
-    if (!file) return false;
-    fclose(file);
-    return true;
-}
- */
-
-void file_delete(const char* path) {
-    if (file_exists(path))
-        remove(path);
-}
-
-//NOTE: Dangerous if in future will run test multithreaded
-//     Eventually improve with mutex or https://en.cppreference.com/w/c/atomic/atomic_flag
-const char* str_fmt(const char* format, ...) {
-    static char result[1024];
-    va_list args;
-    va_start(args, format);
-    __clove_string_vsprintf(result, sizeof(result), format, args);
-    va_end(args);
-    return result;
-}
-
-void str_split(const char* str, char delim, __clove_vector_t* out_lines) {
-    __CLOVE_VECTOR_INIT(out_lines, char*);
-    char* source = __clove_string_strdup(str);
-    char delim_str[2] = {delim, '\0'};
-
-    #ifdef _WIN32
-    char* context;
-    char *token = strtok_s(source, delim_str, &context);
-    #else 
-    char *token = strtok(source, delim_str);
-    #endif //_WIN32
-
-    while (token != NULL) {
-        __CLOVE_VECTOR_ADD(out_lines, char*, token);
-        
-        #ifdef _WIN32
-        token = strtok_s(NULL, delim_str, &context);
-        #else 
-        token = strtok(NULL, delim_str);
-        #endif //_WIN32
-    }
-}
-
-char* read_file(const char* path) {
-    FILE* file = __clove_file_open(path, "rb");
-    fseek(file, 0, SEEK_END);
-    size_t file_size = ftell(file);
-    rewind(file);
-
-    char* result = (char*)malloc(file_size + 1);
-    result[file_size] = '\0';
-    size_t bytes_read = fread(result, file_size, 1, file);
-    fclose(file);
-    return result;
 }

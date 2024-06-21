@@ -1,4 +1,4 @@
-# CLove-Unit &middot; [![version](https://img.shields.io/github/v/release/fdefelici/clove-unit?label=latest&sort=semver)](./clove-unit.h) [![workflow](https://img.shields.io/github/actions/workflow/status/fdefelici/clove-unit/ci_action.yml)](https://github.com/fdefelici/clove-unit/actions/workflows/ci_action.yml) [![conan](https://img.shields.io/badge/conan-available-blueviolet)](https://conan.io/center/recipes/clove-unit) [![Discord channel](https://img.shields.io/discord/1167864219190964255?logo=discord&logoColor=violet)](https://discord.gg/Mjx4YRQfFt)
+# CLove-Unit &middot; [![version](https://img.shields.io/github/v/release/fdefelici/clove-unit?label=latest&sort=semver)](./clove-unit.h) [![workflow](https://img.shields.io/github/actions/workflow/status/fdefelici/clove-unit/ci_action.yml)](https://github.com/fdefelici/clove-unit/actions/workflows/ci_action.yml) [![conan](https://img.shields.io/conan/v/clove-unit)](https://conan.io/center/recipes/clove-unit) [![Discord channel](https://img.shields.io/discord/1167864219190964255?logo=discord&logoColor=violet)](https://discord.gg/Mjx4YRQfFt)
 
 `CLove-Unit` is a single-header unit testing library designed for C (compatible with C++).
 
@@ -19,7 +19,7 @@ Consider also supporting `CLove-Unit` development becoming a [**sponsor**](https
 
 * [Features](#features)
 * [IDE Extensions](#ide-extensions)
-* [Supported Package Managers](#supported-package-managers)
+* [How to Integrate](#how-to-integrate)
 * [How It Works](#how-it-works)
 * [Getting Started](#getting-started)
 * [Programming API](#programming-api)
@@ -48,11 +48,88 @@ For those who prefer a UI oriented test executor, `CLove-Unit` is supported on t
 
 Have a look and enjoy ;-)
 
-## Supported Package Managers
+## How to Integrate
 
-`CLove-Unit` is also available on the following Package Managers:
+`CLove-Unit` can be imported in your project in the following ways:
+- Sourcing the header file
+- Using a Package Manager
+- Using CMake 
 
-* [Conan](https://conan.io/center/recipes/clove-unit)
+### Sourcing the Header file
+Being an header-only library, you can just download [clove-unit.h](./clove-unit.h) file and include it in your project.
+
+```c
+#include "clove-unit.h"
+```
+
+Then remember to properly configure your compiler include paths.
+
+### Using a Package Manager
+`CLove-Unit` is currently available on the following Package Managers:
+
+* [Conan](https://conan.io): read [here](https://conan.io/center/recipes/clove-unit) for details on how to import it.
+
+### Using CMake 
+In case you still need dependency management, but you want to avoid Package Manager configuration complexity, you can use standard mechansim provided by `CMake` such as [FetchContent](https://cmake.org/cmake/help/latest/module/FetchContent.html), [add_subdirectory](https://cmake.org/cmake/help/latest/command/add_subdirectory.html) and [find_package](https://cmake.org/cmake/help/latest/command/find_package.html).
+
+> NOTE: CMake library is named `clove-unit`
+
+Here a few examples:
+
+* **FetchContent**
+
+  ```cmake
+  cmake_minimum_required(VERSION 3.18)
+  project(TestProject C)
+
+  Include(FetchContent)
+  FetchContent_Declare(
+    clove-unit
+    GIT_REPOSITORY https://github.com/fdefelici/clove-unit.git
+    GIT_TAG master       # or eventually any branch, tag or commit sha
+  )
+  FetchContent_MakeAvailable(clove-unit)
+
+  add_executable(tests <YOUR_TEST_FILES>)
+  target_link_libraries(tests clove-unit)
+  ```
+
+* **add_subdirectory** 
+
+  First download `CLove-Unit` repository and then point properly to it like this:
+
+  ```cmake
+  cmake_minimum_required(VERSION 3.18)
+  project(TestProject C)
+
+  add_subdirectory(<PATH_TO_CLOVE_UNIT_REPOSITORY>)  
+
+  add_executable(tests <YOUR_TEST_FILES>)
+  target_link_libraries(tests clove-unit)
+  ```
+
+* **find_package** 
+
+  First download `CLove-Unit` repository and then run cmake install command on it. 
+
+  Package will be installed in at following path: `<CMAKE_INSTALL_PREFIX>/clove-unit/<CLOVE_VERSION>`
+  
+  Eventually you may want to customize [CMAKE_INSTALL_PREFIX](https://cmake.org/cmake/help/latest/variable/CMAKE_INSTALL_PREFIX.html) variable to override cmake default installation path for packages.
+
+  
+  Then use the package as follow:
+  ```cmake
+  cmake_minimum_required(VERSION 3.18)
+  project(TestProject C)
+
+  find_package(clove-unit REQUIRED PATHS <INSTALLATION_PATH>)  
+
+  # or more strict
+  # find_package(clove-unit <CLOVE_VERSION> EXACT REQUIRED PATHS <INSTALLATION_PATH>)  
+
+  add_executable(tests <YOUR_TEST_FILES>)
+  target_link_libraries(tests clove-unit)
+  ```
 
 ## How It Works
 
@@ -236,10 +313,10 @@ Assertions that can be used within a `CLOVE_TEST` definition.
 
 Helper APIs to support test implementation.
 
-| API                      | Description                                                |
-|--------------------------|------------------------------------------------------------|
-| `CLOVE_EXEC_PATH()`      | Macro to easily retrieve executable path as a `char*`      |
-| `CLOVE_EXEC_BASE_PATH()` | Macro to easily retrieve executable base path as a `char*` |
+| API                      | Description                                                               |
+|--------------------------|---------------------------------------------------------------------------|
+| `CLOVE_EXEC_PATH()`      | Macro to easily retrieve executable absolute path as a `const char*`      |
+| `CLOVE_EXEC_BASE_PATH()` | Macro to easily retrieve executable absolute base path as a `const char*` |
 
 ## Command-Line API
 

@@ -96,7 +96,7 @@ CLOVE_TEST(AsString) {
 
     char* result = __clove_string_view_as_string(&vw1);
     CLOVE_STRING_EQ("Hello", result);
-    free(result);
+    __clove_memory_free(result);
 }
 
 CLOVE_TEST(EndWithUsingOffsetOnSuffix) {

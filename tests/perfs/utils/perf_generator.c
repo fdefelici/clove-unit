@@ -55,7 +55,7 @@ int main(int argc, char* argv[]) {
     }
 
     fclose(file);
-    free(path);
-    free(file_path);
+    __clove_memory_free(path);
+    __clove_memory_free(file_path);
     return 0;
 }

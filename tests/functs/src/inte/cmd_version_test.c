@@ -9,7 +9,7 @@ CLOVE_SUITE_SETUP() {
 }
 
 CLOVE_SUITE_TEARDOWN() {
-    if (cmd_out) free(cmd_out);
+    if (cmd_out) __clove_memory_free(cmd_out);
 }
  
 CLOVE_TEST(RunVersionWithOptV) {
