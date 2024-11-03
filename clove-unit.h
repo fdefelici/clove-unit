@@ -982,7 +982,7 @@ char* __clove_path_basepath(const char* path) {
         result = __clove_string_strdup(dot_path);
     } else {
         // Calculate base path length based on the position of the last path separator.
-        size_t base_length = (size_t)(last_char_index + 1);
+        size_t base_length = ((size_t)last_char_index) + 1;
         char* base_path = __CLOVE_MEMORY_CALLOC_TYPE_N(char, base_length);
         __clove_string_strncpy(base_path, base_length, temp_path, base_length - 1);
         __clove_path_to_os(base_path);
