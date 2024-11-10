@@ -61,7 +61,7 @@ jobs:
           echo "== CMAKE VERSION =="
           cmake --version
           echo "== CMAKE CONFIGURE =="
-          cmake -B${{env.BUILD_DIR}} -DCLOVE_CMAKE__UC_BUILD=ON
+          cmake -B${{env.BUILD_DIR}} -DCLOVE_CMAKE__UC_BUILD=ON -DCLOVE_CMAKE__CPP_STRICT_WARN_AS_ERROR=ON
           echo "== CMAKE BUILD =="
           cmake --build ${{env.BUILD_DIR}} --config Release
       - name: List Build
