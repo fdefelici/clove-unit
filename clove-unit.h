@@ -1001,8 +1001,9 @@ char* __clove_path_to_absolute(const char* rel_path) {
     char* result = NULL;
 #if _WIN32
     result = __CLOVE_MEMORY_MALLOC_TYPE_N(char, _MAX_PATH);
-    //if( _fullpath( full, partialPath, _MAX_PATH ) != NULL )
-    _fullpath(result, rel_path, _MAX_PATH );
+    
+    char* discarded = _fullpath(result, rel_path, _MAX_PATH );
+    __CLOVE_UNUSED_VAR(discarded); //fix "warning C6031: Return value ignored: '_fullpath'."
 #else
     result = __CLOVE_MEMORY_MALLOC_TYPE_N(char, PATH_MAX);
     if (__clove_path_exists(rel_path)) {
