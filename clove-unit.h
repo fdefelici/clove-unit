@@ -1,6 +1,6 @@
 /*
  * clove-unit
- * v2.4.5
+ * v2.4.6
  * Single-Header Unit Testing library for C/C++
  * https://github.com/fdefelici/clove-unit
  *
@@ -10,8 +10,8 @@
 
 #define __CLOVE_VERSION_MAJOR 2
 #define __CLOVE_VERSION_MINOR 4
-#define __CLOVE_VERSION_PATCH 5
-#define __CLOVE_VERSION "2.4.5"
+#define __CLOVE_VERSION_PATCH 6
+#define __CLOVE_VERSION "2.4.6"
 
 //Preventing "unknown-pragmas" warning on GCC <= 12 for '#pragma region' usage
 //NOTE1: GCC and G++ v13+ support '#pragma region' by the way.
@@ -982,7 +982,7 @@ char* __clove_path_basepath(const char* path) {
         result = __clove_string_strdup(dot_path);
     } else {
         // Calculate base path length based on the position of the last path separator.
-        size_t base_length = (size_t)(last_char_index + 1);
+        size_t base_length = ((size_t)last_char_index) + 1;
         char* base_path = __CLOVE_MEMORY_CALLOC_TYPE_N(char, base_length);
         __clove_string_strncpy(base_path, base_length, temp_path, base_length - 1);
         __clove_path_to_os(base_path);
@@ -1001,8 +1001,9 @@ char* __clove_path_to_absolute(const char* rel_path) {
     char* result = NULL;
 #if _WIN32
     result = __CLOVE_MEMORY_MALLOC_TYPE_N(char, _MAX_PATH);
-    //if( _fullpath( full, partialPath, _MAX_PATH ) != NULL )
-    _fullpath(result, rel_path, _MAX_PATH );
+    
+    char* discarded = _fullpath(result, rel_path, _MAX_PATH );
+    __CLOVE_UNUSED_VAR(discarded); //fix "warning C6031: Return value ignored: '_fullpath'."
 #else
     result = __CLOVE_MEMORY_MALLOC_TYPE_N(char, PATH_MAX);
     if (__clove_path_exists(rel_path)) {

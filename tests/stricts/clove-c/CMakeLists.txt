@@ -11,7 +11,7 @@ set_property(TARGET StrictCloveC PROPERTY COMPILE_WARNING_AS_ERROR ON)
 
 # Compiler Options
 if (MSVC)
-    target_compile_options(StrictCloveC PRIVATE /W4)
+    target_compile_options(StrictCloveC PRIVATE /W4 /analyze)
 else() # GCC and CLANG
     target_compile_options(StrictCloveC PRIVATE -Wall -Wextra -Wpedantic)
 endif()
